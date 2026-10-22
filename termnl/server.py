@@ -11,6 +11,7 @@ The API takes sentences and gives replies: never a command. The commands are the
 filled in by the agent and run here (runner.py), or simulated (settings.md, "simulate:").
 No sign-in yet: by default it answers this machine only (--host)."""
 import argparse
+import datetime
 import json
 import os
 import re
@@ -24,6 +25,7 @@ from .load import ROOT, load_language, load_settings
 from .runner import run
 
 WEB = os.path.join(ROOT, "web")
+LOGS = os.path.join(ROOT, "logs")
 SWITCHES = ("show commands", "admin mode")
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml"}
 
@@ -86,9 +88,20 @@ class TermNL:
                     if self.settings.get("show commands") == "on":
                         r["output"] = (done["out"] + done["err"]).strip()
             r["here"] = a.here["label"]
+            self.log(session, text, r, command)
             r.pop("teach", None)  # the learning inbox comes next; nothing is learned yet
             r.pop("inbox", None)
             return r
+
+    def log(self, session, text, r, command=None):
+        """every turn, one line of JSON in logs/<date>.jsonl: the real sentences people type"""
+        os.makedirs(LOGS, exist_ok=True)
+        now = datetime.datetime.now()
+        line = {"at": now.isoformat(timespec="seconds"), "session": session[:8], "text": text,
+                **{k: r[k] for k in ("outcome", "skill", "how", "p", "unknown", "say", "ran", "show", "teach", "inbox", "reason") if r.get(k) is not None},
+                **({"command": command} if command else {})}
+        with open(os.path.join(LOGS, now.strftime("%Y-%m-%d") + ".jsonl"), "a", encoding="utf-8") as f:
+            f.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
 def handler(app):
