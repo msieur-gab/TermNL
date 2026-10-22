@@ -6,7 +6,7 @@
 //   {place}     a value; what it may hold comes from the skill's ## Values
 // No learning: a template matches or it doesn't, and the match says which words were what.
 
-import { tokenize, words } from "./text.js";
+import { tokenize, words, close } from "./text.js";
 
 export function compile(template) {
   const src = template.trim();
@@ -61,12 +61,16 @@ export function uses(nodes, acc = { slots: new Set(), refs: new Set() }) {
 // Every way the words can be read by the template.
 //   refs:  name → [[word, ...], ...]               phrases for <name>
 //   slots: name → null (free text) | [{ value, label, phrases: [[word...]] }]   a list
-// A list value not on the list is still read, marked unknown, so the agent can ask about it.
-export function parses(nodes, toks, refs, slots) {
+// A list value not on the list is still read: close to a listed one (a typo), it is marked fuzzy and
+// confirmed; otherwise marked unknown and asked about. Free text never starts with a place word
+// (stops: "in", "inside", "for"…), so a name can't swallow the place that follows it.
+export function parses(nodes, toks, refs, slots, stops = new Set()) {
   const out = [];
   const n = toks.length;
   const at = (phrase, pos) => phrase.length > 0 && pos + phrase.length <= n &&
     phrase.every((w, k) => toks[pos + k].word === w);
+  const near = (phrase, pos) => phrase.length > 0 && pos + phrase.length <= n &&
+    phrase.every((w, k) => close(toks[pos + k].word, w)) && !at(phrase, pos);
 
   function m(list, i, pos, caps, score, k) {
     if (i === list.length) return k(pos, caps, score);
@@ -84,8 +88,10 @@ export function parses(nodes, toks, refs, slots) {
       if (list) {
         for (const v of list) for (const ph of v.phrases) {
           if (at(ph, pos)) next(pos + ph.length, { ...caps, [node.name]: { start: pos, end: pos + ph.length, value: v.value, label: v.label } }, score + ph.length);
+          else if (near(ph, pos)) next(pos + ph.length, { ...caps, [node.name]: { start: pos, end: pos + ph.length, value: v.value, label: v.label, fuzzy: true } }, score + ph.length - 1);
         }
       }
+      if (pos < n && stops.has(toks[pos].word)) return;
       // free text, or a list value that isn't on the list (read, but scored down)
       for (let end = pos + 1; end <= n; end++) {
         const cap = { start: pos, end };

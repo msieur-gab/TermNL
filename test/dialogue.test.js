@@ -72,3 +72,40 @@ test("a name can't inject a command", () => {
   assert.equal(r.outcome, "act");
   assert.ok(r.command.startsWith("mkdir -p $HOME'/x'\\''"));
 });
+
+// Gab's first request in the playground, 22 Oct, and its relatives: a name must never swallow a place,
+// and a misspelled folder is confirmed, never ignored.
+test("“add a new note inside my documets”: the folder is confirmed, then the name asked", () => {
+  const a = agent();
+  const r = a.hear("add a new note inside my documets");
+  assert.equal(r.outcome, "ask");
+  assert.match(r.say, /Documents/);
+  const n = a.hear("yes");
+  assert.equal(n.outcome, "ask");
+  assert.equal(a.hear("shopping list").command, "touch $HOME'/Documents/shopping list.md'");
+});
+
+test("a misspelled folder can be refused and chosen from the list", () => {
+  const a = agent();
+  a.hear("make a folder called seeds in documets");
+  const r = a.hear("no");
+  assert.equal(r.outcome, "ask");
+  assert.ok(r.chips.includes("ideas"));
+  assert.equal(a.hear("ideas").command, "mkdir -p $HOME'/ideas/seeds'");
+});
+
+test("a name never starts with a place word", () => {
+  const r = agent().hear("make a folder for my bike photos");
+  assert.equal(r.outcome, "ask");
+  assert.equal(agent().hear("create a file in documents").outcome, "ask");
+});
+
+test("a place without a name: the name is asked, the place kept", () => {
+  const a = agent();
+  assert.equal(a.hear("create a file in documents").outcome, "ask");
+  assert.equal(a.hear("draft").command, "touch $HOME'/Documents/draft.md'");
+});
+
+test("another name for a folder still finds it", () => {
+  assert.equal(agent().hear("new folder called bikes inside docs").command, "mkdir -p $HOME'/Documents/bikes'");
+});

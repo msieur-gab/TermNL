@@ -55,3 +55,18 @@ export function fill(text, values) {
 
 // A phrase as words: "turn off" → ["turn", "off"]
 export const words = phrase => tokenize(phrase).map(t => t.word);
+
+// A typo of a word: one letter added, dropped, changed or swapped (two for words of 8 letters or
+// more). Short words (under 4 letters) must match exactly: "ssh" is not "ssd".
+export function close(a, b) {
+  if (a === b) return true;
+  if (b.length < 4 || Math.abs(a.length - b.length) > 2) return false;
+  const max = b.length >= 8 ? 2 : 1;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) {
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+  }
+  return d[a.length][b.length] <= max;
+}

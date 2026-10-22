@@ -16,7 +16,7 @@
 
 import { parses, best } from "./template.js";
 import { classify } from "./model.js";
-import { tokenize, words, pick, fill } from "./text.js";
+import { tokenize, words, pick, fill, close } from "./text.js";
 
 const sq = s => "'" + String(s).replace(/'/g, "'\\''") + "'";
 // a path's leading $HOME stays outside the quotes, so the shell still expands it
@@ -35,6 +35,7 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
   const slotLists = skill => Object.fromEntries(Object.entries(skill.values).map(([k, v]) => [k, listOf(v.kind)]));
   const reply = (key, values = {}) => fill(pick(lists.replies[key] || key, random), values);
   const small = new Set((lists.answers["small words"] || []).map(p => p.join(" ")));
+  const stops = new Set((lists.answers["not a name start"] || []).map(p => p.join(" ")));
 
   // Fillers ("please", "can you", "for me") are dropped at the start and end of a sentence.
   function clean(text) {
@@ -57,7 +58,7 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     const found = [];
     for (const skill of skills) {
       const all = [];
-      for (const nodes of skill.compiled) all.push(...parses(nodes, toks, lists.refs, slotLists(skill)));
+      for (const nodes of skill.compiled) all.push(...parses(nodes, toks, lists.refs, slotLists(skill), stops));
       const top = all.length ? best(all) : null;
       if (top) found.push({ skill, parse: top });
     }
@@ -66,7 +67,7 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     return found.filter(f => f.parse.score === max).map(({ skill, parse }) => {
       const vals = {};
       for (const [k, c] of Object.entries(parse.caps)) {
-        vals[k] = { text: original(text, toks, c), value: c.value, label: c.label, unknown: !!c.unknown };
+        vals[k] = { text: original(text, toks, c), value: c.value, label: c.label, unknown: !!c.unknown, fuzzy: !!c.fuzzy };
       }
       return { skill, vals, score: max };
     });
@@ -81,9 +82,11 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
       if (!list) continue;
       let hit = null;
       for (const o of list) for (const ph of o.phrases) for (let i = 0; i + ph.length <= toks.length; i++) {
-        if (ph.every((w, j) => toks[i + j].word === w) && (!hit || ph.length > hit.len)) hit = { o, i, len: ph.length };
+        const exact = ph.every((w, j) => toks[i + j].word === w);
+        const fuzzy = !exact && ph.every((w, j) => close(toks[i + j].word, w));
+        if ((exact || fuzzy) && (!hit || ph.length > hit.len || (exact && hit.fuzzy))) hit = { o, i, len: ph.length, fuzzy };
       }
-      if (hit) { vals[k] = { value: hit.o.value, label: hit.o.label }; for (let j = 0; j < hit.len; j++) used.add(hit.i + j); }
+      if (hit) { vals[k] = { value: hit.o.value, label: hit.o.label, fuzzy: hit.fuzzy }; for (let j = 0; j < hit.len; j++) used.add(hit.i + j); }
     }
     for (const [k, spec] of Object.entries(skill.values)) {
       if (listOf(spec.kind) || vals[k]) continue;
@@ -136,6 +139,13 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
   }
 
   function resolve(skill, vals, approved = false) {
+    // a value close to one on the device's list (a typo): confirm it, never use it silently
+    for (const [k, v] of Object.entries(vals)) {
+      if (v.fuzzy) {
+        pending = { skill, vals, waiting: "fuzzy", slot: k, approved };
+        return { outcome: "ask", skill: skill.id, say: reply("did you mean", { value: v.label }), chips: [v.label, "no"] };
+      }
+    }
     // a value said but not on the device's list: ask which one, with the list as chips
     for (const [k, v] of Object.entries(vals)) {
       if (v.unknown) {
@@ -235,6 +245,21 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
       if (is(toks, "yes")) { pending = null; const r = resolve(skill, vals, true); r.teach = { skill: skill.id, text: asked }; return r; }
       if (is(toks, "no")) { pending = null; return { outcome: "abstain", say: reply("declined"), reason: "declined", inbox: asked }; }
       pending = null;
+    }
+    if (pending?.waiting === "fuzzy") {
+      const { skill, vals, slot, approved } = pending;
+      const v = vals[slot];
+      if (is(toks, "yes") || words(v.label).join(" ") === toks.map(t => t.word).join(" ")) {
+        vals[slot] = { value: v.value, label: v.label };
+        pending = null;
+        return resolve(skill, vals, approved);
+      }
+      if (is(toks, "no")) {
+        const list = listOf(skill.values[slot].kind) || [];
+        pending = { skill, vals, waiting: "value", slot, approved };
+        return { outcome: "ask", skill: skill.id, say: reply("unknown value", { value: `“${v.text || v.label}”` }), chips: list.map(o => o.label).slice(0, 8) };
+      }
+      pending = { ...pending, waiting: "value" }; // another folder named instead: read it as the answer
     }
     if (pending?.waiting === "choose") {
       const said = toks.map(t => t.word).join(" ");

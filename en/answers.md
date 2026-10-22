@@ -8,6 +8,7 @@ Words for the conversation itself, outside any skill.
 - help: help, what can you do, what do you do, what can i ask
 - filler start: please, can you, could you, would you, will you, hey, ok, okay, i want to, i'd like to, i need to
 - filler end: please, for me, now, thanks, thank you
+- not a name start: in, inside, into, to, on, at, under, from, for, with, of, by
 - small words: the, a, an, my, me, i, i'm, it, it's, is, are, am, be, to, of, in, on, at, for, with, from, and, or, please, can, could, would, you, do, does, what, what's, which, how, how's, there, this, that, some, any, up, now, right, still, just, all, so, again, back, get, got, have, has, need, want, let, let's, us, we, will, should, much, very, really, bit, little, too
 
 ## Replies
@@ -18,6 +19,7 @@ Words for the conversation itself, outside any skill.
 - cancelled: OK, cancelled. | Cancelled.
 - choose: Do you mean {options}?
 - unknown value: I don't see {value}. Which one?
+- did you mean: Did you mean {value}? | {value}, right?
 - help: I can: {skills}.
 - not sure: I don't know {words} yet. Do you want me to {label}? | I haven't learned {words} yet. Should I {label}?
 - new words: I don't know {words} yet.
