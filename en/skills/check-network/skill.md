@@ -7,10 +7,10 @@ approve: no
 
 ## Sentences
 
-- am i (online|connected) [to the internet]
-- is the <network> (working|up|on)
-- (what's|what is) my ip [address]
-- <check> [the|my] <network>
+- `am i (online|connected) [to the internet]`
+- `is the <network> (working|up|on)`
+- `(what's|what is) my ip [address]`
+- `<check> [the|my] <network>`
 
 ## Command
 

@@ -23,4 +23,4 @@ Early. The exact layer (templates + shared lists + values from the device) works
 that understands phrasings nobody wrote down is next. `node test/measure.js` shows how many of the
 hand-written phrasings in `test/phrasings.md` are understood.
 
-Run: `node core/check.js` (checks every skill file), `node --test test/`, `node test/measure.js -v`.
+Run: `node core/check.js` (checks every skill file), `node --test test/*.test.js`, `node test/measure.js -v`.

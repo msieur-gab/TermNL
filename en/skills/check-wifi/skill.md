@@ -7,9 +7,9 @@ approve: no
 
 ## Sentences
 
-- is [the] <wifi> (on|off|working)
-- (which|what) <wifi> [network] am i (on|connected to)
-- <check> [the] <wifi>
+- `is [the] <wifi> (on|off|working)`
+- `(which|what) <wifi> [network] am i (on|connected to)`
+- `<check> [the] <wifi>`
 
 ## Command
 

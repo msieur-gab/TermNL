@@ -7,8 +7,8 @@ approve: no
 
 ## Sentences
 
-- is [the] <bluetooth> (on|off|working)
-- <check> [the] <bluetooth>
+- `is [the] <bluetooth> (on|off|working)`
+- `<check> [the] <bluetooth>`
 
 ## Command
 

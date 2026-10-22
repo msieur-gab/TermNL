@@ -5,7 +5,8 @@
 //   admin: no          needs admin rights (only runs with admin mode on, after approval)
 //   approve: no        always asks for approval first (destructive, or cuts a connection)
 //   ---
-//   ## Sentences       templates (core/template.js)
+//   ## Sentences       templates (core/template.js), each in `backticks` so <action> and
+//                      <object> show as written on GitHub instead of vanishing as HTML tags
 //   ## Values          - name: kind[, required][, default: x]
 //   ## Command         one line; {value} is filled in and quoted
 //   ## Replies         - key: variant | variant
@@ -46,7 +47,7 @@ function section(md, name) {
 export function readSkill(id, md) {
   const front = md.startsWith("---") ? md.slice(3, md.indexOf("\n---", 3)) : "";
   const meta = readPairs(front);
-  const sentences = (section(md, "Sentences") || []).filter(l => l.startsWith("- ")).map(l => l.slice(2).trim());
+  const sentences = (section(md, "Sentences") || []).filter(l => l.startsWith("- ")).map(l => l.slice(2).trim().replace(/^`(.*)`$/, "$1"));
   const values = {};
   for (const { key, words: parts } of readList(md, "Values")) {
     const v = { kind: parts[0] || "text", required: false };

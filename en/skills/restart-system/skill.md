@@ -7,7 +7,7 @@ approve: no
 
 ## Sentences
 
-- <restart> [the] <system>
+- `<restart> [the] <system>`
 
 ## Command
 

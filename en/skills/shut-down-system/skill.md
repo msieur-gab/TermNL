@@ -7,9 +7,9 @@ approve: yes
 
 ## Sentences
 
-- <shut down> [the] <system>
-- <turn off> [the] <system>
-- (turn|switch) [the] <system> off
+- `<shut down> [the] <system>`
+- `<turn off> [the] <system>`
+- `(turn|switch) [the] <system> off`
 
 ## Command
 

@@ -7,8 +7,8 @@ approve: yes
 
 ## Sentences
 
-- <turn off> [the] <wifi>
-- (turn|switch) [the] <wifi> off
+- `<turn off> [the] <wifi>`
+- `(turn|switch) [the] <wifi> off`
 
 ## Command
 

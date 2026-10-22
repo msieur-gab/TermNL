@@ -7,8 +7,8 @@ approve: no
 
 ## Sentences
 
-- <show> [me] [the|my] {place} [<folder>]
-- (what's|what is) in [the|my] {place} [<folder>]
+- `<show> [me] [the|my] {place} [<folder>]`
+- `(what's|what is) in [the|my] {place} [<folder>]`
 
 ## Values
 

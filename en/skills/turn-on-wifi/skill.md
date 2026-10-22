@@ -7,8 +7,8 @@ approve: no
 
 ## Sentences
 
-- <turn on> [the] <wifi>
-- (turn|switch) [the] <wifi> [back] on
+- `<turn on> [the] <wifi>`
+- `(turn|switch) [the] <wifi> [back] on`
 
 ## Command
 

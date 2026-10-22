@@ -7,8 +7,8 @@ approve: no
 
 ## Sentences
 
-- <restart> [the] {name} [<service>]
-- <restart> [the|a] <service>
+- `<restart> [the] {name} [<service>]`
+- `<restart> [the|a] <service>`
 
 ## Values
 

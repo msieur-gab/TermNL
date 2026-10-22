@@ -7,9 +7,9 @@ approve: no
 
 ## Sentences
 
-- <create> [a|the] [new] <folder> [(named|called)] {name} [(in|inside|into) [the|my] {place} [<folder>]]
-- <create> [a|the] [new] <folder> (in|inside) [the|my] {place} [<folder>] [(named|called) {name}]
-- <create> [a|the] [new] <folder>
+- `<create> [me] [a|the] [new] <folder> [(named|called)] {name} [(in|inside|into) [the|my] {place} [<folder>]]`
+- `<create> [me] [a|the] [new] <folder> (in|inside) [the|my] {place} [<folder>] [(named|called) {name}]`
+- `<create> [me] [a|the] [new] <folder>`
 
 ## Values
 

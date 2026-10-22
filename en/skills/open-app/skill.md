@@ -7,8 +7,8 @@ approve: no
 
 ## Sentences
 
-- <open> [the|a|my] {name} [<app>]
-- <open> [an|a] <app>
+- `<open> [the|a|my] {name} [<app>]`
+- `<open> [an|a] <app>`
 
 ## Values
 

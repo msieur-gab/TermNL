@@ -1,20 +1,31 @@
 // The dialogue. Every request ends in one of four outcomes:
-//   act      everything is known and nothing needs approval: the command is ready to run
-//   ask      a value is missing or isn't on the device: a question, with chips when there's a list
+//   act      understood, everything known, nothing to approve: the command is ready to run
+//   ask      a value is missing or isn't on the device, or the request isn't surely understood:
+//            a question, with chips when there are choices
 //   approve  the action is destructive or needs admin rights: the person approves first
-//   abstain  no skill reads the sentence, or the settings don't allow it: the agent says so
+//   abstain  nothing understood, or the settings don't allow it: the agent says so
 //
-// The agent never runs anything itself and never writes a command: it fills in the command a skill
+// Understanding comes in two layers:
+//   1. a skill's templates, when one reads the sentence exactly (values read precisely);
+//   2. the model, which recognises the action and the object in any wording, with values found by
+//      their own readers. It acts only when it is sure and knows every word; otherwise it asks
+//      "Do you want me to …?", naming the words it doesn't know yet, and a yes teaches it.
+//
+// The agent never runs anything and never writes a command: it fills in the command a skill
 // declares, with every value quoted. Running it is the device's job.
 
 import { parses, best } from "./template.js";
+import { classify } from "./model.js";
 import { tokenize, words, pick, fill } from "./text.js";
 
 const sq = s => "'" + String(s).replace(/'/g, "'\\''") + "'";
 // a path's leading $HOME stays outside the quotes, so the shell still expands it
 export const quote = p => (p.startsWith("$HOME") ? "$HOME" + (p.length > 5 ? sq(p.slice(5)) : "") : sq(p));
 
-export function createAgent({ lists, skills, settings = {}, device, random = Math.random }) {
+// how sure the model must be of its action × object pair: to act, and to ask at all
+const SURE = 0.5, MAYBE = 0.15;
+
+export function createAgent({ lists, skills, model, settings = {}, device, random = Math.random }) {
   let pending = null;
   const on = key => /^(on|yes|true)$/i.test(settings[key] || "");
   const sys = kind => (device ? device.list(kind) : []).map(d => ({
@@ -23,6 +34,7 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
   const listOf = kind => kind === "filetype" ? lists.filetypes : kind.startsWith("@sys.") ? sys(kind.slice(5)) : null;
   const slotLists = skill => Object.fromEntries(Object.entries(skill.values).map(([k, v]) => [k, listOf(v.kind)]));
   const reply = (key, values = {}) => fill(pick(lists.replies[key] || key, random), values);
+  const small = new Set((lists.answers["small words"] || []).map(p => p.join(" ")));
 
   // Fillers ("please", "can you", "for me") are dropped at the start and end of a sentence.
   function clean(text) {
@@ -40,7 +52,7 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
   const is = (toks, key) => (lists.answers[key] || []).some(ph => ph.length === toks.length && ph.every((w, i) => toks[i].word === w));
   const original = (text, toks, c) => text.replace(/[’‘`]/g, "'").slice(toks[c.start].start, toks[c.end - 1].end);
 
-  // Every skill's best reading of the sentence; the top ones (several if they tie).
+  // Layer 1: every skill's best template reading; the top ones (several if they tie).
   function read(text, toks) {
     const found = [];
     for (const skill of skills) {
@@ -60,14 +72,75 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
     });
   }
 
-  const shown = (skill, k, v) => skill.values[k].kind === "secret" ? "•••" : (v.label ?? v.text);
+  // Values found by their own readers, anywhere in the sentence (when no template read it):
+  // a name from a device list or a shared list, a name after "called"/"named", a file-shaped word.
+  function readValues(skill, text, toks) {
+    const vals = {}, used = new Set();
+    for (const [k, spec] of Object.entries(skill.values)) {
+      const list = listOf(spec.kind);
+      if (!list) continue;
+      let hit = null;
+      for (const o of list) for (const ph of o.phrases) for (let i = 0; i + ph.length <= toks.length; i++) {
+        if (ph.every((w, j) => toks[i + j].word === w) && (!hit || ph.length > hit.len)) hit = { o, i, len: ph.length };
+      }
+      if (hit) { vals[k] = { value: hit.o.value, label: hit.o.label }; for (let j = 0; j < hit.len; j++) used.add(hit.i + j); }
+    }
+    for (const [k, spec] of Object.entries(skill.values)) {
+      if (listOf(spec.kind) || vals[k]) continue;
+      const after = toks.findIndex(t => ["called", "named", "titled"].includes(t.word));
+      if (after >= 0 && after + 1 < toks.length) {
+        let end = after + 1;
+        while (end < toks.length && !["in", "inside", "into", "on", "at", "to", "under"].includes(toks[end].word) && !used.has(end)) end++;
+        if (end > after + 1) {
+          vals[k] = { text: original(text, toks, { start: after + 1, end }) };
+          for (let j = after; j < end; j++) used.add(j);
+          continue;
+        }
+      }
+      const file = toks.findIndex((t, i) => !used.has(i) && /\.[a-z0-9]{1,5}$/i.test(t.word));
+      if (file >= 0) { vals[k] = { text: original(text, toks, { start: file, end: file + 1 }) }; used.add(file); }
+    }
+    return { vals, used };
+  }
 
-  function resolve(skill, vals) {
+  // What the sentence asks for: a template's exact reading, or the model's best action + object.
+  function understand(text, toks) {
+    const found = read(text, toks);
+    if (found.length && found[0].score >= 1) {
+      if (found.length > 1) return { how: "choose", options: found };
+      return { how: "template", skill: found[0].skill, vals: found[0].vals, p: 1, unknown: [] };
+    }
+    if (!model) return null;
+    const ws = toks.map(t => t.word);
+    const pa = classify(model.action, text, ws);
+    const po = classify(model.object, text, ws);
+    const P = (list, label) => (list.find(x => x.label === label) || { p: 0 }).p;
+    let top = null;
+    for (const skill of skills) {
+      const p = P(pa, skill.action) * P(po, skill.object);
+      if (!top || p > top.p) top = { skill, p };
+    }
+    const none = Math.max(P(pa, "none"), P(po, "none"));
+    if (!top || top.p < MAYBE || none > top.p) return null;
+    const { vals, used } = readValues(top.skill, text, toks);
+    const taught = new Set(model.taught[top.skill.id] || []);
+    const unknown = toks.filter((t, i) => !used.has(i) && !small.has(t.word) && !taught.has(t.word)).map(t => t.word);
+    return { how: "model", skill: top.skill, vals, p: top.p, unknown };
+  }
+
+  const shown = (skill, k, v) => skill.values[k].kind === "secret" ? "•••" : (v.label ?? v.text);
+  function display(skill, vals) {
+    const out = { output: "{output}" };
+    for (const [k, v] of Object.entries(vals)) out[k] = shown(skill, k, v);
+    return out;
+  }
+
+  function resolve(skill, vals, approved = false) {
     // a value said but not on the device's list: ask which one, with the list as chips
     for (const [k, v] of Object.entries(vals)) {
       if (v.unknown) {
         const list = listOf(skill.values[k].kind) || [];
-        pending = { skill, vals, waiting: "value", slot: k };
+        pending = { skill, vals, waiting: "value", slot: k, approved };
         return { outcome: "ask", skill: skill.id, say: reply("unknown value", { value: `“${v.text}”` }), chips: list.map(o => o.label).slice(0, 8) };
       }
     }
@@ -78,7 +151,7 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
         const hit = list && list.find(o => o.value === spec.default || o.label === spec.default || o.phrases.some(p => p.join(" ") === spec.default));
         vals[k] = hit ? { value: hit.value, label: hit.label } : { text: spec.default };
       } else if (spec.required) {
-        pending = { skill, vals, waiting: "value", slot: k };
+        pending = { skill, vals, waiting: "value", slot: k, approved };
         const list = listOf(spec.kind);
         return { outcome: "ask", skill: skill.id, say: reply(skill.replies["ask " + k]), chips: list ? list.map(o => o.label).slice(0, 8) : [] };
       }
@@ -88,7 +161,7 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
       pending = null;
       return { outcome: "abstain", skill: skill.id, say: reply("admin off"), reason: "admin mode off" };
     }
-    if (skill.admin || skill.approve) {
+    if ((skill.admin || skill.approve) && !approved) {
       pending = { skill, vals, waiting: "approve" };
       return { outcome: "approve", skill: skill.id, say: reply(skill.replies.approve, display(skill, vals)), chips: ["yes", "no"] };
     }
@@ -107,12 +180,6 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
     vals.name = { text: `${name}.${type.ext}` };
   }
 
-  function display(skill, vals) {
-    const out = { output: "{output}" };
-    for (const [k, v] of Object.entries(vals)) out[k] = shown(skill, k, v);
-    return out;
-  }
-
   function act(skill, vals) {
     pending = null;
     const command = skill.command.split(" ").map(part => {
@@ -126,11 +193,11 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
 
   // An answer to "Which folder?": a value on the list, or free text for a text value.
   function fillPending(text, toks) {
-    const { skill, vals, slot } = pending;
+    const { skill, vals, slot, approved } = pending;
     const list = listOf(skill.values[slot].kind);
     if (!list) {
       vals[slot] = { text: toks.length ? original(text, toks, { start: 0, end: toks.length }) : text.trim() };
-      return resolve(skill, vals);
+      return resolve(skill, vals, approved);
     }
     let hit = null;
     for (const o of list) for (const ph of o.phrases) for (let i = 0; i + ph.length <= toks.length; i++) {
@@ -140,7 +207,7 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
       return { outcome: "ask", skill: skill.id, say: reply("unknown value", { value: `“${text.trim()}”` }), chips: list.map(o => o.label).slice(0, 8) };
     }
     vals[slot] = { value: hit.o.value, label: hit.o.label };
-    return resolve(skill, vals);
+    return resolve(skill, vals, approved);
   }
 
   function hear(text) {
@@ -154,32 +221,50 @@ export function createAgent({ lists, skills, settings = {}, device, random = Mat
       if (is(toks, "no")) { pending = null; return { outcome: "abstain", skill: skill.id, say: reply("declined"), reason: "declined" }; }
       pending = null; // something else: a new request
     }
+    if (pending?.waiting === "understand") {
+      const { skill, vals, text: asked } = pending;
+      if (is(toks, "yes")) { pending = null; const r = resolve(skill, vals, true); r.teach = { skill: skill.id, text: asked }; return r; }
+      if (is(toks, "no")) { pending = null; return { outcome: "abstain", say: reply("declined"), reason: "declined", inbox: asked }; }
+      pending = null;
+    }
+    if (pending?.waiting === "choose") {
+      const said = toks.map(t => t.word).join(" ");
+      const chosen = pending.options.find(o => words(o.skill.label).join(" ") === said);
+      if (chosen) { pending = null; return resolve(chosen.skill, chosen.vals); }
+    }
     if (is(toks, "help")) {
       pending = null;
       const names = skills.map(s => s.label);
       return { outcome: "act", say: reply("help", { skills: names.join(", ") }), chips: names };
     }
 
-    const found = read(text, toks);
-    if (pending?.waiting === "choose") {
-      const said = toks.map(t => t.word).join(" ");
-      const chosen = pending.options.find(o => words(o.skill.label).join(" ") === said);
-      if (chosen) { pending = null; return resolve(chosen.skill, chosen.vals); }
-    }
-    // a full request (two or more words recognised) replaces a pending question; anything else answers it
-    if (pending?.waiting === "value" && !(found.length && found[0].score >= 2)) return fillPending(text, toks);
+    const u = understand(text, toks);
+    const sure = u && (u.how === "template" || (u.how === "model" && u.p >= SURE && !u.unknown.length));
+    // a clear new request replaces a pending question; anything else answers it
+    if (pending?.waiting === "value" && !sure) return fillPending(text, toks);
 
-    if (!found.length || found[0].score < 1) {
-      pending = null;
-      return { outcome: "abstain", say: reply("abstain"), reason: "no skill", inbox: text };
-    }
-    if (found.length > 1) {
-      pending = { waiting: "choose", options: found };
-      const labels = found.map(f => f.skill.label);
+    if (!u) { pending = null; return { outcome: "abstain", say: reply("abstain"), reason: "no skill", inbox: text }; }
+    if (u.how === "choose") {
+      pending = { waiting: "choose", options: u.options };
+      const labels = u.options.map(f => f.skill.label);
       return { outcome: "ask", say: reply("choose", { options: labels.join(" or ") }), chips: labels };
     }
     pending = null;
-    return resolve(found[0].skill, found[0].vals);
+    if (sure) return resolve(u.skill, u.vals);
+
+    // understood, but not surely: ask before doing anything, naming the words it doesn't know
+    if (u.skill.admin && !on("admin mode")) {
+      return { outcome: "abstain", skill: u.skill.id, say: reply("sounds like", { label: u.skill.label }), reason: "admin mode off" };
+    }
+    pending = { waiting: "understand", skill: u.skill, vals: u.vals, text };
+    const label = u.skill.label;
+    const named = u.unknown.map(w => `“${w}”`).join(", ");
+    let say = u.unknown.length ? reply("not sure", { words: named, label }) : reply("confirm", { label });
+    // a skill that needs approval asks its own question, so the person approves once, knowingly
+    if (u.skill.admin || u.skill.approve) {
+      say = (u.unknown.length ? reply("new words", { words: named }) + " " : "") + reply(u.skill.replies.approve, display(u.skill, u.vals));
+    }
+    return { outcome: "ask", skill: u.skill.id, say, chips: ["yes", "no"], unknown: u.unknown, p: Math.round(u.p * 100) / 100 };
   }
 
   return { hear, get pending() { return pending; } };

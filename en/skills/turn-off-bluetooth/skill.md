@@ -7,8 +7,8 @@ approve: no
 
 ## Sentences
 
-- <turn off> [the] <bluetooth>
-- (turn|switch) [the] <bluetooth> off
+- `<turn off> [the] <bluetooth>`
+- `(turn|switch) [the] <bluetooth> off`
 
 ## Command
 

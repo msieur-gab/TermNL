@@ -16,7 +16,10 @@ export function loadLanguage(lang = "en", root = ROOT) {
     const f = join(dir, "skills", id, "skill.md");
     if (existsSync(f)) skills[id] = readFileSync(f, "utf8");
   }
-  return load({ lists, skills });
+  const out = load({ lists, skills });
+  const m = join(root, "model", lang + ".json");
+  if (existsSync(m)) out.model = JSON.parse(readFileSync(m, "utf8"));
+  return out;
 }
 
 export function loadSettings(root = ROOT) {

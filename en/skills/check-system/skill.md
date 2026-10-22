@@ -7,12 +7,12 @@ approve: no
 
 ## Sentences
 
-- how is the <system> [doing]
-- how's the <system> [doing]
-- <check> [the] <system>
-- [give me|run] [a] (health|system|status) (check|report)
-- is everything (ok|okay|fine|alright) [with the <system>]
-- <system> (status|health)
+- `how is the <system> [doing]`
+- `how's the <system> [doing]`
+- `<check> [the] <system>`
+- `[give me|run] [a] (health|system|status) (check|report)`
+- `is everything (ok|okay|fine|alright) [with the <system>]`
+- `<system> (status|health)`
 
 ## Command
 
