@@ -130,3 +130,10 @@ test("a clearly different request replaces the question", () => {
   a.hear("create a file in documents");
   assert.equal(a.hear("how much space is left").skill, "check-storage");
 });
+
+test("the folder confirmed earlier is kept until the file is made (Gab's run, 22 Oct)", () => {
+  const a = agent();
+  a.hear("add a new note inside my documets");
+  a.hear("Documents");
+  assert.equal(a.hear("note.txt").command, "touch $HOME'/Documents/note.txt'");
+});
