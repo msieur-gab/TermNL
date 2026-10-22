@@ -121,6 +121,10 @@ class Agent:
     def reply(self, key, values=None):
         return fill(pick(self.lists["replies"].get(key) or key, self.random), values or {})
 
+    def quoted(self, word):
+        """a word as the person typed it, in the language's quotation marks (conversation.md, "quoted")"""
+        return self.reply("quoted", {"word": word})
+
     def is_(self, toks, key):
         return any(len(ph) == len(toks) and at(toks, ph, 0) for ph in self.words(key))
 
@@ -197,7 +201,7 @@ class Agent:
         # understood, but not surely: ask, naming the words it doesn't know. A skill that needs approval
         # asks its own question, so the person approves once, knowingly, but only when every value is
         # known; otherwise this yes only confirms the skill, and the approval comes later.
-        named = ", ".join("“%s”" % w for w in u["unknown"])
+        named = ", ".join(self.quoted(w) for w in u["unknown"])
         approves = (skill["admin"] or skill["approve"]) and self.complete(skill, vals)
         self.ask_first(skill, vals, text, approves)
         out = {"outcome": "ask", "skill": skill["id"], "chips": self.yes_no, "unknown": u["unknown"], "p": round(u["p"] * 100) / 100,
@@ -292,7 +296,7 @@ class Agent:
         found = self.list_of(skill["values"][slot]["kind"])
         if self.is_(toks, "yes"):
             v, ask = vals.get(slot) or {}, skill["replies"].get("ask " + slot)
-            say = self.reply(ask) if ask else self.reply("unknown value", {"value": "“%s”" % (v.get("text") or v.get("label") or "")})
+            say = self.reply(ask) if ask else self.reply("unknown value", {"value": self.quoted(v.get("text") or v.get("label") or "")})
             return {"outcome": "ask", "skill": skill["id"], "say": say, "chips": self.chips(found)}
         if found is None:
             start = max((len(ph) for ph in self.words("before a name") if len(ph) < len(toks) and at(toks, ph, 0)), default=0)
@@ -300,7 +304,7 @@ class Agent:
             return self.next_step(skill, vals, approved)
         hit = best_in(toks, found)
         if not hit:
-            return {"outcome": "ask", "skill": skill["id"], "say": self.reply("unknown value", {"value": "“%s”" % text.strip()}), "chips": self.chips(found)}
+            return {"outcome": "ask", "skill": skill["id"], "say": self.reply("unknown value", {"value": self.quoted(text.strip())}), "chips": self.chips(found)}
         vals[slot] = {"value": hit["o"]["value"], "label": hit["o"]["label"]}
         return self.next_step(skill, vals, approved)
 
@@ -424,7 +428,7 @@ class Agent:
             return self.confirm_typo(skill, vals, gap[1], approved)
         if gap and gap[0] == "unknown":  # said, but not on the device's list: which one, with the list as chips
             k = gap[1]
-            return self.ask_value(skill, vals, k, approved, self.reply("unknown value", {"value": "“%s”" % vals[k]["text"]}),
+            return self.ask_value(skill, vals, k, approved, self.reply("unknown value", {"value": self.quoted(vals[k]["text"])}),
                                   self.chips(self.list_of(skill["values"][k]["kind"])))
         for k, spec in skill["values"].items():
             d = spec.get("default") or ""
@@ -467,7 +471,7 @@ class Agent:
             return self.next_step(skill, vals, approved)
 
         def refuse():
-            return self.ask_value(skill, vals, k, approved, self.reply("unknown value", {"value": "“%s”" % (v.get("text") or v["label"])}),
+            return self.ask_value(skill, vals, k, approved, self.reply("unknown value", {"value": self.quoted(v.get("text") or v["label"])}),
                                   self.chips(self.list_of(skill["values"][k]["kind"])))
 
         self.question("fuzzy", yes=take, no=refuse, options=[(v["label"], take)],
@@ -603,7 +607,8 @@ def noted(r, fixes, agent):
     """the typos read as words, said with the reply: "I read “chek” as “check”." """
     if fixes:
         r["corrections"] = fixes
-        r["note"] = agent.reply("read as", {"fixes": ", ".join("“%s” as “%s”" % (a, b) for a, b in fixes)})
+        read = [agent.reply("a word read as", {"typed": agent.quoted(a), "word": agent.quoted(b)}) for a, b in fixes]
+        r["note"] = agent.reply("read as", {"fixes": ", ".join(read)})
         if r.get("say"):
             r["say"] = r["note"] + " " + r["say"]
     return r

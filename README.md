@@ -28,6 +28,8 @@ Python 3.9 or newer, standard library only. Training the model needs numpy (`pyt
           objects.md            file, folder, wifi…
           filetypes.md          markdown → .md…
           conversation.md       yes, no, fillers, the rules' word lists, and TermNL's own replies
+          samples.md            sample values the model trains with
+          readings.md           the words shown with what the device reads (tables, "3 days")
         skills/<action>-<object>/skill.md
                                 one skill per action + object: its sentences, values, command or
                                 reader, and replies

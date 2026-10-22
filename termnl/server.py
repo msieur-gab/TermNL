@@ -109,7 +109,7 @@ class TermNL:
         try:
             kinds = {k: v["kind"] for k, v in skill["values"].items()}
             args = {k: self.device.path(v) if kinds.get(k) == "@sys.folder" else v for k, v in r.pop("args", {}).items()}
-            found = readers.read(r.pop("reads"), **args)
+            found = readers.read(r.pop("reads"), words=self.lang["lists"]["readings"], **args)
         except (OSError, ValueError, KeyError, IndexError) as e:
             r["ran"], r["say"] = "failed", a.reply("failed", {"error": str(e)})
             return

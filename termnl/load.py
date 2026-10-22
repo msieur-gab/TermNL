@@ -1,6 +1,6 @@
 """Loads a language (its words, skills and model) and the device's settings, from disk.
 
-    termnl/languages/<lang>/words/      actions, objects, filetypes, conversation, samples (.md)
+    termnl/languages/<lang>/words/      actions, objects, filetypes, conversation, samples, readings (.md)
     termnl/languages/<lang>/skills/     one folder per skill, a skill.md in each
     termnl/languages/<lang>/model.json  trained from the above (python3 -m termnl.train)"""
 import json
@@ -25,7 +25,7 @@ def language_dir(lang="en", languages=LANGUAGES):
 
 def load_language(lang="en", languages=LANGUAGES):
     d = language_dir(lang, languages)
-    lists = {k: read(os.path.join(d, "words", k + ".md")) for k in ("actions", "objects", "filetypes", "conversation", "samples")}
+    lists = {k: read(os.path.join(d, "words", k + ".md")) for k in ("actions", "objects", "filetypes", "conversation", "samples", "readings")}
     skills = {}
     for id in sorted(os.listdir(os.path.join(d, "skills"))):
         f = os.path.join(d, "skills", id, "skill.md")

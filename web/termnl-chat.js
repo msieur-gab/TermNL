@@ -91,11 +91,16 @@ class TermNLChat extends HTMLElement {
     this.log.scrollTop = this.log.scrollHeight;
   }
 
-  // a reader's table: columns, then rows; a cell naming a level (high, hot…) is coloured
-  table({ columns, rows }) {
+  // a reader's table: columns, then rows; a row's level (high, hot…), when given, colours its last cell,
+  // whatever the language the words are in
+  table({ columns, rows, levels = [] }) {
     const wrap = this.el("div", "scroll"), t = this.el("table");
     if (columns.some(Boolean)) { const tr = this.el("tr"); for (const c of columns) tr.append(this.el("th", "", c)); t.append(tr); }
-    for (const row of rows) { const tr = this.el("tr"); for (const c of row) tr.append(this.el("td", c.replace(/ /g, "-"), c)); t.append(tr); }
+    rows.forEach((row, i) => {
+      const tr = this.el("tr");
+      row.forEach((c, j) => tr.append(this.el("td", j === row.length - 1 && levels[i] ? levels[i].replace(/ /g, "-") : "", c)));
+      t.append(tr);
+    });
     wrap.append(t);
     return wrap;
   }

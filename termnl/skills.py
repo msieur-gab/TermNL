@@ -42,7 +42,9 @@ def read_lists(files):
     answers = {e["key"]: [words(w) for w in e["words"]] for e in read_list(files["conversation"])}
     replies = {e["key"]: e["rest"] for e in read_list(files["conversation"], "Replies")}
     samples = {e["key"]: e["words"] for e in read_list(files["samples"])}
-    return {"samples": samples, "refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
+    # every "- name: words" line of readings.md, whatever its section
+    readings = {m.group(1).strip(): m.group(2).strip() for m in re.finditer(r"^- ([^:]+):\s*(.*)$", files["readings"], re.M)}
+    return {"samples": samples, "readings": readings, "refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
             "conversation": answers, "replies": replies}
 
 

@@ -42,4 +42,6 @@ Words for the conversation itself, outside any skill.
 - cannot read: I can't read that on this device.
 - already home: You're already in your home folder. | This is your home folder: there's nothing above it here.
 - read as: I read {fixes}. | (I read {fixes}.)
+- a word read as: {typed} as {word}
+- quoted: “{word}”
 - sounds like: That sounds like "{label}", which needs admin mode. You can turn it on in your settings.
