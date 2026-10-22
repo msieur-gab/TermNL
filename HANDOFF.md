@@ -31,8 +31,9 @@ Run: `python3 -m termnl.check` · `python3 -m unittest` (60 pass) · `python3 -m
    inbox the person reviews, then "live training" on the device. Gab also said it only works if a person
    can say "no, I meant another skill" or "this is new": **who writes a new skill** when the person
    doesn't know the commands is his open question ("I need to sink a bit with it").
-2. **`termnl/agent.py` is 636 lines** and grew fix by fix today; read it as a whole and simplify before
-   adding more (ptiLU's lesson, `brain/projects/ptilu/review-2026-10-21.md`).
+2. **`termnl/agent.py` was rewritten as one turn in five steps** (22 Oct; the version before is
+   `back_agent.py`, and `python3 -m tests.compare_agents` must keep showing 0 differences). Further cuts
+   mean removing behaviour (e.g. the "not here, but in Documents" file search): Gab's call.
 3. **Permacomputing:** Gab wants the surface as light as possible. The model is 669 KB of JSON floats
    (most weights tiny; ptiLU stored 1-byte weights).
 4. **The test set is still mostly Claude's** (`tests/phrasings.md`); Gab's sentences are its last section.
