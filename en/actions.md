@@ -13,3 +13,5 @@ A skill names its action in `does:`; its sentences write it as `<action>`.
 - restart: restart, reboot, relaunch, reload
 - shut down: shut down, shutdown, power off, power down
 - leave: leave, exit, get out of
+- rename: rename, change the name of
+- close: close, quit

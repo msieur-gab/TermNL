@@ -111,6 +111,8 @@ class TermNL:
         lines = skill["when"].get(found["level"])
         said = {k: v for k, v in r.pop("values", {}).items() if k != "output"}
         r["say"] = fill(random.choice(lines), {**said, **found["values"], "user": self.settings.get("name") or ""}) if lines else a.reply("cannot read")
+        if r.get("note"):
+            r["say"] = r["note"] + " " + r["say"]
         r["ran"], r["level"] = "read", found["level"]
         if found.get("table"):
             r["table"] = found["table"]

@@ -52,6 +52,40 @@ class Agent:
         self.places = joined("before a place")
         self.reading = joined("reading actions")
         self.object_words = {ph[0] for o in lists["objects"] for ph in lists["refs"].get(o, []) if len(ph) == 1}
+        # every word TermNL knows how to read: a typo of one of them is read as it (correct())
+        self.vocab = {w for phs in list(lists["refs"].values()) + list(answers.values()) for ph in phs for w in ph}
+        self.vocab |= {w for t in lists["filetypes"] for ph in t["phrases"] for w in ph}
+        self.vocab |= {w for s in skills for nodes in s.get("compiled", []) for w in self._template_words(nodes)}
+
+    @classmethod
+    def _template_words(cls, nodes):
+        for n in nodes:
+            if n["t"] == "w":
+                yield n["w"]
+            elif n["t"] == "alt":
+                for a in n["alts"]:
+                    yield from cls._template_words(a)
+
+    def correct(self, toks):
+        """A word TermNL doesn't know, one letter away from exactly one word it knows ("chek" → "check"),
+        is read as that word. Only for understanding, and only when it helps (respond); the offsets stay,
+        so a name keeps what was typed.
+        Short words, file names and the device's own names are left as they are."""
+        known = self.vocab | {w for kind in ("folder", "service", "app", "running") for d in self.sys(kind) for ph in d["phrases"] for w in ph}
+        out, fixes = [], []
+        for t in toks:
+            w = t["word"]
+            if w in known or len(w) < 4 or "." in w or not w.isalpha():
+                out.append(t)
+                continue
+            near = {v for v in self.vocab if len(v) >= 4 and close(w, v)}
+            if len(near) == 1:
+                fix = near.pop()
+                fixes.append([w, fix])
+                out.append({**t, "word": fix})
+            else:
+                out.append(t)
+        return out, fixes
 
     # ---- the device, the settings, the lists
 
@@ -244,6 +278,13 @@ class Agent:
                 continue
             if spec.get("default") == "here":
                 vals[k] = dict(self.here)
+            elif spec.get("default", "").startswith("parent of "):
+                of = vals.get(spec["default"][10:])
+                if not of:
+                    continue
+                up = of["value"].rsplit("/", 1)[0] if of["value"] != "$HOME" else "$HOME"
+                found = next((f for f in self.sys("folder") if f["value"] == up), None)
+                vals[k] = {"value": up, "label": found["label"] if found else up.rsplit("/", 1)[-1]}
             elif spec.get("default") == "parent":
                 here = self.here
                 if here["value"] == "$HOME":
@@ -263,6 +304,8 @@ class Agent:
                         "chips": self.chips(self.list_of(spec["kind"]))}
         self.finish_filetype(skill, vals)
         found = self.find_files(skill, vals, approved)
+        if not found:
+            found = self.already_there(skill, vals)
         if found:
             return found
         if skill["admin"] and not self.on("admin mode"):
@@ -297,9 +340,6 @@ class Agent:
             v = vals.get(k)
             if not v or not place:
                 continue
-            if spec.get("new") and v.get("text") and v["text"] in self.device.files(place["value"]):
-                self.pending = None
-                return {"outcome": "abstain", "skill": skill["id"], "say": self.reply("already", {"file": v["text"], "folder": place["label"]}), "reason": "already exists"}
             if spec["kind"] != "@sys.file" or v.get("value") is not None:
                 continue
             name = v["text"]
@@ -327,6 +367,27 @@ class Agent:
                 return {"outcome": "ask", "skill": skill["id"], "say": self.reply("several", {"count": len(elsewhere), "file": elsewhere[0]["file"], "folders": ", ".join(labels)}), "chips": labels}
             self.pending = None
             return {"outcome": "abstain", "skill": skill["id"], "say": self.reply("not found", {"file": name, "here": place["label"]}), "reason": "not found"}
+        return None
+
+    def already_there(self, skill, vals):
+        """A new name never replaces what is there. The folder it goes into is the one written before it
+        in the command ({place}/{name}); a new name without an extension keeps the old file's
+        (rename notes.md to ideas → ideas.md)."""
+        if not self.device or not hasattr(self.device, "exists"):
+            return None
+        old = next((vals[k] for k, s in skill["values"].items() if s["kind"] == "@sys.file" and vals.get(k)), None)
+        for k, spec in skill["values"].items():
+            v = vals.get(k)
+            if not spec.get("new") or not v or not v.get("text"):
+                continue
+            ext = re.search(r"\.\w+$", str(old.get("value") or "")) if old else None
+            if ext and not re.search(r"\.\w+$", v["text"]):
+                vals[k] = v = {"text": v["text"] + ext.group(0)}
+            m = re.search(r"\{(\w+)\}/\{%s\}" % k, skill["command"])
+            folder = vals.get(m.group(1)) if m else None
+            if folder and self.device.exists(folder["value"] + "/" + v["text"]):
+                self.pending = None
+                return {"outcome": "abstain", "skill": skill["id"], "say": self.reply("already", {"file": v["text"], "folder": folder["label"]}), "reason": "already exists"}
         return None
 
     @staticmethod
@@ -421,7 +482,7 @@ class Agent:
         return r
 
     def respond(self, text):
-        toks = self.clean(text)
+        toks, self.fixes = self.clean(text), []
         if not toks:
             return {"outcome": "abstain", "say": self.reply("abstain")}
         if self.is_(toks, "cancel"):
@@ -490,6 +551,13 @@ class Agent:
             return {"outcome": "act", "say": self.reply("help", {"skills": ", ".join(names)}), "chips": names}
 
         u = self.understand(text, toks)
+        # typos: only when the sentence as typed isn't read by a template, and only if the corrected
+        # sentence is read better (by a template, or with fewer words unknown)
+        if not u or u["how"] == "model":
+            fixed, fixes = self.correct(toks)
+            v = self.understand(text, fixed) if fixes else None
+            if v and v["how"] != "choose" and (not u or v["how"] == "template" or len(v["unknown"]) < len(u["unknown"])):
+                u, toks, self.fixes = v, fixed, fixes
         self.last = u if u and u["how"] != "choose" else None
         sure = bool(u) and (u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"]))
         # While a question waits, what the person says answers it, unless it clearly asks for something
@@ -532,12 +600,14 @@ class Agent:
         # "do not reboot", "don't turn off the wifi": a request that changes something is never acted on
         # when it says no; it is asked about, and its approval, if any, still comes after the yes
         negated = self.negation(toks)
+        if self.fixes and skill["action"] not in self.reading:
+            sure = False  # a typo read as a word: a change is asked first, naming what was read
         if negated and skill["action"] not in self.reading:
             self.pending = {"waiting": "understand", "skill": skill, "vals": u["vals"], "text": text, "approves": False}
             return {"outcome": "ask", "skill": skill["id"], "chips": ["yes", "no"],
                     "say": self.reply("negated", {"words": ", ".join(negated), "label": skill["label"]})}
         if sure:
-            return self.resolve(u["skill"], u["vals"])
+            return self.noted(self.resolve(u["skill"], u["vals"]))
 
         # understood, but not surely: ask before doing anything, naming the words it doesn't know
         if skill["admin"] and not self.on("admin mode"):
@@ -554,4 +624,13 @@ class Agent:
         if approves:
             out["say"] = (self.reply("new words", {"words": named}) + " " if u["unknown"] else "") + self.reply(skill["replies"]["approve"], self.display(skill, u["vals"]))
             self.with_show(out, skill, u["vals"])
-        return out
+        return self.noted(out)
+
+    def noted(self, r):
+        """the typos read as words, said with the reply: "I read “chek” as “check”." """
+        if self.fixes:
+            r["corrections"] = self.fixes
+            r["note"] = self.reply("read as", {"fixes": ", ".join("“%s” as “%s”" % (a, b) for a, b in self.fixes)})
+            if r.get("say"):
+                r["say"] = r["note"] + " " + r["say"]
+        return r

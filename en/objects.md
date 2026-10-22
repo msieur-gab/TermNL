@@ -10,7 +10,7 @@ The kinds of things acted on. Each line: the object, then the words people use f
 - wifi: wifi, wi-fi, wireless
 - bluetooth: bluetooth
 - service: service
-- file: file, files, document, documents, note, notes
+- file: file, files, document, note
 - folder: folder, folders, directory, directories, dir
 - app: app, application, program
 - process: process, processes, task, tasks, thread, threads

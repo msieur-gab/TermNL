@@ -22,6 +22,10 @@ LISTS = {
         {"value": "mpd", "names": ["music server", "mpd", "music"]},
     ],
     "network": [{"value": "home-5g", "names": ["home-5g", "home"]}],
+    "running": [
+        {"value": "firefox", "names": ["Firefox", "firefox", "browser", "web browser"]},
+        {"value": "gnome-terminal-", "names": ["Terminal", "terminal", "console"]},
+    ],
     "app": [
         {"value": "x-terminal-emulator", "names": ["terminal", "console", "shell"]},
         {"value": "firefox", "names": ["firefox", "browser", "web browser"]},
@@ -35,6 +39,10 @@ class PretendDevice:
 
     def files(self, folder):
         return FILES.get(folder, [])
+
+    def exists(self, path):
+        folder, _, name = path.rpartition("/")
+        return path in [d["value"] for d in FOLDERS] or name in FILES.get(folder, [])
 
     def find(self, test):
         return [{"folder": folder, "file": f, "label": next(d for d in FOLDERS if d["value"] == folder)["names"][0]}

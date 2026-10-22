@@ -71,6 +71,30 @@ class Device:
             out.append({"value": exe, "names": [name] + ([exe] if exe.lower() != name.lower() else [])})
         return out
 
+    def _running(self):
+        """the installed apps that are running now, each by its process name (what pkill -x matches)"""
+        procs = []
+        for line in _run(["ps", "-u", str(os.getuid()), "-o", "comm=,args="]).splitlines():
+            parts = line.split(None, 1)
+            if len(parts) == 2:
+                procs.append((parts[0], os.path.basename(parts[1].split()[0])))
+        by = {}
+        for app in self._apps():
+            exe = app["value"]
+            # brave-browser-stable starts brave; gnome-terminal runs as gnome-terminal-server
+            for comm, prog in procs:
+                if prog == exe or exe.startswith(prog + "-") or prog == exe + "-server":
+                    by.setdefault(comm, []).append(app)
+                    break
+        out = []
+        for comm, apps in by.items():
+            names = []
+            # the name that says the program's own name first: "Brave Web Browser", not a web app it runs
+            for a in sorted(apps, key=lambda a: comm.split("-")[0].lower() not in a["names"][0].lower()):
+                names += [n for n in a["names"] if n not in names]
+            out.append({"value": comm, "names": names + ([comm] if comm not in names else [])})
+        return out
+
     def _networks(self):
         names = []
         for line in _run(["nmcli", "-t", "-f", "ssid", "dev", "wifi", "list", "--rescan", "no"]).splitlines():
@@ -83,7 +107,8 @@ class Device:
         self._cache.clear()
 
     def list(self, kind):
-        read = {"folder": self._folders, "service": self._services, "app": self._apps, "network": self._networks}.get(kind)
+        read = {"folder": self._folders, "service": self._services, "app": self._apps, "network": self._networks,
+                "running": self._running}.get(kind)
         if not read:
             return []
         at, found = self._cache.get(kind, (0, None))
@@ -91,6 +116,9 @@ class Device:
             found = read()
             self._cache[kind] = (time.time(), found)
         return found
+
+    def exists(self, value):
+        return os.path.lexists(self.path(value))
 
     def files(self, folder):
         p = self.path(folder)

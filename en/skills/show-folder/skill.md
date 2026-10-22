@@ -13,6 +13,7 @@ approve: no
 - `(what's|what is) (here|in here|in this <folder>)`
 - `what do i have (in|inside) [the|my] {place} [<folder>]`
 - `what do i have here`
+- `ls [[the|my] {place} [<folder>]]`
 - `<show> [me] [all] [the|my] (<file>|<folder>|things) [(in|inside|of) [the|my] {place} [<folder>]]`
 - `(what|which) <file> (are|do i have) [(here|in [the|my] {place} [<folder>])]`
 

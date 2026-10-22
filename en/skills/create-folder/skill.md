@@ -7,13 +7,14 @@ approve: no
 
 ## Sentences
 
-- `<create> [me] [a|the] [new] <folder> [(named|called)] {name} [(in|inside|into) [the|my] {place} [<folder>]]`
-- `<create> [me] [a|the] [new] <folder> (in|inside) [the|my] {place} [<folder>] [(named|called) {name}]`
+- `<create> [me] [a|the] [new] <folder> [(named|called|call|name|titled)] {name} [(in|inside|into) [the|my] {place} [<folder>]]`
+- `<create> [me] [a|the] [new] <folder> (in|inside) [the|my] {place} [<folder>] [(named|called|call|name|titled) {name}]`
 - `<create> [me] [a|the] [new] <folder>`
+- `<create> [me] [a|the] [new] {name} <folder> [(in|inside|into) [the|my] {place} [<folder>]]`
 
 ## Values
 
-- name: text, required
+- name: text, required, new
 - place: @sys.folder, default: here
 
 ## Command

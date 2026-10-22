@@ -335,5 +335,82 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(agent().here["label"], "home")
 
 
+    # Typos, 22 Oct: about one request in six in Gab's log. A word one letter away from a word TermNL
+    # knows is read as that word, and said so; names are never corrected; a change still asks.
+    def test_a_typo_in_a_reading_request_is_read_and_said(self):
+        r = agent().hear("chek the memory")
+        self.assertEqual((r["outcome"], r["skill"]), ("act", "check-memory"))
+        self.assertEqual(r["corrections"], [["chek", "check"]])
+        self.assertIn("chek", r["note"])
+
+    def test_a_typo_in_a_change_asks_first_and_the_name_stays_as_typed(self):
+        a = agent()
+        r = a.hear("creat a folder called bikse")
+        self.assertEqual(r["outcome"], "ask")
+        self.assertIn("creat", r["say"])
+        self.assertEqual(a.hear("yes")["command"], "mkdir -p $HOME'/bikse'")
+
+    def test_a_typo_in_a_name_or_a_short_word_is_left_alone(self):
+        r = agent().hear("create a folder called recipies")
+        self.assertEqual(r["command"], "mkdir -p $HOME'/recipies'")
+        self.assertNotIn("corrections", r)
+
+    # Rename (Gab, 22 Oct: "perhaps we will need a rename file/folder skill"): never overwrites.
+    def test_renaming_a_file(self):
+        self.assertEqual(agent().hear("rename note.md to memo.md")["command"], "mv -nT $HOME'/note.md' $HOME'/memo.md'")
+        self.assertEqual(agent().hear("rename note.md to memo")["command"], "mv -nT $HOME'/note.md' $HOME'/memo.md'")
+        r = agent().hear("rename note.md to todo.txt")
+        self.assertEqual(r["reason"], "already exists")
+        self.assertIsNone(r.get("command"))
+
+    def test_renaming_a_folder(self):
+        self.assertEqual(agent().hear("rename the ideas folder to thoughts")["command"], "mv -nT $HOME'/ideas' $HOME'/thoughts'")
+        self.assertEqual(agent().hear("rename ideas to projects")["reason"], "already exists")
+        self.assertEqual(agent().hear("rename ideas to Documents")["reason"], "already exists")  # a name can be a word like "documents"
+
+    def test_a_new_folder_never_replaces_one(self):
+        self.assertEqual(agent().hear("create a folder called projects")["reason"], "already exists")
+
+    # Closing an app (Gab's log, 22 Oct: "close expressvpn"): approved first, unsaved work may be lost.
+    def test_closing_a_running_app_is_approved_first(self):
+        a = agent()
+        r = a.hear("close firefox")
+        self.assertEqual((r["outcome"], r["skill"]), ("approve", "close-app"))
+        self.assertEqual(a.hear("yes")["command"], "pkill -x 'firefox'")
+        self.assertEqual(agent().hear("quit the terminal")["skill"], "close-app")
+
+    def test_closing_an_app_that_isnt_running_asks_which(self):
+        a = agent()
+        self.assertEqual(a.hear("close chrome")["skill"], "close-app")  # "I don't know “chrome” yet…"
+        r = a.hear("yes")
+        self.assertEqual(r["outcome"], "ask")
+        self.assertEqual(sorted(r["chips"]), ["Firefox", "Terminal"])
+
+
+    # Gab's run, 22 Oct 13:50–13:54: two folders made with the wrong name, and two requests missed.
+    def test_a_request_said_again_with_a_typo_while_a_name_is_asked(self):
+        a = agent()
+        a.hear("make a new folder")
+        r = a.hear("crate a folder named Pictures")
+        self.assertEqual(r.get("command"), "mkdir -p $HOME'/Pictures'")
+
+    def test_call_and_name_before_a_name(self):
+        self.assertEqual(agent().hear("create a folder call Pictures")["command"], "mkdir -p $HOME'/Pictures'")
+        self.assertEqual(agent().hear("make a file name groceries")["command"], "touch $HOME'/groceries.md'")
+
+    def test_the_name_before_the_word_folder(self):
+        for said in ["create a Pictures folder", "add a Videos folder", "make a new Pictures folder in documents"]:
+            r = agent().hear(said)
+            self.assertEqual(r["outcome"], "act", said)
+            self.assertIn("Pictures" if "Pictures" in said else "Videos", r["command"])
+        self.assertEqual(agent().hear("create a new folder")["outcome"], "ask")  # "new" is not a name
+
+    def test_ls_lists_where_you_are(self):
+        a = agent()
+        a.hear("go to documents")
+        r = a.hear("ls")
+        self.assertEqual((r["skill"], r["args"]["place"]), ("show-folder", "$HOME/Documents"))
+
+
 if __name__ == "__main__":
     unittest.main()

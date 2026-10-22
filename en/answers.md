@@ -14,7 +14,7 @@ Words for the conversation itself, outside any skill.
 - reading actions: check, show, find
 - before a name: call it, name it, let's call it, called, named, titled, it's called, the name is
 - pointing words: this, that, it, these, those, here, there
-- small words: the, a, an, my, me, i, i'm, it, it's, is, are, am, be, to, of, in, on, at, for, with, from, and, or, please, can, could, would, you, do, does, what, what's, which, how, how's, there, this, that, some, any, up, now, right, still, just, all, so, again, back, get, got, have, has, need, want, let, let's, us, we, will, should, much, very, really, bit, little, too
+- small words: the, a, an, my, me, i, i'm, it, it's, is, are, am, be, to, of, in, on, at, for, with, from, and, or, please, can, could, would, you, do, does, what, what's, whats, which, how, how's, there, this, that, some, any, up, now, right, still, just, all, so, again, back, get, got, have, has, need, want, let, let's, us, we, will, should, much, very, really, bit, little, too
 
 ## Replies
 
@@ -39,4 +39,5 @@ Words for the conversation itself, outside any skill.
 - nothing waiting: Nothing is waiting for an answer right now. What would you like to do? | There's no question waiting. What can I do for you?
 - cannot read: I can't read that on this device.
 - already home: You're already in your home folder. | This is your home folder: there's nothing above it here.
+- read as: I read {fixes}. | (I read {fixes}.)
 - sounds like: That sounds like "{label}", which needs admin mode. You can turn it on in your settings.

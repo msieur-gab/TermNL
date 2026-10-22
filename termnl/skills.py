@@ -25,7 +25,7 @@ from .readers import READERS, placeholder
 from .template import compile_template, uses
 from .text import read_list, read_pairs, words
 
-DEVICE_KINDS = ["folder", "file", "service", "network", "app"]
+DEVICE_KINDS = ["folder", "file", "service", "network", "app", "running"]
 
 
 def read_lists(files):
