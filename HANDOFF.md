@@ -25,27 +25,11 @@ that isn't ratified yet. Gab's decisions are his; don't rework them.
 Run: `python3 -m termnl.check` · `python3 -m unittest` (60 pass) · `python3 -m tests.measure -v`
 (59 phrasings: 29 handled, 23 asked first, 4 wrong skill but asked, 0 wrong actions, 3 not understood).
 
-## Open, in order of importance
+## Next
 
-1. **The learning loop.** A "yes" returns `teach`; nothing saves it. Decided (Gab): learning goes to an
-   inbox the person reviews, then "live training" on the device. Gab also said it only works if a person
-   can say "no, I meant another skill" or "this is new": **who writes a new skill** when the person
-   doesn't know the commands is his open question ("I need to sink a bit with it").
-2. **`termnl/agent.py` was rewritten as one turn in five steps** (22 Oct; the version before is
-   `back_agent.py`, and `python3 -m tests.compare_agents` must keep showing 0 differences). Further cuts
-   mean removing behaviour (e.g. the "not here, but in Documents" file search): Gab's call.
-3. **Permacomputing:** Gab wants the surface as light as possible. The model is 669 KB of JSON floats
-   (most weights tiny; ptiLU stored 1-byte weights).
-4. **The test set is still mostly Claude's** (`tests/phrasings.md`); Gab's sentences are its last section.
-   A passing suite hid a failure Gab found in his first sentence, twice today.
-5. **What runs when TermNL reads** (`open-question-reading-commands.md`, Gab to decide): reading skills
-   read /proc in Python (readers.py), so no skill command runs and "show commands" shows nothing for them;
-   the alternative is the skill's command really running and Python converting its output.
-6. **Authoring** (`open-question-authoring.md`): the template grammar works but people can't write it.
-7. **Shared words in two families:** "start" (create + open), "note" (file + markdown).
-8. **Not done:** Wi-Fi, Bluetooth and network replies are still raw command output; no "undo" or
-   Dialogflow-style context; pairing and keys deferred until the system proves itself.
-9. **Word embeddings for unknown words: tested, not worth it now** (this morning, another session).
-   GloVe-50 on the 26 untaught words of the phrasings: 3 useful neighbours (warm → hot), 15 wrong
-   (kill → bring, stop → out), because most new words are context, not synonyms, and embeddings put
-   opposites side by side. A better embedding (Model2Vec) could be tried with `tools/neighbours.py`.
+Gab picked the next tasks on 22 Oct; each has a brief in `briefs/`, written at the end of a long session
+(read them as Claude's proposals, to check before trusting). Everything else is parked in `TODO.md`.
+
+- `briefs/2026-10-22-clock-network-real-tests.md`: a clock skill, Wi-Fi/Bluetooth/network replies in plain
+  words, a test set from Gab's real sentences.
+- `briefs/2026-10-22-model-format.md`: a lighter model and how to package it, to discuss with Gab first.
