@@ -1,4 +1,5 @@
-"""python3 -m tests.measure [-v] — how many hand-written phrasings TermNL understands, and how it answers.
+"""python3 -m tests.measure [-v] — how many hand-written phrasings TermNL understands, and how it answers;
+then, if tests/real.md is here, how the conversations people really had go today (tests/real.py).
 It looks at the skill only, not the values: see the review of 22 Oct 2026."""
 import os
 import re
@@ -27,3 +28,12 @@ for want, text in lines:
         print("%-8s %-18s %-18s %s%s" % (kind, want, got, text, new))
 print('\n%d phrasings: %d understood and handled, %d understood but checked first ("Do you want me to…?"), %d wrong skill but asked first, '
       '%d wrong skill acted on or approved, %d not understood' % (len(lines), tally["acted"], tally["asked"], tally["wrong?"], tally["WRONG"], tally["abstain"]))
+
+# the sentences people really typed (tests/real.md, kept out of git), apart from these: python3 -m tests.real
+if os.path.exists(os.path.join(ROOT, "tests", "real.md")):
+    import contextlib
+    import io
+    from tests import real
+    with contextlib.redirect_stdout(io.StringIO()):
+        tally = real.replay()
+    print(real.summary(tally))

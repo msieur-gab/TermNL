@@ -186,6 +186,9 @@ class Agent:
                         "unknown": bool(c.get("unknown")), "fuzzy": bool(c.get("fuzzy"))}
                     for k, c in parse["caps"].items()}
             out.append({"skill": skill, "vals": vals, "score": top})
+        # a word TermNL knows as an object (bluetooth, wifi) is that object, not a name on the device's list
+        if len(out) > 1:
+            out = [o for o in out if not any(v["text"].lower() in self.object_words for v in o["vals"].values())] or out
         return out
 
     def read_values(self, skill, text, toks):
@@ -433,7 +436,11 @@ class Agent:
             self._here = {"value": v["value"], "label": v["label"]}
         if skill["reads"]:  # the device reads itself; the reply is chosen once it has (server.py)
             args = {k: v["value"] if v.get("value") is not None else v.get("text") for k, v in vals.items()}
-            return {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"], "args": args, "values": self.display(skill, vals)}
+            out = {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"], "args": args, "values": self.display(skill, vals)}
+            if skill["command"]:  # a reader of the command's output (check wifi: nmcli)
+                out["command"] = self.command_for(skill, vals)
+                self.with_show(out, skill, vals)
+            return out
         return self.with_show({"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"], self.display(skill, vals)), "command": command}, skill, vals)
 
     def fill_pending(self, text, toks):

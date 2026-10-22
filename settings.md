@@ -6,7 +6,7 @@ The chat page has switches for "show commands" and "admin mode"; they are writte
 name:
 agent name:
 language: en
-show commands: off
+show commands: on
 admin mode: on
 
 ## For this device

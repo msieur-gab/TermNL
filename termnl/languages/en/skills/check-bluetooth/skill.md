@@ -1,6 +1,7 @@
 ---
 does: check bluetooth
 label: check Bluetooth
+reads: bluetooth
 admin: no
 approve: no
 ---
@@ -14,6 +15,14 @@ approve: no
 
 bluetoothctl show
 
-## Replies
+## When it's on
 
-- done: Bluetooth: {output}
+- Bluetooth is on. Others see this device as {@sys.bluetooth.name}.
+
+## When it's off
+
+- Bluetooth is off. Say "turn on Bluetooth" if you need it.
+
+## When it's none
+
+- I can't find any Bluetooth on this device.

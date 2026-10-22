@@ -1,6 +1,7 @@
 ---
 does: show wifi
 label: show Wi-Fi networks
+reads: networks
 admin: no
 approve: no
 ---
@@ -13,8 +14,13 @@ approve: no
 
 ## Command
 
-nmcli -t -f ssid,signal dev wifi list
+nmcli -t -f in-use,ssid,signal dev wifi list
 
-## Replies
+## When it's fine
 
-- done: Networks around: {output} | I can see: {output}
+- I can see {@sys.networks.count} networks; the strongest is {@sys.networks.best}:
+- {@sys.networks.count} networks around, strongest first:
+
+## When it's none
+
+- I can't see any Wi-Fi network. Wi-Fi may be off.

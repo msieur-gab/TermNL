@@ -20,6 +20,7 @@ LISTS = {
         {"value": "ssh", "names": ["ssh", "sshd"]},
         {"value": "nginx", "names": ["nginx", "web server", "webserver"]},
         {"value": "mpd", "names": ["music server", "mpd", "music"]},
+        {"value": "bluetooth", "names": ["bluetooth"]},  # a laptop's Bluetooth service has the object's name
     ],
     "network": [{"value": "home-5g", "names": ["home-5g", "home"]}],
     "running": [

@@ -341,6 +341,10 @@ class Agent:
         tops = [{"skill": s, "vals": {k: {"text": self.original(text, toks, c["start"], c["end"]), "value": c.get("value"), "label": c.get("label"),
                                           "unknown": bool(c.get("unknown")), "fuzzy": bool(c.get("fuzzy"))} for k, c in p["caps"].items()}}
                 for s, p in found if p["score"] == top]
+        # a word TermNL knows as an object (bluetooth, wifi) is that object, not a name on the device's list
+        # (Gab, 22 Oct: "is bluetooth on" is the board's Bluetooth, not the service called bluetooth)
+        if len(tops) > 1:
+            tops = [t for t in tops if not any(v["text"].lower() in self.object_words for v in t["vals"].values())] or tops
         if tops and top >= 1:
             return {"how": "choose", "options": tops} if len(tops) > 1 else {"how": "template", **tops[0], "p": 1, "unknown": []}
         if not self.model:
@@ -579,7 +583,11 @@ class Agent:
             self._here = {"value": v["value"], "label": v["label"]}
         if skill["reads"]:  # the device reads itself; the reply is chosen once it has (server.py)
             args = {k: v["value"] if v.get("value") is not None else v.get("text") for k, v in vals.items()}
-            return {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"], "args": args, "values": self.display(skill, vals)}
+            out = {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"], "args": args, "values": self.display(skill, vals)}
+            if skill["command"]:  # a reader of the command's output (check wifi: nmcli)
+                out["command"] = self.command_for(skill, vals)
+                self.with_show(out, skill, vals)
+            return out
         return self.with_show({"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"], self.display(skill, vals)),
                                "command": self.command_for(skill, vals)}, skill, vals)
 

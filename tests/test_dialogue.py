@@ -307,6 +307,25 @@ class Dialogue(unittest.TestCase):
             self.assertEqual(agent().hear(said)["skill"], "show-process", said)
 
 
+    # Wi-Fi, the network and Bluetooth: the skill's command runs and is shown, and a reader turns its output into words.
+    def test_a_reader_of_a_commands_output_runs_the_skills_command_and_shows_it(self):
+        r = agent({"show commands": "on"}).hear("what is my IP address")
+        self.assertEqual((r["outcome"], r["reads"], r["command"], r["show"]), ("act", "network", "ip -4 -brief addr", "ip -4 -brief addr"))
+
+    # Gab, 22 Oct: "is bluetooth on" is the board's own Bluetooth, though a service has the same name
+    def test_an_object_word_is_the_object_not_a_service_of_the_same_name(self):
+        for said in ["is bluetooth on", "is the bluetooth working"]:
+            r = agent().hear(said)
+            self.assertEqual((r["outcome"], r.get("skill")), ("act", "check-bluetooth"), said)
+        self.assertEqual(agent().hear("is ssh running")["skill"], "check-service")
+
+    # Gab asked the time five times on 22 Oct; it was out of scope by oversight.
+    def test_the_time_and_the_date_are_read_and_an_alarm_is_still_out_of_scope(self):
+        for said in ["what time is it?", "what is the date today", "what day is it"]:
+            r = agent().hear(said)
+            self.assertEqual((r["outcome"], r.get("skill"), r.get("reads")), ("act", "check-time", "clock"), said)
+        self.assertEqual(agent().hear("set an alarm for seven")["outcome"], "abstain")
+
     # Gab's second run, 22 Oct: "list the files inside my home", "cd ..".
     def test_listing_a_folders_files(self):
         for said, place in [("list the files inside my home", "$HOME"), ("what do I have in downloads", "$HOME/Downloads"),

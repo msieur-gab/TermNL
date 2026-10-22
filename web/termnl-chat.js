@@ -18,7 +18,7 @@ const css = `
   th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { font-weight: 600; color: var(--muted); font-size: 12px; }
   tr:last-child td { border-bottom: 0; }
-  td.high, td.warm, td.busy, td.filling-up { color: var(--warn); } td.full, td.hot, td.struggling { color: var(--bad); }
+  td.high, td.warm, td.busy, td.filling-up, td.weak { color: var(--warn); } td.full, td.hot, td.struggling { color: var(--bad); }
   .scroll { max-width: 100%; overflow-x: auto; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   button { font: inherit; cursor: pointer; }

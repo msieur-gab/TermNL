@@ -6,8 +6,8 @@ he picks it. Nothing here is decided unless it says so. The thinking behind each
 
 ## Next (with a brief)
 
-- The clock, network replies in plain words, a test set from real sentences →
-  `briefs/2026-10-22-clock-network-real-tests.md`
+- ~~The clock, network replies in plain words, a test set from real sentences~~ → done 22 Oct, evening
+- Should reading ever ask first? (see HANDOFF, Next): Gab's call
 - A lighter model, and how a model should be packaged (to discuss first) →
   `briefs/2026-10-22-model-format.md`
 
@@ -31,6 +31,12 @@ he picks it. Nothing here is decided unless it says so. The thinking behind each
 - **A connector:** TermNL installs anywhere on its own; with Symbiot, one merged index. Method open.
 
 ## Not placed yet
+
+- **Connecting to a network** ("connect to wonderland", Gab's test of 22 Oct): no skill yet.
+- **A dataset as a takeaway** (Gab, 22 Oct): one day, sentences people can reuse to train their own model,
+  apart from his private logs.
+- **Speaking to TermNL:** push to talk through the browser failed in Brave (22 Oct); something local, like
+  sherpa-onnx, stays possible.
 
 - **The learning loop.** A "yes" returns `teach`; nothing saves it. Decided (Gab): learning goes to an
   inbox the person reviews, then "live training" on the device. It needs "no, I meant another skill" and

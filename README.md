@@ -42,7 +42,9 @@ Python 3.9 or newer, standard library only. Training the model needs numpy (`pyt
       device.py, runner.py      the device's own lists, and running a command
       server.py                 the thin API and the chat page
     web/                        the chat page; termnl-chat.js is the chat, a component any page can hold
-    tests/                      the dialogue tests, the readers, the measure on phrasings.md
+    tests/                      the dialogue tests, the readers, the measure on phrasings.md, and
+                                real.py: the conversations people really had (real.md, from logs/,
+                                kept out of git), replayed against today's TermNL
     tools/neighbours.py         a test of word embeddings for unknown words (22 Oct: not worth it yet)
     settings.md                 this device's settings
     logs/                       every turn the server hears, one line of JSON (kept out of git)
@@ -54,4 +56,6 @@ Python 3.9 or newer, standard library only. Training the model needs numpy (`pyt
     TERMNL_AGENT=termnl.back_agent python3 -m unittest   # the same tests, for back_agent
     python3 -m tests.compare_agents     # agent and back_agent, reply by reply, on tests and logs
     python3 -m tests.measure -v         # how the phrasings in tests/phrasings.md are understood
+    python3 -m tests.real -v            # the real conversations in tests/real.md, turn by turn
+    python3 -m tests.real --add         # adds the conversations in logs/ that real.md doesn't hold yet
     python3 -m termnl.train             # retrain termnl/languages/en/model.json

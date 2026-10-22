@@ -8,7 +8,6 @@ More are welcome; each one teaches the edge.
 - who are you
 - send an email to my mother
 - play some music
-- what time is it
 - remind me to call the dentist
 - how do I cook rice
 - translate this into french

@@ -5,7 +5,8 @@
   admin: no          needs admin rights (only runs with admin mode on, after approval)
   approve: no        always asks for approval first (destructive, or cuts a connection)
   moves: place       after it runs, you are in that folder (open folder)
-  reads: memory      a skill that only reads: the device reads itself (readers.py), no command
+  reads: memory      a skill that only reads: the device reads itself (readers.py), no command;
+                     or a reader of its command's output (reads: wifi, with nmcli in ## Command)
   ---
   ## Sentences       templates (template.py), each in `backticks` so <action> and
                      <object> show as written on GitHub instead of vanishing as HTML tags
@@ -21,7 +22,7 @@ Kinds: text, secret, a shared list (filetype), or a device list (@sys.folder, @s
 @sys.network, @sys.app)."""
 import re
 
-from .readers import READERS, placeholder
+from .readers import FROM_COMMAND, READERS, placeholder
 from .template import compile_template, uses
 from .text import read_list, read_pairs, words
 
@@ -155,8 +156,10 @@ def check(skill, lists):
                     for m in re.finditer(r"\{([\w@.]+)\}", l):
                         if m.group(1) not in known:
                             say("""## When it's %s uses {%s}; the %s reader gives %s""" % (level, m.group(1), skill["reads"], ", ".join("{%s}" % k for k in sorted(known))))
-        if skill["command"]:
-            say("a skill that reads has no command")
+        if skill["reads"] in FROM_COMMAND and not skill["command"]:
+            say("the %s reader reads what a command says: the skill needs a ## Command" % skill["reads"])
+        elif skill["reads"] not in FROM_COMMAND and skill["command"]:
+            say("the %s reader reads the device itself: the skill has no command" % skill["reads"])
     elif "done" not in skill["replies"]:
         say('no "done" reply')
     if (skill["admin"] or skill["approve"]) and "approve" not in skill["replies"]:

@@ -77,7 +77,7 @@ class TermNL:
             r = a.hear(text)
             command = r.pop("command", None)
             if r["outcome"] == "act" and r.get("reads"):
-                self.read(a, r)
+                self.read(a, r, command)
             elif r["outcome"] == "act" and command:
                 label = next(s["label"] for s in self.lang["skills"] if s["id"] == r["skill"])
                 if self.simulated(r["skill"]):
@@ -85,30 +85,41 @@ class TermNL:
                     r["say"] = a.reply("simulated", {"label": label})
                     r["show"] = command  # what would have run, always shown when nothing ran
                 else:
-                    done = run(command, self.device.home)
-                    self.device.forget()
-                    if done["code"] == 0:
+                    out = self.execute(a, r, command)
+                    if out is not None:
                         r["ran"] = "ran"
-                        r["say"] = r["say"].replace("{output}", done["out"].strip())
-                    else:
-                        r["ran"] = "failed"
-                        error = (done["err"].strip().splitlines() or ["code %d" % done["code"]])[-1]
-                        r["say"] = a.reply("failed", {"error": error})
-                        r["show"] = command
-                    if self.settings.get("show commands") == "on":
-                        r["output"] = (done["out"] + done["err"]).strip()
+                        r["say"] = r["say"].replace("{output}", out.strip())
             r["here"] = a.here["label"]
             self.log(session, text, r, command)
             r.pop("teach", None)  # the learning inbox comes next; nothing is learned yet
             r.pop("inbox", None)
             return r
 
-    def read(self, a, r):
-        """a reading skill: the device reads itself, and the reply is the one written for what it found"""
+    def execute(self, a, r, command):
+        """runs a skill's command → its output, or None when it failed (the reply then says why)"""
+        done = run(command, self.device.home)
+        self.device.forget()
+        if self.settings.get("show commands") == "on":
+            r["output"] = (done["out"] + done["err"]).strip()
+        if done["code"] != 0:
+            error = (done["err"].strip().splitlines() or ["code %d" % done["code"]])[-1]
+            r["ran"], r["say"], r["show"] = "failed", a.reply("failed", {"error": error}), command
+            return None
+        return done["out"]
+
+    def read(self, a, r, command=None):
+        """a reading skill: the device reads itself, or the skill's command runs and its output is read
+        (Wi-Fi, the network, Bluetooth); the reply is the one written for what was found"""
         skill = next(s for s in self.lang["skills"] if s["id"] == r["skill"])
         try:
             kinds = {k: v["kind"] for k, v in skill["values"].items()}
             args = {k: self.device.path(v) if kinds.get(k) == "@sys.folder" else v for k, v in r.pop("args", {}).items()}
+            if command:
+                out = self.execute(a, r, command)
+                if out is None:
+                    r.pop("reads", None)
+                    return
+                args["output"] = out
             found = readers.read(r.pop("reads"), words=self.lang["lists"]["readings"], **args)
         except (OSError, ValueError, KeyError, IndexError) as e:
             r["ran"], r["say"] = "failed", a.reply("failed", {"error": str(e)})

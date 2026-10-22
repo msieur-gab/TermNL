@@ -1,6 +1,7 @@
 ---
 does: check wifi
 label: check Wi-Fi
+reads: wifi
 admin: no
 approve: no
 ---
@@ -13,8 +14,21 @@ approve: no
 
 ## Command
 
-nmcli -t -f active,ssid dev wifi
+nmcli -t -f in-use,ssid,signal dev wifi
 
-## Replies
+## When it's fine
 
-- done: Wi-Fi: {output} | Here's the Wi-Fi: {output}
+- You're on {@sys.wifi}, with a good signal ({@sys.wifi.signal}).
+- Connected to {@sys.wifi}. The signal is good: {@sys.wifi.signal}.
+
+## When it's weak
+
+- You're on {@sys.wifi}, but the signal is weak ({@sys.wifi.signal}): things may be slow. Moving closer to the router would help.
+
+## When it's not connected
+
+- Wi-Fi is on, but you're not connected to any network. I can see {@sys.wifi.count} around.
+
+## When it's off
+
+- I see no Wi-Fi network at all: Wi-Fi is probably off.

@@ -19,6 +19,26 @@ follows it. `{n}`, `{used}`… are filled in with the numbers.
 - months: Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
 - unknown: unknown
 
+## The clock
+
+- clock time: {hour}:{minute}
+- clock date: {day} {month} {year}
+- weekdays: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+- months in full: January, February, March, April, May, June, July, August, September, October, November, December
+
+## Wi-Fi and the network
+
+- network: Network
+- signal: Signal
+- connected name: {name} (connected)
+- signal good: good
+- signal weak: weak
+- connection: Connection
+- address: Address
+- wifi link: Wi-Fi
+- cable link: a cable
+- usb link: USB
+
 ## Storage
 
 - disk: Disk

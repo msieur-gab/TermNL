@@ -1,6 +1,7 @@
 ---
 does: check network
 label: check the network
+reads: network
 admin: no
 approve: no
 ---
@@ -16,6 +17,11 @@ approve: no
 
 ip -4 -brief addr
 
-## Replies
+## When it's connected
 
-- done: Network: {output} | Here's the connection: {output}
+- You're connected through {@sys.network.through}. Your address on this network is {@sys.network.address}. I only look at the board itself, so I can't tell whether the internet answers.
+- Connected through {@sys.network.through}, at {@sys.network.address}. (I don't contact anything outside to check the internet.)
+
+## When it's not connected
+
+- You're not connected to any network: no Wi-Fi and no cable has an address.

@@ -4,13 +4,16 @@ A skill that only reads names its reader in its front matter (`reads: memory`) i
 Its replies use the reader's values ({@sys.memory.used}) and are chosen by the reader's level
 ("## When it's high"). A reader may also give a table, shown under the reply.
 
-Each reader only reads (files under /proc and /sys, or a read-only command) and never changes the
-device. The thresholds live here, written once per kind of board, so a skill author never needs them.
+Each reader only reads (files under /proc and /sys, the kernel's own answers, a read-only command, or
+the output of its skill's own command) and never changes the device. The thresholds live here, written once per kind of board, so a skill author never needs them.
 The words shown with a reading (table headings, "3 days and 2 hours"…) are the language's own
 (words/readings.md), given to each reader as `w`."""
+import ctypes
+import ctypes.util
 import datetime
 import os
 import platform
+import re
 import subprocess
 
 from .text import fill
@@ -222,6 +225,119 @@ def folder(w, place):
             "table": {"columns": [w("name"), w("kind"), w("size"), w("changed")], "rows": rows} if names else None}
 
 
+# a clock earlier than this can't be right: TermNL was written in 2026. A board without a clock battery
+# can wake up in 1970, or on the day its system image was made, after a power cut.
+MADE = 2026
+
+
+def _synchronised():
+    """the kernel's own answer: has a time service (NTP) set the clock? None when it can't tell"""
+    try:
+        libc = ctypes.CDLL(ctypes.util.find_library("c") or "libc.so.6", use_errno=True)
+        timex = ctypes.create_string_buffer(512)  # struct timex, all zero: only read, change nothing
+        state = libc.adjtimex(timex)
+    except (OSError, AttributeError):
+        return None
+    return None if state < 0 else state != 5  # 5: TIME_ERROR, the clock is not synchronised
+
+
+def clock(w):
+    """the time, the day and the date, and whether the clock can be trusted"""
+    now = datetime.datetime.now()
+    days, months = w.list("weekdays", []), w.list("months in full", [])
+    day = days[now.weekday()] if len(days) == 7 else now.strftime("%A")
+    month = months[now.month - 1] if len(months) == 12 else now.month
+    synced = _synchronised()
+    level = "wrong" if now.year < MADE else "unsure" if synced is False else "fine"
+    return {"level": level, "values": {"": w("clock time", hour=now.strftime("%H"), minute=now.strftime("%M")), "day": day,
+                                       "date": w("clock date", day=now.day, month=month, year=now.year)}}
+
+
+# Wi-Fi, the network and Bluetooth have no file to read: their skill's command runs (and is what "show
+# commands" shows), and these readers turn its output into words. Each gets it as `output`.
+FROM_COMMAND = ("wifi", "networks", "network", "bluetooth")
+WEAK = 40  # a Wi-Fi signal under this (of 100) drops and slows down
+
+
+def _fields(line):
+    """nmcli -t: fields split by ":", a ":" inside a name written "\\:" """
+    return [f.replace("\\:", ":") for f in re.split(r"(?<!\\):", line)]
+
+
+def _wifi_list(output):
+    """nmcli -t -f in-use,ssid,signal → [(name, signal, in use)], one per name: the access point in use, or
+    else the strongest (a network often has several, and only the one in use gives this device's signal)"""
+    best = {}
+    for line in output.splitlines():
+        f = _fields(line)
+        if len(f) < 3 or not f[1] or not f[2].isdigit():
+            continue  # a hidden network has no name
+        name, signal, used = f[1], int(f[2]), f[0].strip() == "*"
+        old = best.get(name)
+        if used or not old or (not old[2] and signal > old[1]):
+            best[name] = (name, signal, used)
+    return sorted(best.values(), key=lambda n: (-n[1], not n[2]))  # strongest first; the one in use first among equals
+
+
+def wifi(w, output=""):
+    """the Wi-Fi network this device is on, and how strong its signal is"""
+    found = _wifi_list(output)
+    on = next((n for n in found if n[2]), None)
+    if on:
+        level = "fine" if on[1] >= WEAK else "weak"
+        return {"level": level, "values": {"": on[0], "signal": "%d%%" % on[1], "count": str(len(found))}}
+    return {"level": "not connected" if found else "off", "values": {"": w("nothing"), "signal": "", "count": str(len(found))}}
+
+
+def networks(w, output="", top=15):
+    """the Wi-Fi networks around, strongest first"""
+    found = _wifi_list(output)
+    if not found:
+        return {"level": "none", "values": {"count": "0", "best": w("nothing")}, "table": None}
+    rows = [[w("connected name", name=n) if used else n, "%d%%" % sig, w("signal " + ("good" if sig >= WEAK else "weak"))] for n, sig, used in found[:top]]
+    levels = [None if sig >= WEAK else "weak" for _, sig, _ in found[:top]]
+    more = len(found) - top
+    if more > 0:
+        rows.append([w("more", count=more), "", ""])
+        levels.append(None)
+    return {"level": "fine", "values": {"count": str(len(found)), "best": found[0][0]},
+            "table": {"columns": [w("network"), w("signal"), ""], "rows": rows, "levels": levels}}
+
+
+# connections that aren't a way out of the device: itself, and the bridges of containers and virtual machines
+NOT_A_LINK = ("lo", "docker", "br-", "virbr", "veth")
+
+
+def _link(name, w):
+    """what people call a connection: wlan0 → Wi-Fi, eth0 → cable"""
+    kind = "wifi link" if name.startswith(("wl", "wlan")) else "cable link" if name.startswith(("en", "eth")) else \
+        "usb link" if name.startswith("usb") else None
+    return w(kind) if kind else name
+
+
+def network(w, output=""):
+    """connected to a network: an address on a connection that is up. Nothing leaves the device to ask
+    whether the internet answers."""
+    rows = []
+    for line in output.splitlines():
+        f = line.split()
+        if len(f) < 3 or f[0].startswith(NOT_A_LINK) or f[1] == "DOWN":
+            continue
+        rows.append([_link(f[0].split("@")[0], w), f[2].split("/")[0]])
+    if not rows:
+        return {"level": "not connected", "values": {"address": "", "through": ""}, "table": None}
+    return {"level": "connected", "values": {"address": rows[0][1], "through": rows[0][0]},
+            "table": {"columns": [w("connection"), w("address")], "rows": rows} if len(rows) > 1 else None}
+
+
+def bluetooth(w, output=""):
+    """bluetoothctl show: is Bluetooth on, and the name others see"""
+    pairs = dict(l.strip().split(": ", 1) for l in output.splitlines() if ": " in l)
+    if not output.strip().startswith("Controller"):
+        return {"level": "none", "values": {"name": ""}}
+    return {"level": "on" if pairs.get("Powered") == "yes" else "off", "values": {"name": pairs.get("Alias") or pairs.get("Name", "")}}
+
+
 # name → (reader, its levels, its values; "" is the main one: {@sys.temperature})
 READERS = {
     "memory": (memory, ["fine", "high", "full"], ["used", "total", "free", "percent"]),
@@ -231,6 +347,11 @@ READERS = {
     "system": (system, ["fine"], ["model", "os"]),
     "folder": (folder, ["fine", "empty"], ["count"]),
     "health": (health, ["fine", "busy", "struggling"], ["temperature", "memory", "disk", "uptime"]),
+    "clock": (clock, ["fine", "unsure", "wrong"], ["", "day", "date"]),
+    "wifi": (wifi, ["fine", "weak", "not connected", "off"], ["", "signal", "count"]),
+    "networks": (networks, ["fine", "none"], ["count", "best"]),
+    "network": (network, ["connected", "not connected"], ["address", "through"]),
+    "bluetooth": (bluetooth, ["on", "off", "none"], ["name"]),
 }
 
 
