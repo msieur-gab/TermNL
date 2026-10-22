@@ -109,3 +109,24 @@ test("a place without a name: the name is asked, the place kept", () => {
 test("another name for a folder still finds it", () => {
   assert.equal(agent().hear("new folder called bikes inside docs").command, "mkdir -p $HOME'/Documents/bikes'");
 });
+
+// Follow-ups (22 Oct, Gab's playground run): an answer to a question is an answer, unless the person
+// clearly asks for something else.
+test("an answer that is also a skill word fills the question, no loop", () => {
+  const a = agent();
+  a.hear("add a new note inside my documets");
+  a.hear("Documents");
+  assert.equal(a.hear("note").command, "touch $HOME'/Documents/note.md'");
+});
+
+test("the same request said again completes the question with what it adds", () => {
+  const a = agent();
+  a.hear("create a file in documents");
+  assert.equal(a.hear("create a file called draft").command, "touch $HOME'/Documents/draft.md'");
+});
+
+test("a clearly different request replaces the question", () => {
+  const a = agent();
+  a.hear("create a file in documents");
+  assert.equal(a.hear("how much space is left").skill, "check-storage");
+});

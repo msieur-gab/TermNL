@@ -878,8 +878,20 @@ function createAgent({ lists, skills, model, settings = {}, device, random = Mat
     const u = understand(text, toks);
     last = u && u.how !== "choose" ? u : null;
     const sure = u && (u.how === "template" || (u.how === "model" && u.p >= SURE && !u.unknown.length));
-    // a clear new request replaces a pending question; anything else answers it
-    if (pending?.waiting === "value" && !sure) return fillPending(text, toks);
+    // While a question waits, what the person says answers it, unless it clearly asks for something
+    // else (another skill, surely understood). The same skill said again adds its values to the
+    // question; then whatever is still asked for is filled from the words themselves.
+    if (pending?.waiting === "value") {
+      const other = sure && u.skill.id !== pending.skill.id;
+      if (!other) {
+        if (sure && u.skill.id === pending.skill.id) {
+          for (const [k, v] of Object.entries(u.vals)) if (!pending.vals[k] || pending.vals[k].unknown) pending.vals[k] = v;
+          if (pending.vals[pending.slot]) { last = null; const { skill, vals, approved } = pending; pending = null; return resolve(skill, vals, approved); }
+        }
+        last = null; // an answer, not a new request: nothing to report about understanding it
+        return fillPending(text, toks);
+      }
+    }
 
     if (!u) { pending = null; return { outcome: "abstain", say: reply("abstain"), reason: "no skill", inbox: text }; }
     if (u.how === "choose") {
