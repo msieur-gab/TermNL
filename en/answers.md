@@ -30,4 +30,6 @@ Words for the conversation itself, outside any skill.
 - not sure: I don't know {words} yet. Do you want me to {label}? | I haven't learned {words} yet. Should I {label}?
 - new words: I don't know {words} yet.
 - confirm: Do you want me to {label}? | Should I {label}?
+- failed: That didn't work: {error} | It didn't work: {error}
+- simulated: On this device I only pretend to {label}: nothing ran. | Simulated here: I would {label}, but nothing ran.
 - sounds like: That sounds like "{label}", which needs admin mode. You can turn it on in your settings.

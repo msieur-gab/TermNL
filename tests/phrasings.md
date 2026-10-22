@@ -1,0 +1,60 @@
+# Phrasings — how people might really ask
+
+Written on 22 Oct 2026 without looking at the templates, to measure what TermLU understands.
+Each line: the skill that should answer, then the sentence.
+(22 Oct, 10:30: "open the ideas folder" relabelled show-folder → open-folder after Gab's rule that opening a
+folder goes into it.)
+
+- check-storage: how much room do I have left on the disk
+- check-storage: my disk feels full
+- check-storage: do I still have free space
+- check-storage: storage left?
+- check-storage: is there enough space for a movie
+- check-memory: how much ram am I using
+- check-memory: is it low on memory
+- check-memory: memory status
+- check-temperature: the board feels really warm
+- check-temperature: what temperature is the cpu at
+- check-temperature: is the pi overheating
+- check-system: is my pi ok
+- check-system: everything alright?
+- check-system: how's it going with the board
+- check-network: do I have internet
+- check-network: is the connection down
+- check-network: what's my address on the network
+- check-wifi: am I connected to wifi
+- check-wifi: what network am I on right now
+- check-wifi: is the wireless working
+- show-wifi: scan for wifi
+- show-wifi: list the networks nearby
+- turn-off-wifi: kill the wifi
+- turn-off-wifi: disconnect from wifi
+- turn-off-wifi: I don't need wifi right now, switch it off
+- turn-on-wifi: get the wifi back
+- turn-on-wifi: wifi on please
+- turn-on-bluetooth: bluetooth on
+- turn-off-bluetooth: stop bluetooth
+- check-service: is ssh up
+- check-service: is the web server alive
+- restart-service: the music server is stuck, restart it
+- restart-service: give nginx a kick
+- restart-system: reboot
+- restart-system: restart everything
+- restart-system: can you reboot the pi
+- shut-down-system: power off
+- shut-down-system: shut it all down
+- shut-down-system: I'm done for today, turn the board off
+- create-folder: I need a new folder for my bike photos
+- create-folder: new folder called bikes
+- create-folder: make me a directory named recipes in documents
+- create-folder: put a folder called seeds inside ideas
+- create-file: start a new note called groceries
+- create-file: I want to write a python script named test
+- create-file: make todo.txt in documents
+- create-file: new markdown file in ideas called draft
+- show-folder: what do I have in downloads
+- show-folder: list my documents
+- open-folder: open the ideas folder
+- open-app: I need a terminal
+- open-app: start firefox
+- open-app: can I get the browser

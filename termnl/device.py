@@ -1,0 +1,111 @@
+"""The device as the agent sees it: the values it can list itself (@sys.folder, @sys.service,
+@sys.app, @sys.network) and the files in a folder, all read from this machine.
+
+Folders and files are those under TermNL's home (settings.md, "home:"), the folder that $HOME means
+in every command. Hidden folders are skipped. Lists are read again after a few seconds, so a folder
+made a moment ago is already known."""
+import configparser
+import glob
+import os
+import subprocess
+import time
+
+HOME_NAMES = ["home", "home folder", "my home"]
+
+
+def _run(args):
+    try:
+        return subprocess.run(args, capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+
+
+class Device:
+    def __init__(self, home, fresh=3):
+        self.home = os.path.abspath(os.path.expanduser(home))
+        self.fresh = fresh
+        self._cache = {}
+
+    def path(self, value):
+        """$HOME/Documents → the real path"""
+        return self.home + value[5:] if value.startswith("$HOME") else value
+
+    def _folders(self, depth=4):
+        out = [{"value": "$HOME", "names": HOME_NAMES}]
+        for root, dirs, _ in os.walk(self.home):
+            dirs[:] = sorted(d for d in dirs if not d.startswith("."))
+            if root[len(self.home):].count(os.sep) >= depth:
+                dirs[:] = []
+            for d in dirs:
+                rel = os.path.relpath(os.path.join(root, d), self.home)
+                names = [d] + ([d.lower()] if d.lower() != d else [])
+                out.append({"value": "$HOME/" + rel, "names": names})
+        return out
+
+    def _services(self):
+        out = []
+        for line in _run(["systemctl", "list-units", "--type=service", "--all", "--no-legend", "--plain"]).splitlines():
+            unit = line.split()[0] if line.split() else ""
+            if unit.endswith(".service") and "@" not in unit:
+                out.append({"value": unit[:-8], "names": [unit[:-8]]})
+        return out
+
+    def _apps(self):
+        out, seen = [], set()
+        for f in sorted(glob.glob("/usr/share/applications/*.desktop") + glob.glob(os.path.expanduser("~/.local/share/applications/*.desktop"))):
+            c = configparser.ConfigParser(interpolation=None, strict=False)
+            try:
+                c.read(f, encoding="utf-8")
+                e = c["Desktop Entry"]
+            except (configparser.Error, KeyError, UnicodeDecodeError):
+                continue
+            if e.get("NoDisplay", "").lower() == "true" or e.get("Type", "Application") != "Application":
+                continue
+            # the program itself: "env VAR=1 prog %u" → prog
+            words = [w for w in (e.get("Exec") or "").split() if w != "env" and "=" not in w]
+            exe = os.path.basename(words[0]) if words else ""
+            name = (e.get("Name") or "").strip()
+            if not exe or not name or name.lower() in seen:
+                continue
+            seen.add(name.lower())
+            out.append({"value": exe, "names": [name] + ([exe] if exe.lower() != name.lower() else [])})
+        return out
+
+    def _networks(self):
+        names = []
+        for line in _run(["nmcli", "-t", "-f", "ssid", "dev", "wifi", "list", "--rescan", "no"]).splitlines():
+            if line and line not in names:
+                names.append(line)
+        return [{"value": n, "names": [n]} for n in names]
+
+    def forget(self):
+        """after a command ran: the lists are read again next time (a folder just made is known)"""
+        self._cache.clear()
+
+    def list(self, kind):
+        read = {"folder": self._folders, "service": self._services, "app": self._apps, "network": self._networks}.get(kind)
+        if not read:
+            return []
+        at, found = self._cache.get(kind, (0, None))
+        if found is None or time.time() - at > self.fresh:
+            found = read()
+            self._cache[kind] = (time.time(), found)
+        return found
+
+    def files(self, folder):
+        p = self.path(folder)
+        try:
+            return sorted(f for f in os.listdir(p) if not f.startswith(".") and os.path.isfile(os.path.join(p, f)))
+        except OSError:
+            return []
+
+    def find(self, test):
+        """every file under home whose name passes the test, hidden folders skipped"""
+        out = []
+        for root, dirs, files in os.walk(self.home):
+            dirs[:] = sorted(d for d in dirs if not d.startswith("."))
+            rel = os.path.relpath(root, self.home)
+            folder = "$HOME" if rel == "." else "$HOME/" + rel
+            label = "home" if rel == "." else os.path.basename(root)
+            out += [{"folder": folder, "file": f, "label": label} for f in sorted(files) if not f.startswith(".") and test(f)]
+        return out
