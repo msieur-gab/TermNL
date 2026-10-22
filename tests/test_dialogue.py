@@ -1,7 +1,11 @@
 """python3 -m unittest — the dialogue, against the pretend device."""
 import unittest
 
-from termnl.agent import Agent
+import importlib
+import os
+
+# TERMNL_AGENT=termnl.agent_v2 python3 -m unittest: the same tests for the second version
+Agent = importlib.import_module(os.environ.get("TERMNL_AGENT", "termnl.agent")).Agent
 from termnl.load import load_language
 from tests.device import device
 

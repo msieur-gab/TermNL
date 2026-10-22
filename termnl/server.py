@@ -20,8 +20,9 @@ import socket
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+import importlib
+
 from . import readers
-from .agent import Agent
 from .device import Device
 from .load import ROOT, load_language, load_settings
 from .runner import run
@@ -34,8 +35,11 @@ TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": 
 
 
 class TermNL:
-    def __init__(self, root=ROOT, home=None):
+    def __init__(self, root=ROOT, home=None, agent="v1"):
         self.root = root
+        # v1: agent.py; v2: agent_v2.py, the same behaviour rewritten, kept side by side for testing
+        self.version = agent
+        self.Agent = importlib.import_module(".agent" if agent == "v1" else ".agent_" + agent, __package__).Agent
         self.lang = load_language("en")
         if self.lang["errors"]:
             raise SystemExit("\n".join(self.lang["errors"]))
@@ -63,7 +67,7 @@ class TermNL:
 
     def agent(self, session):
         if session not in self.sessions:
-            self.sessions[session] = Agent(**self.lang, settings=self.settings, device=self.device)
+            self.sessions[session] = self.Agent(**self.lang, settings=self.settings, device=self.device)
         return self.sessions[session]
 
     def say(self, text, session):
@@ -121,7 +125,7 @@ class TermNL:
         """every turn, one line of JSON in logs/<date>.jsonl: the real sentences people type"""
         os.makedirs(LOGS, exist_ok=True)
         now = datetime.datetime.now()
-        line = {"at": now.isoformat(timespec="seconds"), "session": session[:8], "text": text,
+        line = {"at": now.isoformat(timespec="seconds"), "session": session[:8], "agent": self.version, "text": text,
                 **{k: r[k] for k in ("outcome", "skill", "how", "p", "unknown", "say", "ran", "level", "show", "teach", "inbox", "reason") if r.get(k) is not None},
                 **({"command": command} if command else {})}
         with open(os.path.join(LOGS, now.strftime("%Y-%m-%d") + ".jsonl"), "a", encoding="utf-8") as f:
@@ -185,9 +189,10 @@ def main():
     p.add_argument("--host", default="127.0.0.1", help="address to answer on (default: this machine only)")
     p.add_argument("--port", type=int, default=8810)
     p.add_argument("--home", help="the folder home means, instead of settings.md's (for trying things out)")
+    p.add_argument("--agent", default="v1", choices=["v1", "v2"], help="which dialogue: agent.py (v1) or agent_v2.py (v2)")
     a = p.parse_args()
-    app = TermNL(home=a.home)
-    print("TermNL on http://%s:%d — home: %s" % (a.host, a.port, app.device.home))
+    app = TermNL(home=a.home, agent=a.agent)
+    print("TermNL (agent %s) on http://%s:%d — home: %s" % (a.agent, a.host, a.port, app.device.home))
     ThreadingHTTPServer((a.host, a.port), handler(app)).serve_forever()
 
 
