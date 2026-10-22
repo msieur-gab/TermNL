@@ -7,7 +7,10 @@
 //   ---
 //   ## Sentences       templates (core/template.js), each in `backticks` so <action> and
 //                      <object> show as written on GitHub instead of vanishing as HTML tags
-//   ## Values          - name: kind[, required][, default: x]
+//   moves: place      after it runs, you are in that folder (open folder)
+//   ## Values          - name: kind[, required][, new][, default: x]
+//                        new: must not exist yet in the place (create file); default: here = where you are
+//                        @sys.file: a file that must exist, found in the place or anywhere in home
 //   ## Command         one line; {value} is filled in and quoted
 //   ## Replies         - key: variant | variant
 //
@@ -17,7 +20,7 @@
 import { compile, uses } from "./template.js";
 import { readList, readPairs, words } from "./text.js";
 
-export const DEVICE_KINDS = ["folder", "service", "network", "app"];
+export const DEVICE_KINDS = ["folder", "file", "service", "network", "app"];
 
 export function readLists(files) {
   const refs = {}, kinds = { actions: [], objects: [] };
@@ -53,6 +56,7 @@ export function readSkill(id, md) {
     const v = { kind: parts[0] || "text", required: false };
     for (const p of parts.slice(1)) {
       if (p === "required") v.required = true;
+      else if (p === "new") v.new = true;
       else if (p.startsWith("default:")) v.default = p.slice(8).trim();
     }
     values[key] = v;
@@ -62,7 +66,7 @@ export function readSkill(id, md) {
   for (const { key, rest } of readList(md, "Replies")) replies[key] = rest;
   return {
     id, does: meta.does || "", label: meta.label || meta.does || id,
-    admin: /^yes$/i.test(meta.admin || ""), approve: /^yes$/i.test(meta.approve || ""),
+    admin: /^yes$/i.test(meta.admin || ""), approve: /^yes$/i.test(meta.approve || ""), moves: meta.moves || "",
     sentences, values, command, replies,
   };
 }

@@ -13,8 +13,8 @@ approve: no
 
 ## Values
 
-- name: text, required
-- place: @sys.folder, default: home
+- name: @sys.file, required
+- place: @sys.folder, default: here
 
 ## Command
 

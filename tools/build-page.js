@@ -19,6 +19,7 @@ const lists = { actions: read("actions.md"), objects: read("objects.md"), filety
 const { skills: loaded, model } = loadLanguage(lang);
 const skills = Object.fromEntries(loaded.map(s => [s.id, read(`skills/${s.id}/skill.md`)]));
 const deviceLists = Object.fromEntries(["folder", "service", "app", "network"].map(k => [k, device.list(k)]));
+const fileTree = Object.fromEntries(device.list("folder").map(f => [f.value, device.files(f.value)]));
 
 const bundle = `const TermLU = (() => {
 ${core}
@@ -26,8 +27,11 @@ const files = ${JSON.stringify({ lists, skills })};
 const lang = load(files);
 if (lang.errors.length) console.error(lang.errors);
 const deviceLists = ${JSON.stringify(deviceLists)};
+const fileTree = ${JSON.stringify(fileTree)};
 return { createAgent, lang: { lists: lang.lists, skills: lang.skills }, model: ${JSON.stringify(model)},
-  device: { list: kind => deviceLists[kind] || [] } };
+  device: { list: kind => deviceLists[kind] || [], files: folder => fileTree[folder] || [],
+    find: test => Object.entries(fileTree).flatMap(([folder, files]) => files.filter(test)
+      .map(file => ({ folder, file, label: deviceLists.folder.find(d => d.value === folder).names[0] }))) } };
 })();`;
 
 const page = readFileSync(join(ROOT, "tools", "page.html"), "utf8").replace("/*BUNDLE*/", () => bundle);

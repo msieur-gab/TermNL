@@ -27,11 +27,15 @@ const SURE = 0.5, MAYBE = 0.15;
 
 export function createAgent({ lists, skills, model, settings = {}, device, random = Math.random }) {
   let pending = null;
+  // where you are, like a terminal's working folder: home at first, moved by "open/go to a folder"
+  let here = null;
+  const whereNow = () => here || (() => { const h = sys("folder").find(f => f.value === "$HOME"); return h ? { value: h.value, label: h.label } : { value: "$HOME", label: "home" }; })();
   const on = key => /^(on|yes|true)$/i.test(settings[key] || "");
   const sys = kind => (device ? device.list(kind) : []).map(d => ({
     value: d.value, label: d.names[0], phrases: d.names.map(words),
   }));
-  const listOf = kind => kind === "filetype" ? lists.filetypes : kind.startsWith("@sys.") ? sys(kind.slice(5)) : null;
+  // files aren't a list read in advance: they are looked up in the place once it is known
+  const listOf = kind => kind === "filetype" ? lists.filetypes : kind === "@sys.file" ? null : kind.startsWith("@sys.") ? sys(kind.slice(5)) : null;
   const slotLists = skill => Object.fromEntries(Object.entries(skill.values).map(([k, v]) => [k, listOf(v.kind)]));
   const reply = (key, values = {}) => fill(pick(lists.replies[key] || key, random), values);
   const small = new Set((lists.answers["small words"] || []).map(p => p.join(" ")));
@@ -162,7 +166,9 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     }
     for (const [k, spec] of Object.entries(skill.values)) {
       if (vals[k]) continue;
-      if (spec.default) {
+      if (spec.default === "here") {
+        vals[k] = { ...whereNow() };
+      } else if (spec.default) {
         const list = listOf(spec.kind);
         const hit = list && list.find(o => o.value === spec.default || o.label === spec.default || o.phrases.some(p => p.join(" ") === spec.default));
         vals[k] = hit ? { value: hit.value, label: hit.label } : { text: spec.default };
@@ -173,6 +179,8 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
       }
     }
     finishFiletype(skill, vals);
+    const found = findFiles(skill, vals, approved);
+    if (found) return found;
     if (skill.admin && !on("admin mode")) {
       pending = null;
       return { outcome: "abstain", skill: skill.id, say: reply("admin off"), reason: "admin mode off" };
@@ -183,6 +191,46 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     }
     return act(skill, vals);
   }
+
+  // Files are checked on the device. A file to open must exist: here, or else anywhere in home
+  // (one place: "That one?"; several: "Which one?"; none: said so). A file to create must not.
+  function findFiles(skill, vals, approved) {
+    if (!device || !device.files) return null;
+    const placeKey = Object.keys(skill.values).find(k => skill.values[k].kind === "@sys.folder");
+    const place = placeKey && vals[placeKey];
+    for (const [k, spec] of Object.entries(skill.values)) {
+      const v = vals[k];
+      if (!v || !place) continue;
+      if (spec.new && v.text && device.files(place.value).includes(v.text)) {
+        pending = null;
+        return { outcome: "abstain", skill: skill.id, say: reply("already", { file: v.text, folder: place.label }), reason: "already exists" };
+      }
+      if (spec.kind !== "@sys.file" || v.value !== undefined) continue;
+      const name = v.text, stem = f => f.replace(/\.[^.]+$/, "");
+      const lower = name.toLowerCase();
+      const same = f => f.toLowerCase() === lower || (!/\.\w+$/.test(name) && stem(f).toLowerCase() === lower);
+      const files = device.files(place.value);
+      const hit = files.find(same);
+      if (hit) { vals[k] = { value: hit, label: hit }; continue; }
+      const typo = files.find(f => close(lower, f.toLowerCase()) || (!/\.\w+$/.test(name) && close(lower, stem(f).toLowerCase())));
+      if (typo) { vals[k] = { value: typo, label: typo, text: name, fuzzy: true }; return resolve(skill, vals, approved); }
+      const elsewhere = device.find(same).filter(r => r.folder !== place.value);
+      if (elsewhere.length === 1) {
+        const r = elsewhere[0];
+        pending = { waiting: "elsewhere", skill, vals, approved, options: [{ ...r, k, placeKey }] };
+        return { outcome: "ask", skill: skill.id, say: reply("elsewhere", { file: r.file, here: place.label, folder: r.label }), chips: ["yes", "no"] };
+      }
+      if (elsewhere.length > 1) {
+        pending = { waiting: "where", skill, vals, approved, options: elsewhere.map(r => ({ ...r, k, placeKey })) };
+        const labels = elsewhere.map(r => r.label);
+        return { outcome: "ask", skill: skill.id, say: reply("several", { count: elsewhere.length, file: elsewhere[0].file, folders: labels.join(", ") }), chips: labels };
+      }
+      pending = null;
+      return { outcome: "abstain", skill: skill.id, say: reply("not found", { file: name, here: place.label }), reason: "not found" };
+    }
+    return null;
+  }
+  const choose = (o, vals) => { vals[o.k] = { value: o.file, label: o.file }; vals[o.placeKey] = { value: o.folder, label: o.label }; };
 
   // A file's name gets the extension of its type, unless it already has a known one (seed.md).
   function finishFiletype(skill, vals) {
@@ -202,6 +250,7 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
       if (!part.includes("{")) return part;
       return quote(part.replace(/\{(\w+)\}/g, (_, k) => vals[k] ? (vals[k].value ?? vals[k].text) : ""));
     }).join(" ");
+    if (skill.moves && vals[skill.moves]) here = { value: vals[skill.moves].value, label: vals[skill.moves].label };
     const out = { outcome: "act", skill: skill.id, say: reply(skill.replies.done, display(skill, vals)), command };
     if (on("show commands")) out.show = command;
     return out;
@@ -250,6 +299,15 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
       const { skill, vals, text: asked } = pending;
       if (is(toks, "yes")) { pending = null; const r = resolve(skill, vals, true); r.teach = { skill: skill.id, text: asked }; return r; }
       if (is(toks, "no")) { pending = null; return { outcome: "abstain", say: reply("declined"), reason: "declined", inbox: asked }; }
+      pending = null;
+    }
+    if (pending?.waiting === "elsewhere" || pending?.waiting === "where") {
+      const { skill, vals, approved, options } = pending;
+      const said = toks.map(t => t.word).join(" ");
+      const o = pending.waiting === "elsewhere" ? (is(toks, "yes") ? options[0] : null)
+        : options.find(x => words(x.label).join(" ") === said);
+      if (o) { pending = null; choose(o, vals); return resolve(skill, vals, approved); }
+      if (is(toks, "no")) { pending = null; return { outcome: "abstain", skill: skill.id, say: reply("declined"), reason: "declined" }; }
       pending = null;
     }
     if (pending?.waiting === "fuzzy") {
@@ -324,5 +382,5 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     return { outcome: "ask", skill: u.skill.id, say, chips: ["yes", "no"], unknown: u.unknown, p: Math.round(u.p * 100) / 100 };
   }
 
-  return { hear, get pending() { return pending; } };
+  return { hear, get pending() { return pending; }, get here() { return whereNow(); } };
 }

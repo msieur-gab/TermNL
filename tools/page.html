@@ -34,6 +34,8 @@ h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
 h1 span { font-family: var(--mono); font-weight: 600; color: var(--accent); }
 header p { margin: 0; color: var(--muted); font-size: 14px; }
 .chat { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.where { padding: 10px 16px; border-bottom: 1px solid var(--line); font: 13px/1.4 var(--mono); color: var(--muted); }
+.where b { color: var(--accent); font-weight: 600; }
 .log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-height: 320px; }
 .you { align-self: flex-end; max-width: 80%; background: var(--accent); color: var(--panel); padding: 8px 12px; border-radius: 12px 12px 2px 12px; }
 .turn { display: flex; flex-direction: column; gap: 8px; max-width: 92%; min-width: 0; }
@@ -86,6 +88,7 @@ dd { margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.7; }
   </header>
 
   <main class="chat">
+    <div class="where" id="where"></div>
     <div class="log" id="log" aria-live="polite"></div>
     <form id="form">
       <label for="say" hidden>Your request</label>
@@ -118,7 +121,7 @@ dd { margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.7; }
 
 const PILLS = [
   "create a file named seed.md in the ideas folder", "make a new folder", "create a python file called test",
-  "put a folder called seeds in the garden folder", "add a new note inside my documets", "make a txt file todo in downloads", "what's in my documents folder", "open this file", "open the note.md file located inside my Documents folder", "how much space is left",
+  "put a folder called seeds in the garden folder", "add a new note inside my documets", "make a txt file todo in downloads", "what's in my documents folder", "open this file", "open the note.md file located inside my Documents folder", "go to documents", "open note.md", "open report.pdf", "open groceries", "open taxes.pdf", "how much space is left",
   "is there enough space for a movie", "how hot is the board", "is ssh running", "restart the web server",
   "turn off the wifi", "kill the wifi", "restart the pi", "open the terminal", "I need a terminal",
   "what's the weather tomorrow", "help", "yes", "no", "cancel",
@@ -139,7 +142,14 @@ function send(text) {
   log.append(el("div", "you", text));
   const r = agent.hear(text);
   const turn = el("div", "turn");
-  turn.append(el("div", "say", r.say.replace(/\{output\}/g, "…")));
+  // nothing runs here; for a folder listing, the pretend device's files stand in for the output
+  let output = "…";
+  if (r.command && r.command.startsWith("ls ")) {
+    const folder = r.command.slice(3).replace(/'/g, "");
+    const files = TermLU.device.files(folder);
+    output = files.length ? "It holds " + files.join(", ") + "." : "It's empty.";
+  }
+  turn.append(el("div", "say", r.say.replace(/\{output\}/g, output)));
   const meta = el("div", "meta");
   meta.append(el("span", "out " + r.outcome, r.outcome));
   if (r.skill) meta.append(el("span", "tag", r.skill));
@@ -158,6 +168,10 @@ function send(text) {
   else turn.append(el("div", "cmd none", "no command"));
   log.append(turn);
   log.scrollTop = log.scrollHeight;
+  showWhere();
+}
+function showWhere() {
+  const w = $("where"); w.replaceChildren(document.createTextNode("You're in "), el("b", "", agent.here.label));
 }
 
 $("form").addEventListener("submit", e => { e.preventDefault(); send($("say").value); $("say").value = ""; $("say").focus(); });
@@ -168,10 +182,14 @@ $("admin").onclick = () => {
   $("admin").textContent = on ? "on" : "off";
   $("admin").setAttribute("aria-pressed", String(on));
 };
-$("reset").onclick = () => { fresh(); $("log").replaceChildren(); };
+$("reset").onclick = () => { fresh(); $("log").replaceChildren(); showWhere(); };
 for (const [kind, label] of [["folder", "Folders"], ["service", "Services"], ["app", "Apps"], ["network", "Networks"]]) {
   $("device").append(el("dt", "", label), el("dd", "", TermLU.device.list(kind).map(d => d.names[0]).join(", ")));
 }
+for (const f of TermLU.device.list("folder")) {
+  $("device").append(el("dt", "", f.names[0] + "/"), el("dd", "", TermLU.device.files(f.value).join(", ")));
+}
+showWhere();
 send("make a folder called bikes in documents");
 send("is there enough space for a movie");
 </script>

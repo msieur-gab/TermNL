@@ -2,6 +2,8 @@
 
 Written on 22 Oct 2026 without looking at the templates, to measure what TermLU understands.
 Each line: the skill that should answer, then the sentence.
+(22 Oct, 10:30: "open the ideas folder" relabelled show-folder → open-folder after Gab's rule that opening a
+folder goes into it.)
 
 - check-storage: how much room do I have left on the disk
 - check-storage: my disk feels full
@@ -52,7 +54,7 @@ Each line: the skill that should answer, then the sentence.
 - create-file: new markdown file in ideas called draft
 - show-folder: what do I have in downloads
 - show-folder: list my documents
-- show-folder: open the ideas folder
+- open-folder: open the ideas folder
 - open-app: I need a terminal
 - open-app: start firefox
 - open-app: can I get the browser

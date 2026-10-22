@@ -13,9 +13,9 @@ approve: no
 
 ## Values
 
-- name: text, required
+- name: text, required, new
 - type: filetype, default: markdown
-- place: @sys.folder, default: home
+- place: @sys.folder, default: here
 
 ## Command
 

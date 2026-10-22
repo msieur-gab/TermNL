@@ -20,6 +20,10 @@ Words for the conversation itself, outside any skill.
 - cancelled: OK, cancelled. | Cancelled.
 - choose: Do you mean {options}?
 - unknown value: I don't see {value}. Which one?
+- already: There's already a {file} in {folder}. | {folder} already has a {file}.
+- elsewhere: {file} isn't in {here}, but there's one in {folder}. That one?
+- several: There are {count} files called {file}, in {folders}. Which one?
+- not found: I can't find {file} in {here}, or anywhere in your home folder.
 - did you mean: Did you mean {value}? | {value}, right?
 - help: I can: {skills}.
 - not sure: I don't know {words} yet. Do you want me to {label}? | I haven't learned {words} yet. Should I {label}?

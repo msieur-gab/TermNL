@@ -10,9 +10,9 @@ const agent = (settings = {}) => createAgent({ ...lang, settings, device, random
 test("skill files have no problems", () => assert.deepEqual(lang.errors, []));
 
 test("a template request acts, with values quoted", () => {
-  const r = agent().hear("create a file named seed.md in the ideas folder");
+  const r = agent().hear("create a file named sprout.md in the ideas folder");
   assert.equal(r.outcome, "act");
-  assert.equal(r.command, "touch $HOME'/ideas/seed.md'");
+  assert.equal(r.command, "touch $HOME'/ideas/sprout.md'");
 });
 
 test("a missing name is asked for, and the answer completes the request", () => {
@@ -116,7 +116,12 @@ test("an answer that is also a skill word fills the question, no loop", () => {
   const a = agent();
   a.hear("add a new note inside my documets");
   a.hear("Documents");
-  assert.equal(a.hear("note").command, "touch $HOME'/Documents/note.md'");
+  const r = a.hear("note"); // Documents already has a note.md: no loop, and no second one
+  assert.equal(r.reason, "already exists");
+  const b = agent();
+  b.hear("add a new note inside my documets");
+  b.hear("Documents");
+  assert.equal(b.hear("memo").command, "touch $HOME'/Documents/memo.md'");
 });
 
 test("the same request said again completes the question with what it adds", () => {
@@ -155,4 +160,64 @@ test("“open the note.md file located inside my Documents folder” opens it th
 
 test("opening an app still opens the app", () => {
   assert.equal(agent().hear("open the terminal").command, "setsid 'x-terminal-emulator'");
+});
+
+// Where you are (Gab, 22 Oct 10:30: "if i say open or go to Documents folder i imagine getting inside
+// its directory"). Files are found on the device, not assumed.
+test("opening a folder goes into it; a file is then opened there", () => {
+  const a = agent();
+  const r = a.hear("open the documents folder");
+  assert.equal(r.command, "ls $HOME'/Documents'");
+  assert.equal(a.here.label, "Documents");
+  assert.equal(a.hear("open note.md").command, "xdg-open $HOME'/Documents/note.md'");
+});
+
+test("“go to ideas” then creating a file makes it there", () => {
+  const a = agent();
+  a.hear("go to ideas");
+  assert.equal(a.hear("create a file called plan").command, "touch $HOME'/ideas/plan.md'");
+});
+
+test("showing a folder lists it without going into it", () => {
+  const a = agent();
+  a.hear("show me downloads");
+  assert.equal(a.here.label, "home");
+});
+
+test("a file not here but in one other folder: asked, then opened there", () => {
+  const a = agent();
+  const r = a.hear("open report.pdf");
+  assert.equal(r.outcome, "ask");
+  assert.match(r.say, /Documents/);
+  assert.equal(a.hear("yes").command, "xdg-open $HOME'/Documents/report.pdf'");
+});
+
+test("the same name in several folders: which one, with chips", () => {
+  const a = agent();
+  a.hear("go to downloads");
+  const r = a.hear("open note.md");
+  assert.equal(r.outcome, "ask");
+  assert.deepEqual(r.chips.sort(), ["Documents", "home", "ideas"]);
+  assert.equal(a.hear("ideas").command, "xdg-open $HOME'/ideas/note.md'");
+});
+
+test("a name without its extension, and a typo, still find the file", () => {
+  const a = agent();
+  a.hear("go to documents");
+  assert.equal(a.hear("open groceries").command, "xdg-open $HOME'/Documents/groceries.md'");
+  const r = a.hear("open grocries.md");
+  assert.equal(r.outcome, "ask");
+  assert.match(r.say, /groceries\.md/);
+});
+
+test("a file found nowhere is said so, and nothing runs", () => {
+  const r = agent().hear("open taxes.pdf");
+  assert.equal(r.command, undefined);
+  assert.match(r.say, /taxes\.pdf/);
+});
+
+test("creating a file that already exists runs nothing", () => {
+  const r = agent().hear("create a file called seed.md in ideas");
+  assert.equal(r.command, undefined);
+  assert.match(r.say, /already/);
 });

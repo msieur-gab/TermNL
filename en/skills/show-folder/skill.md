@@ -9,11 +9,10 @@ approve: no
 
 - `<show> [me] [the|my] {place} [<folder>]`
 - `(what's|what is) in [the|my] {place} [<folder>]`
-- `<open> [the|my] {place} <folder>`
 
 ## Values
 
-- place: @sys.folder, required
+- place: @sys.folder, default: here
 
 ## Command
 
@@ -21,5 +20,4 @@ ls {place}
 
 ## Replies
 
-- ask place: Which folder?
 - done: In {place}: {output}

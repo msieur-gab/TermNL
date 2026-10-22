@@ -14,7 +14,7 @@ approve: no
 ## Values
 
 - name: text, required
-- place: @sys.folder, default: home
+- place: @sys.folder, default: here
 
 ## Command
 
