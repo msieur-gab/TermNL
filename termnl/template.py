@@ -2,7 +2,7 @@
   word        a word that must be there
   (a|b c)     one of these
   [a|b]       one of these, or nothing
-  <create>    any word for the action or object "create" (en/actions.md, en/objects.md)
+  <create>    any word for the action or object "create" (words/actions.md, words/objects.md)
   {place}     a value; what it may hold comes from the skill's ## Values
 No learning: a template matches or it doesn't, and the match says which words were what."""
 from .text import close, words

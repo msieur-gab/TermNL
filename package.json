@@ -1,7 +1,0 @@
-{
-  "name": "termlu",
-  "private": true,
-  "type": "module",
-  "description": "Talk to your Linux board in plain words. Offline, readable skill files, no generated commands.",
-  "scripts": { "test": "node --test test/*.test.js", "check": "node core/check.js" }
-}

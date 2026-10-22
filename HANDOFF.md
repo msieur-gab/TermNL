@@ -1,54 +1,47 @@
-# Handoff — 22 October 2026
+# Handoff — 22 October 2026, afternoon
 
-TermLU was born this morning from ptiLU (repo msieur-gab/ptilu). The design lives in Gab's brain repo,
-`projects/termlu/`: read `intention.md`, `brief.md`, `vocabulary.md`, `decisions.md`, `day-one-scope.md`
-and the `open-question-*.md` files before changing anything. Gab's decisions there are his; don't
-rework them.
+TermNL (born this morning as TermLU, from ptiLU). The design lives in Gab's brain repo, `projects/termlu/`:
+read `intention.md`, `brief.md`, `decisions.md`, `review-2026-10-22.md`, both `prior-art-2026-10-22*.md`
+and the `open-question-*.md` files before changing anything, and the `.inbox.md` for what Gab said today
+that isn't ratified yet. Gab's decisions are his; don't rework them.
 
 ## What exists
 
-- 22 skills in `en/skills/`, one per action + object pair (`does: create file`).
-- Two layers of understanding (`core/agent.js`):
-  1. templates (`core/template.js`, Home Assistant style) read a sentence exactly, values included;
-  2. the model (`core/model.js`, ptiLU's TF-IDF + logistic regression, two small classifiers: action
-     and object) for other wordings. It acts only when sure (≥ 0.5) and every word is taught;
-     otherwise it asks "Do you want me to …?", naming the new words.
-- Values: device lists (`@sys.folder`, `@sys.service`, `@sys.app`, `@sys.network`), files found on the
-  device (`@sys.file`: here, elsewhere, several, nowhere), the shared `filetype` list, free text.
-- Four outcomes: act, ask, approve, abstain. Admin mode off by default (`settings.md`).
-- Where you are: "open / go to a folder" goes into it; new files go where you are.
-- Rules learned the hard way today, each with tests: a name never starts with a place word, never ends
-  with an object word, never is a pointing word (this, that); a misspelled device value is confirmed
-  ("Did you mean Documents?"); an answer to a pending question fills it unless the person clearly asks
-  for something else (action word or a skill's exact sentence); a new file never replaces one.
-- Playground: `node tools/build-page.js` → `docs/index.html` (also published as a claude.ai artifact).
+- **Python only.** The first version in JavaScript was frozen (it gave the same replies as the Python one
+  on 139 turns, commit c032e13), then deleted on Gab's request. See `README.md` for the layout.
+- **The brain on the device:** `python3 -m termnl.server` serves the chat page and a thin API that takes
+  sentences, never commands. Built and tested on Gab's laptop (my-laptop); files land in `~/TermNL-home`;
+  restart, shutdown, Wi-Fi, Bluetooth and services are simulated (`settings.md`, `simulate:`).
+- **28 skills** in `termnl/languages/en/skills/`, one per action + object. Reading skills name a reader
+  (`reads: memory`) and write a reply per level (`## When it's high`); the reader gives values, a level
+  and sometimes a table.
+- **Rules learned from Gab's own sentences**, each with tests (`tests/test_dialogue.py`): names never
+  swallow a place; misspelled device values are confirmed; typos are read as known words only when that
+  reads better, and said; names are never corrected; "not/don't" requests are asked about; approval comes
+  last, with every value known; a lone yes/no with nothing waiting says so; a new name never replaces
+  what's there.
+- **Logs:** `logs/<date>.jsonl` holds every turn Gab typed (not in git). They are the honest test set.
 
-Run: `node core/check.js` · `node core/train.js` · `node --test test/*.test.js` (31 pass) ·
-`node test/measure.js -v` (53 phrasings: 18 handled, 27 asked first, 4 wrong skill but asked, 0 wrong
-actions, 4 not understood).
+Run: `python3 -m termnl.check` · `python3 -m unittest` (60 pass) · `python3 -m tests.measure -v`
+(59 phrasings: 29 handled, 23 asked first, 4 wrong skill but asked, 0 wrong actions, 3 not understood).
 
 ## Open, in order of importance
 
-1. **The learning loop doesn't exist.** A "yes" to "I don't know “kill” yet…" returns `teach`, but
-   nothing saves or retrains. ptiLU's core promise (the inbox, retraining on the device) isn't built.
-2. **The test set is Claude's.** `test/phrasings.md` was written by Claude; one label was changed after
-   Gab's "open = go into" rule, and "open the ideas folder" was added to a skill. Gab's own sentences,
-   never trained on, are the honest measure. Test real conversations before trusting any number:
-   twice today a passing suite hid a failure Gab found in his first sentence.
-3. **Authoring** (`open-question-authoring.md`): the template grammar works but users can't write it,
-   and the `## Values` lines are obscure. Kept for now "until we find what breaks".
-4. **Shared words in two families:** "start" (create + open), "note" (file + markdown). ptiLU learned
-   that such words pull the wrong way (`brain/projects/ptilu/what-the-router-sees.md`).
-5. **Free names** (`open-question-free-names.md`): fixed for the cases tested; "make a new folder in
-   projects for the website" still answers "I don't see “projects for the website”".
-6. **Nothing runs.** No executor: listing a folder's files, finding a name in home, running the
-   declared command, the admin permission rule. Commands differ per board (nmcli, rfkill, thermal zone).
-7. **Results aren't read back.** Read skills reply with `{output}` raw; turning `df` or `free` output
-   into plain words is undesigned.
-8. **No context beyond a pending question.** Dialogflow-style contexts ("undo that", "and in ideas?")
-   aren't built.
-9. **Word embeddings for unknown words: tested, not worth it now.** GloVe-50 on the 26 untaught words of
-   the phrasings: 3 useful neighbours (warm → hot), 15 wrong (kill → bring, stop → out), because most
-   new words are context, not synonyms, and embeddings put opposites side by side. A better embedding
-   (Model2Vec, not reachable from the cloud session) could be tried with `tools/neighbours.py`.
-10. The model file is 430 KB of JSON floats; it can shrink (ptiLU stored 1-byte weights).
+1. **The learning loop.** A "yes" returns `teach`; nothing saves it. Decided (Gab): learning goes to an
+   inbox the person reviews, then "live training" on the device. Gab also said it only works if a person
+   can say "no, I meant another skill" or "this is new": **who writes a new skill** when the person
+   doesn't know the commands is his open question ("I need to sink a bit with it").
+2. **`termnl/agent.py` is 636 lines** and grew fix by fix today; read it as a whole and simplify before
+   adding more (ptiLU's lesson, `brain/projects/ptilu/review-2026-10-21.md`).
+3. **Permacomputing:** Gab wants the surface as light as possible. The model is 669 KB of JSON floats
+   (most weights tiny; ptiLU stored 1-byte weights).
+4. **The test set is still mostly Claude's** (`tests/phrasings.md`); Gab's sentences are its last section.
+   A passing suite hid a failure Gab found in his first sentence, twice today.
+5. **Authoring** (`open-question-authoring.md`): the template grammar works but people can't write it.
+6. **Shared words in two families:** "start" (create + open), "note" (file + markdown).
+7. **Not done:** Wi-Fi, Bluetooth and network replies are still raw command output; no "undo" or
+   Dialogflow-style context; pairing and keys deferred until the system proves itself.
+8. **Word embeddings for unknown words: tested, not worth it now** (this morning, another session).
+   GloVe-50 on the 26 untaught words of the phrasings: 3 useful neighbours (warm → hot), 15 wrong
+   (kill → bring, stop → out), because most new words are context, not synonyms, and embeddings put
+   opposites side by side. A better embedding (Model2Vec) could be tried with `tools/neighbours.py`.

@@ -36,7 +36,7 @@ TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": 
 class TermNL:
     def __init__(self, root=ROOT, home=None):
         self.root = root
-        self.lang = load_language("en", root)
+        self.lang = load_language("en")
         if self.lang["errors"]:
             raise SystemExit("\n".join(self.lang["errors"]))
         self.settings = load_settings(root)

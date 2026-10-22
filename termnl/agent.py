@@ -44,7 +44,7 @@ class Agent:
         self.pending = None
         self._here = None  # where you are, like a terminal's working folder: home at first
         self.last = None
-        answers = lists["answers"]
+        answers = lists["conversation"]
         joined = lambda key: {" ".join(p) for p in answers.get(key, [])}
         self.small = joined("small words")
         self.stops = joined("not a name start")
@@ -125,16 +125,16 @@ class Agent:
 
     def is_(self, toks, key):
         return any(len(ph) == len(toks) and all(toks[i]["word"] == w for i, w in enumerate(ph))
-                   for ph in self.lists["answers"].get(key, []))
+                   for ph in self.lists["conversation"].get(key, []))
 
     @staticmethod
     def original(text, toks, start, end):
         return text.translate(str.maketrans({"’": "'", "‘": "'", "`": "'"}))[toks[start]["start"]:toks[end - 1]["end"]]
 
     def negation(self, toks):
-        """the negation words said ("not", "don't"…), as written in en/answers.md"""
+        """the negation words said ("not", "don't"…), as written in words/conversation.md"""
         said = []
-        for ph in self.lists["answers"].get("negation", []):
+        for ph in self.lists["conversation"].get("negation", []):
             for i in range(len(toks) - len(ph) + 1):
                 if all(toks[i + j]["word"] == w for j, w in enumerate(ph)):
                     said.append(" ".join(ph))
@@ -148,8 +148,8 @@ class Agent:
     def clean(self, text):
         """Fillers ("please", "can you", "for me") are dropped at the start and end of a sentence."""
         toks = tokenize(text)
-        starts = self.lists["answers"].get("filler start", [])
-        ends = self.lists["answers"].get("filler end", [])
+        starts = self.lists["conversation"].get("filler start", [])
+        ends = self.lists["conversation"].get("filler end", [])
         at_start = lambda ph: len(ph) <= len(toks) and all(toks[i]["word"] == w for i, w in enumerate(ph))
         at_end = lambda ph: len(ph) <= len(toks) and all(toks[len(toks) - len(ph) + i]["word"] == w for i, w in enumerate(ph))
         changed = True
@@ -247,7 +247,7 @@ class Agent:
             return None
         vals, used = self.read_values(top["skill"], text, toks)
         taught = set(self.model["taught"].get(top["skill"]["id"], []))
-        negation = {w for ph in self.lists["answers"].get("negation", []) for w in ph}  # handled by its own rule
+        negation = {w for ph in self.lists["conversation"].get("negation", []) for w in ph}  # handled by its own rule
         unknown = [t["word"] for i, t in enumerate(toks) if i not in used and t["word"] not in self.small and t["word"] not in taught and t["word"] not in negation]
         return {"how": "model", "skill": top["skill"], "vals": vals, "p": top["p"], "unknown": unknown}
 
@@ -438,7 +438,7 @@ class Agent:
     def fill_pending(self, text, toks):
         """An answer to "Which folder?": a value on the list, or free text for a text value.
         "no" stops the request; "yes" answers nothing, so the question is asked again; "call it bikes"
-        gives the name after its lead-in words (en/answers.md, "before a name")."""
+        gives the name after its lead-in words (words/conversation.md, "before a name")."""
         p = self.pending
         skill, vals, slot, approved = p["skill"], p["vals"], p["slot"], p["approved"]
         if self.is_(toks, "no"):
@@ -451,7 +451,7 @@ class Agent:
             say = self.reply(ask) if ask else self.reply("unknown value", {"value": "“%s”" % (v.get("text") or v.get("label") or "")})
             return {"outcome": "ask", "skill": skill["id"], "say": say, "chips": self.chips(found)}
         if found is None:
-            leads = [ph for ph in self.lists["answers"].get("before a name", [])
+            leads = [ph for ph in self.lists["conversation"].get("before a name", [])
                      if len(ph) < len(toks) and all(toks[i]["word"] == w for i, w in enumerate(ph))]
             start = max((len(ph) for ph in leads), default=0)
             vals[slot] = {"text": self.original(text, toks, start, len(toks)) if toks else text.strip()}

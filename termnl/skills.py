@@ -39,10 +39,10 @@ def read_lists(files):
         m = re.match(r"^(.+?)\s*\((\w+)\)$", e["key"])
         value = m.group(1).strip() if m else e["key"]
         filetypes.append({"value": value, "ext": m.group(2) if m else value, "label": value, "phrases": [words(w) for w in e["words"]]})
-    answers = {e["key"]: [words(w) for w in e["words"]] for e in read_list(files["answers"])}
-    replies = {e["key"]: e["rest"] for e in read_list(files["answers"], "Replies")}
+    answers = {e["key"]: [words(w) for w in e["words"]] for e in read_list(files["conversation"])}
+    replies = {e["key"]: e["rest"] for e in read_list(files["conversation"], "Replies")}
     return {"refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
-            "answers": answers, "replies": replies}
+            "conversation": answers, "replies": replies}
 
 
 def section(md, name):
@@ -101,9 +101,9 @@ def check(skill, lists):
     if not does:
         say("no does: line")
     elif not action:
-        say('does: "%s" starts with no action from en/actions.md' % does)
+        say('does: "%s" starts with no action from words/actions.md' % does)
     elif obj not in lists["objects"]:
-        say('unknown object "%s" (en/objects.md)' % obj)
+        say('unknown object "%s" (words/objects.md)' % obj)
     if not skill["sentences"]:
         say("no sentences")
     used = set()

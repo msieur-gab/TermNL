@@ -9,7 +9,7 @@ skills_of = {}
 for sk, ws in taught.items():
     for w in ws: skills_of.setdefault(w, set()).add(sk)
 need = set(skills_of)
-lines = [re.match(r"^- ([\w-]+): (.+)$", l) for l in open("test/phrasings.md")]
+lines = [re.match(r"^- ([\w-]+): (.+)$", l) for l in open("tests/phrasings.md")]
 lines = [(m[1], m[2]) for m in lines if m]
 unknown = {}
 for want, text in lines:

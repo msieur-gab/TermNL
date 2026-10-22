@@ -21,20 +21,31 @@ Python 3.9 or newer, standard library only. Training the model needs numpy (`pyt
 
 ## Layout
 
-- `settings.md`: how much TermNL may do on this device (admin mode off by default).
-- `en/actions.md`, `en/objects.md`: the shared vocabulary, each word with the words people use for it.
-- `en/filetypes.md`: a shared list of values. `en/answers.md`: yes, no, fillers, and the agent's own replies.
-- `en/skills/<action>-<object>/skill.md`: one skill per action + object pair: its sentences, values,
-  command and replies.
-- `termnl/`: the brain (templates, model, dialogue), the device's own lists, the runner and the API.
-- `web/`: the chat page; `web/termnl-chat.js` is the chat itself, a component any page can hold.
-- `core/`, `tools/`, `docs/`: the first version, in JavaScript, and its playground, frozen on 22 Oct 2026
-  (commit c032e13, where the Python version gave the same replies on 139 turns). New work is in Python only.
-- `logs/`: every turn the server hears, one line of JSON per turn (kept out of git).
+    termnl/                     the system
+      languages/en/             everything English; another language is a copy of this folder
+        words/                  the shared vocabulary, each word with the words people use for it
+          actions.md            create, open, restart…
+          objects.md            file, folder, wifi…
+          filetypes.md          markdown → .md…
+          conversation.md       yes, no, fillers, the rules' word lists, and TermNL's own replies
+        skills/<action>-<object>/skill.md
+                                one skill per action + object: its sentences, values, command or
+                                reader, and replies
+        out-of-scope.md         what TermNL should not try to do
+        model.json              trained from the above: python3 -m termnl.train
+      agent.py                  the dialogue (templates, model, questions, approval)
+      readers.py                the device read in words people use (temperature, memory…)
+      device.py, runner.py      the device's own lists, and running a command
+      server.py                 the thin API and the chat page
+    web/                        the chat page; termnl-chat.js is the chat, a component any page can hold
+    tests/                      the dialogue tests, the readers, the measure on phrasings.md
+    tools/neighbours.py         a test of word embeddings for unknown words (22 Oct: not worth it yet)
+    settings.md                 this device's settings
+    logs/                       every turn the server hears, one line of JSON (kept out of git)
 
 ## Checks
 
     python3 -m termnl.check             # every skill file
-    python3 -m unittest                 # the dialogue
-    python3 -m tests.measure -v         # how the hand-written phrasings in tests/phrasings.md are understood
-    python3 -m termnl.train             # retrain model/en.json from the skill files
+    python3 -m unittest                 # the dialogue and the readers
+    python3 -m tests.measure -v         # how the phrasings in tests/phrasings.md are understood
+    python3 -m termnl.train             # retrain termnl/languages/en/model.json
