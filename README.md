@@ -28,8 +28,9 @@ Python 3.9 or newer, standard library only. Training the model needs numpy (`pyt
   command and replies.
 - `termnl/`: the brain (templates, model, dialogue), the device's own lists, the runner and the API.
 - `web/`: the chat page; `web/termnl-chat.js` is the chat itself, a component any page can hold.
-- `core/`, `tools/`, `docs/`: the first version, in JavaScript, and its playground. Kept until the
-  Python version has replaced it; `tests/` checks the two give the same replies.
+- `core/`, `tools/`, `docs/`: the first version, in JavaScript, and its playground, frozen on 22 Oct 2026
+  (commit c032e13, where the Python version gave the same replies on 139 turns). New work is in Python only.
+- `logs/`: every turn the server hears, one line of JSON per turn (kept out of git).
 
 ## Checks
 

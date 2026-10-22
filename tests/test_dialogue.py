@@ -244,6 +244,44 @@ class Dialogue(unittest.TestCase):
             a.hear("make a new folder")
             self.assertEqual(a.hear(said)["command"], "mkdir -p $HOME'/%s'" % name, said)
 
+    # Review of 22 Oct: a place the device doesn't have is asked about, never folded into the name.
+    def test_an_unknown_place_is_asked_never_swallowed_by_the_name(self):
+        for said in ["make a folder called seeds in garden", "create a note called groceries in garden"]:
+            a = agent()
+            r = a.hear(said)
+            self.assertEqual(r["outcome"], "ask", said)
+            self.assertIn("garden", r["say"])
+            self.assertIn("ideas", r["chips"])
+        a = agent()
+        a.hear("make a folder called seeds in garden")
+        self.assertEqual(a.hear("ideas")["command"], "mkdir -p $HOME'/ideas/seeds'")
+
+    def test_a_known_place_after_the_name_still_works(self):
+        self.assertEqual(agent().hear("make a folder called seeds in ideas")["command"], "mkdir -p $HOME'/ideas/seeds'")
+        self.assertEqual(agent().hear("create a note called photos of paris")["command"], "touch $HOME'/photos of paris.md'")
+
+    # Review of 22 Oct: a request with "not", "don't"… is never acted on as if it were positive.
+    def test_a_negated_request_is_never_acted_on(self):
+        for said in ["do not reboot the pi", "don't turn off the wifi", "don't create a folder called bikes", "never restart ssh"]:
+            a = agent({"admin mode": "on"})
+            r = a.hear(said)
+            self.assertEqual(r["outcome"], "ask", said)
+            self.assertIsNone(r.get("command"), said)
+            self.assertEqual(r["chips"], ["yes", "no"])
+        a = agent({"admin mode": "on"})
+        a.hear("do not reboot the pi")
+        self.assertEqual(a.hear("no")["outcome"], "abstain")
+
+    def test_a_negated_request_still_needs_its_approval_after_a_yes(self):
+        a = agent({"admin mode": "on"})
+        a.hear("I don't need wifi right now, switch it off")
+        self.assertEqual(a.hear("yes")["outcome"], "approve")
+        self.assertEqual(a.hear("yes")["command"], "nmcli radio wifi off")
+
+    def test_reading_is_not_held_back_by_a_negation(self):
+        for said in ["is the board not overheating", "is my memory not full"]:
+            self.assertEqual(agent().hear(said)["outcome"], "act", said)
+
 
 if __name__ == "__main__":
     unittest.main()

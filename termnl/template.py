@@ -72,14 +72,16 @@ def uses(nodes, acc=None):
     return acc
 
 
-def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset()):
+def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places=frozenset()):
     """Every way the words can be read by the template.
       refs:  name → [[word, ...], ...]               phrases for <name>
       slots: name → None (free text) | [{value, label, phrases: [[word...]]}]   a list
     A list value not on the list is still read: close to a listed one (a typo), it is marked fuzzy and
     confirmed; otherwise marked unknown and asked about. Free text never starts with a place word
     (stops: "in", "inside", "for"…), so a name can't swallow the place that follows it, and never
-    ends with an object word (ends: "folder", "file"…), so "the ideas folder" isn't a name."""
+    ends with an object word (ends: "folder", "file"…), so "the ideas folder" isn't a name. Nor does it
+    hold a place word with words after it (places: "in", "inside", "into"), so in "seeds in garden" the
+    garden is read as a place, and asked about when the device has none by that name."""
     out = []
     n = len(toks)
 
@@ -126,6 +128,8 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset()):
             for end in range(pos + 1, n + 1):
                 if found is None and toks[end - 1]["word"] in ends:
                     continue  # "the ideas folder" is a folder, not a name
+                if found is None and any(toks[j]["word"] in places for j in range(pos + 1, end - 1)):
+                    break  # "seeds in garden": the name stops before the place
                 cap = {"start": pos, "end": end}
                 if found is not None:
                     cap["unknown"] = True

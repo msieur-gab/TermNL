@@ -7,7 +7,7 @@ name:
 agent name:
 language: en
 show commands: on
-admin mode: off
+admin mode: on
 
 ## For this device
 

@@ -49,6 +49,8 @@ class Agent:
         self.small = joined("small words")
         self.stops = joined("not a name start")
         self.pointing = joined("pointing words")
+        self.places = joined("before a place")
+        self.reading = joined("reading actions")
         self.object_words = {ph[0] for o in lists["objects"] for ph in lists["refs"].get(o, []) if len(ph) == 1}
 
     # ---- the device, the settings, the lists
@@ -95,6 +97,15 @@ class Agent:
     def original(text, toks, start, end):
         return text.translate(str.maketrans({"’": "'", "‘": "'", "`": "'"}))[toks[start]["start"]:toks[end - 1]["end"]]
 
+    def negation(self, toks):
+        """the negation words said ("not", "don't"…), as written in en/answers.md"""
+        said = []
+        for ph in self.lists["answers"].get("negation", []):
+            for i in range(len(toks) - len(ph) + 1):
+                if all(toks[i + j]["word"] == w for j, w in enumerate(ph)):
+                    said.append(" ".join(ph))
+        return said
+
     def chips(self, found):
         return [o["label"] for o in found][:8] if found else []
 
@@ -126,7 +137,7 @@ class Agent:
         for skill in self.skills:
             every = []
             for nodes in skill["compiled"]:
-                every += parses(nodes, toks, self.lists["refs"], self.slot_lists(skill), self.stops, self.object_words)
+                every += parses(nodes, toks, self.lists["refs"], self.slot_lists(skill), self.stops, self.object_words, self.places)
             if every:
                 found.append((skill, best(every)))
         if not found:
@@ -202,7 +213,8 @@ class Agent:
             return None
         vals, used = self.read_values(top["skill"], text, toks)
         taught = set(self.model["taught"].get(top["skill"]["id"], []))
-        unknown = [t["word"] for i, t in enumerate(toks) if i not in used and t["word"] not in self.small and t["word"] not in taught]
+        negation = {w for ph in self.lists["answers"].get("negation", []) for w in ph}  # handled by its own rule
+        unknown = [t["word"] for i, t in enumerate(toks) if i not in used and t["word"] not in self.small and t["word"] not in taught and t["word"] not in negation]
         return {"how": "model", "skill": top["skill"], "vals": vals, "p": top["p"], "unknown": unknown}
 
     # ---- filling in, approving, acting
@@ -496,11 +508,18 @@ class Agent:
             labels = [f["skill"]["label"] for f in u["options"]]
             return {"outcome": "ask", "say": self.reply("choose", {"options": " or ".join(labels)}), "chips": labels}
         self.pending = None
+        skill = u["skill"]
+        # "do not reboot", "don't turn off the wifi": a request that changes something is never acted on
+        # when it says no; it is asked about, and its approval, if any, still comes after the yes
+        negated = self.negation(toks)
+        if negated and skill["action"] not in self.reading:
+            self.pending = {"waiting": "understand", "skill": skill, "vals": u["vals"], "text": text, "approves": False}
+            return {"outcome": "ask", "skill": skill["id"], "chips": ["yes", "no"],
+                    "say": self.reply("negated", {"words": ", ".join(negated), "label": skill["label"]})}
         if sure:
             return self.resolve(u["skill"], u["vals"])
 
         # understood, but not surely: ask before doing anything, naming the words it doesn't know
-        skill = u["skill"]
         if skill["admin"] and not self.on("admin mode"):
             return {"outcome": "abstain", "skill": skill["id"], "say": self.reply("sounds like", {"label": skill["label"]}), "reason": "admin mode off"}
         label = skill["label"]
