@@ -3,7 +3,7 @@ import random as _random
 import re
 
 # A word: letters of any alphabet or digits, with . _ - ' inside (seed.md, wi-fi, what's).
-WORD_RE = re.compile(r"\w(?:[\w.\-']*\w)?")
+WORD_RE = re.compile(r"\w(?:[\w.\-']*\w)?|\.\.")  # and "..", the folder above (cd ..)
 QUOTES = str.maketrans({"’": "'", "‘": "'", "`": "'"})
 
 

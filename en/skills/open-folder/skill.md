@@ -2,6 +2,7 @@
 does: open folder
 label: go into a folder
 moves: place
+reads: folder
 admin: no
 approve: no
 ---
@@ -17,11 +18,15 @@ approve: no
 
 - place: @sys.folder, required
 
-## Command
-
-ls {place}
-
 ## Replies
 
 - ask place: Which folder? | Where to?
-- done: You're in {place} now. {output} | Now in {place}. {output}
+
+## When it's fine
+
+- You're in {place} now:
+- Now in {place}:
+
+## When it's empty
+
+- You're in {place} now. It's empty.

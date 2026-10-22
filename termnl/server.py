@@ -102,12 +102,15 @@ class TermNL:
         """a reading skill: the device reads itself, and the reply is the one written for what it found"""
         skill = next(s for s in self.lang["skills"] if s["id"] == r["skill"])
         try:
-            found = readers.read(r.pop("reads"))
+            kinds = {k: v["kind"] for k, v in skill["values"].items()}
+            args = {k: self.device.path(v) if kinds.get(k) == "@sys.folder" else v for k, v in r.pop("args", {}).items()}
+            found = readers.read(r.pop("reads"), **args)
         except (OSError, ValueError, KeyError, IndexError) as e:
             r["ran"], r["say"] = "failed", a.reply("failed", {"error": str(e)})
             return
         lines = skill["when"].get(found["level"])
-        r["say"] = fill(random.choice(lines), {**found["values"], "user": self.settings.get("name") or ""}) if lines else a.reply("cannot read")
+        said = {k: v for k, v in r.pop("values", {}).items() if k != "output"}
+        r["say"] = fill(random.choice(lines), {**said, **found["values"], "user": self.settings.get("name") or ""}) if lines else a.reply("cannot read")
         r["ran"], r["level"] = "read", found["level"]
         if found.get("table"):
             r["table"] = found["table"]

@@ -8,6 +8,7 @@ approve: no
 ## Sentences
 
 - `<restart> [the] <system>`
+- `(reboot|restart) [now|everything|it all]`
 
 ## Command
 

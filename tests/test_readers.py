@@ -1,4 +1,5 @@
 """The device's readers on this machine, and the reply chosen for what they find."""
+import tempfile
 import unittest
 
 from termnl import readers
@@ -8,8 +9,9 @@ from termnl.server import TermNL
 
 class Readers(unittest.TestCase):
     def test_every_reader_gives_a_level_it_declares_and_its_values(self):
+        args = {"folder": {"place": tempfile.gettempdir()}}
         for name, (_, levels, names) in readers.READERS.items():
-            r = readers.read(name)
+            r = readers.read(name, **args.get(name, {}))
             self.assertIn(r["level"], levels, name)
             for n in names:
                 self.assertIn(readers.placeholder(name, n), r["values"], name)

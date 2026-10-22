@@ -6,6 +6,7 @@ Its replies use the reader's values ({@sys.memory.used}) and are chosen by the r
 
 Each reader only reads (files under /proc and /sys, or a read-only command) and never changes the
 device. The thresholds live here, written once per kind of board, so a skill author never needs them."""
+import datetime
 import os
 import platform
 import subprocess
@@ -173,6 +174,31 @@ def health():
             "table": {"columns": ["", "Now", ""], "rows": rows}}
 
 
+def folder(place):
+    """what a folder holds: folders first, then files, newest change shown as a date"""
+    try:
+        names = sorted(n for n in os.listdir(place) if not n.startswith("."))
+    except OSError:
+        names = []
+    rows = []
+    today = datetime.date.today()
+    for n in sorted(names, key=lambda n: (not os.path.isdir(os.path.join(place, n)), n.lower())):
+        p = os.path.join(place, n)
+        try:
+            st = os.stat(p)
+        except OSError:
+            continue
+        is_dir = os.path.isdir(p)
+        kind = "folder" if is_dir else (os.path.splitext(n)[1][1:].lower() + " file" if "." in n else "file")
+        when = datetime.datetime.fromtimestamp(st.st_mtime)
+        changed = when.strftime("today %H:%M") if when.date() == today else when.strftime("%-d %b %Y")
+        rows.append([n, kind, "" if is_dir else _size(st.st_size // 1024 or (1 if st.st_size else 0)), changed])
+    more = len(rows) - 30
+    rows = rows[:30] + ([["… and %d more" % more, "", "", ""]] if more > 0 else [])
+    return {"level": "fine" if names else "empty", "values": {"count": str(len(names))},
+            "table": {"columns": ["Name", "Kind", "Size", "Changed"], "rows": rows} if names else None}
+
+
 # name → (reader, its levels, its values; "" is the main one: {@sys.temperature})
 READERS = {
     "memory": (memory, ["fine", "high", "full"], ["used", "total", "free", "percent"]),
@@ -180,13 +206,14 @@ READERS = {
     "storage": (storage, ["fine", "filling up", "full"], ["free", "total", "percent"]),
     "processes": (processes, ["fine"], ["top", "count"]),
     "system": (system, ["fine"], ["model", "os"]),
+    "folder": (folder, ["fine", "empty"], ["count"]),
     "health": (health, ["fine", "busy", "struggling"], ["temperature", "memory", "disk", "uptime"]),
 }
 
 
-def read(name):
+def read(name, **args):
     """→ {level, values: {"@sys.<name>.<value>": text, "@sys.<name>": main}, table?}"""
-    r = READERS[name][0]()
+    r = READERS[name][0](**args)
     r["values"] = {placeholder(name, k): v for k, v in r["values"].items()}
     return r
 

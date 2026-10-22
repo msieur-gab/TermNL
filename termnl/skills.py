@@ -129,8 +129,9 @@ def check(skill, lists):
             say('value %s: unknown kind "%s"' % (name, k))
         if v["required"] and not v.get("default") and ("ask " + name) not in skill["replies"]:
             say('value %s is required but has no "ask %s" reply' % (name, name))
-        if name not in used and ("{%s}" % name) not in skill["command"]:
-            say("value %s is used by no sentence and no command" % name)
+        in_replies = any("{%s}" % name in l for lines in skill["when"].values() for l in lines)
+        if name not in used and ("{%s}" % name) not in skill["command"] and not in_replies:
+            say("value %s is used by no sentence, no command and no reply" % name)
     for m in re.finditer(r"\{(\w+)\}", skill["command"]):
         if m.group(1) not in skill["values"]:
             say("command uses {%s}, not declared" % m.group(1))
@@ -140,7 +141,7 @@ def check(skill, lists):
             say('reads: "%s" is no reader (termnl/readers.py: %s)' % (skill["reads"], ", ".join(READERS)))
         else:
             _, levels, names = reader
-            known = {placeholder(skill["reads"], n) for n in names} | {"user"}
+            known = {placeholder(skill["reads"], n) for n in names} | {"user"} | set(skill["values"])
             for level in levels:
                 if level != "unknown" and not skill["when"].get(level):
                     say("""no "## When it's %s" replies""" % level)

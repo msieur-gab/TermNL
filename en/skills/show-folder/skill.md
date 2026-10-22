@@ -1,6 +1,7 @@
 ---
 does: show folder
 label: show a folder
+reads: folder
 admin: no
 approve: no
 ---
@@ -9,15 +10,22 @@ approve: no
 
 - `<show> [me] [the|my] {place} [<folder>]`
 - `(what's|what is) in [the|my] {place} [<folder>]`
+- `(what's|what is) (here|in here|in this <folder>)`
+- `what do i have (in|inside) [the|my] {place} [<folder>]`
+- `what do i have here`
+- `<show> [me] [all] [the|my] (<file>|<folder>|things) [(in|inside|of) [the|my] {place} [<folder>]]`
+- `(what|which) <file> (are|do i have) [(here|in [the|my] {place} [<folder>])]`
 
 ## Values
 
 - place: @sys.folder, default: here
 
-## Command
+## When it's fine
 
-ls {place}
+- In {place}:
+- Here's what {place} holds:
 
-## Replies
+## When it's empty
 
-- done: In {place}: {output}
+- {place} is empty.
+- There's nothing in {place} yet.

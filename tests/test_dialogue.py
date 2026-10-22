@@ -149,7 +149,8 @@ class Dialogue(unittest.TestCase):
     # inside its directory"). Files are found on the device, not assumed.
     def test_opening_a_folder_goes_into_it_a_file_is_then_opened_there(self):
         a = agent()
-        self.assertEqual(a.hear("open the documents folder")["command"], "ls $HOME'/Documents'")
+        r = a.hear("open the documents folder")
+        self.assertEqual((r["reads"], r["args"]), ("folder", {"place": "$HOME/Documents"}))
         self.assertEqual(a.here["label"], "Documents")
         self.assertEqual(a.hear("open note.md")["command"], "xdg-open $HOME'/Documents/note.md'")
 
@@ -300,6 +301,38 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(agent().hear("what is this device configuration")["skill"], "show-system")
         for said in ["what is taking my memory", "what is consuming my ram"]:
             self.assertEqual(agent().hear(said)["skill"], "show-process", said)
+
+
+    # Gab's second run, 22 Oct: "list the files inside my home", "cd ..".
+    def test_listing_a_folders_files(self):
+        for said, place in [("list the files inside my home", "$HOME"), ("what do I have in downloads", "$HOME/Downloads"),
+                            ("show me the files in documents", "$HOME/Documents"), ("list my files", "$HOME")]:
+            r = agent().hear(said)
+            self.assertEqual((r["outcome"], r.get("skill"), r.get("reads")), ("act", "show-folder", "folder"), said)
+            self.assertEqual(r["args"]["place"], place, said)
+        a = agent()
+        a.hear("go to ideas")
+        self.assertEqual(a.hear("what's in here")["args"]["place"], "$HOME/ideas")
+
+    def test_the_same_request_without_the_unknown_place_uses_where_you_are(self):
+        a = agent()
+        self.assertEqual(a.hear("what do I have in the garden")["outcome"], "ask")
+        r = a.hear("list my files")
+        self.assertEqual((r["outcome"], r["args"]["place"]), ("act", "$HOME"))
+
+    def test_going_up_a_folder(self):
+        for said in ["cd ..", "go back", "go up a folder", "leave this folder"]:
+            a = agent()
+            a.hear("go to documents")
+            r = a.hear(said)
+            self.assertEqual((r["outcome"], r.get("skill")), ("act", "leave-folder"), said)
+            self.assertEqual(a.here["label"], "home", said)
+
+    def test_going_up_from_home_says_so(self):
+        r = agent().hear("cd ..")
+        self.assertEqual(r["outcome"], "abstain")
+        self.assertIn("home", r["say"])
+        self.assertEqual(agent().here["label"], "home")
 
 
 if __name__ == "__main__":

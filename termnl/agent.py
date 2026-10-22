@@ -244,6 +244,14 @@ class Agent:
                 continue
             if spec.get("default") == "here":
                 vals[k] = dict(self.here)
+            elif spec.get("default") == "parent":
+                here = self.here
+                if here["value"] == "$HOME":
+                    self.pending = None
+                    return {"outcome": "abstain", "skill": skill["id"], "say": self.reply("already home"), "reason": "already home"}
+                up = here["value"].rsplit("/", 1)[0]
+                found = next((f for f in self.sys("folder") if f["value"] == up), None)
+                vals[k] = {"value": up, "label": found["label"] if found else up.rsplit("/", 1)[-1]}
             elif spec.get("default"):
                 found = self.list_of(spec["kind"])
                 d = spec["default"]
@@ -362,7 +370,8 @@ class Agent:
             v = vals[skill["moves"]]
             self._here = {"value": v["value"], "label": v["label"]}
         if skill["reads"]:  # the device reads itself; the reply is chosen once it has (server.py)
-            return {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"]}
+            args = {k: v["value"] if v.get("value") is not None else v.get("text") for k, v in vals.items()}
+            return {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"], "args": args, "values": self.display(skill, vals)}
         return self.with_show({"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"], self.display(skill, vals)), "command": command}, skill, vals)
 
     def fill_pending(self, text, toks):
@@ -495,6 +504,12 @@ class Agent:
             other = sure and u["skill"]["id"] != p["skill"]["id"] and (u["how"] == "template" or says_action)
             if not other:
                 if sure and u["skill"]["id"] == p["skill"]["id"]:
+                    # "list my files" after "Which one?": said again without the value, its default applies
+                    spec = p["skill"]["values"][p["slot"]]
+                    if p["slot"] not in u["vals"] and spec.get("default") and (p["vals"].get(p["slot"]) or {}).get("unknown"):
+                        del p["vals"][p["slot"]]
+                        self.last, self.pending = None, None
+                        return self.resolve(p["skill"], p["vals"], p["approved"])
                     for k, v in u["vals"].items():
                         if not p["vals"].get(k) or p["vals"][k].get("unknown"):
                             p["vals"][k] = v
