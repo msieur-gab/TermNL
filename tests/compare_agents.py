@@ -1,4 +1,4 @@
-"""python3 -m tests.compare_agents [-v] — agent.py and agent_v2.py, side by side, reply by reply.
+"""python3 -m tests.compare_agents [-v] — agent.py and back_agent.py, side by side, reply by reply.
 
 Plays the same conversations through both: the test conversations and the phrasings (pretend device),
 and every turn people typed (logs/, read against this machine's own lists, with admin mode and show
@@ -9,8 +9,8 @@ import os
 import re
 import sys
 
-from termnl import agent as v1
-from termnl import agent_v2 as v2
+from termnl import agent as v2
+from termnl import back_agent as v1
 from termnl.device import Device
 from termnl.load import ROOT, load_language, load_settings
 from tests.device import device as pretend
@@ -20,7 +20,7 @@ here = os.path.join(ROOT, "tests")
 conversations = [(s, t, pretend) for s, t in json.load(open(os.path.join(here, "conversations.json"), encoding="utf-8"))]
 conversations += [({"admin mode": "on"}, [m.group(1)], pretend) for m in
                   (re.match(r"^- [\w-]+: (.+)$", l) for l in open(os.path.join(here, "phrasings.md"), encoding="utf-8").read().split("\n")) if m]
-real = Device(load_settings().get("home") or "~/TermNL-home")
+real = Device(load_settings().get("home") or "~/TermNL-home", home_names=[" ".join(p) for p in lang["lists"]["conversation"]["home folder"]])
 for f in sorted(glob.glob(os.path.join(ROOT, "logs", "*.jsonl"))):
     by = {}
     for line in open(f, encoding="utf-8"):

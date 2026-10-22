@@ -10,6 +10,8 @@ Words for the conversation itself, outside any skill.
 - filler end: please, for me, now, thanks, thank you
 - not a name start: in, inside, into, to, on, at, under, from, for, with, of, by
 - before a place: in, inside, into
+- name ends before: in, inside, into, on, at, to, under
+- home folder: home, home folder, my home
 - negation: not, don't, dont, never, doesn't, won't, shouldn't
 - reading actions: check, show, find
 - before a name: call it, name it, let's call it, called, named, titled, it's called, the name is

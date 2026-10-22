@@ -3,21 +3,12 @@ with its optional words in and out, each alternative, each word for its action a
 sample values. Authors write a few readable lines; the model learns from all their variations."""
 from .text import words
 
-# Sample values for training only. Real values come from the device at run time.
-SAMPLES = {
-    "text": ["bikes", "recipes", "notes", "todo", "draft", "seed.md", "photos 2024", "ideas for the trip", "report", "budget"],
-    "secret": ["hunter2", "s3cret"],
-    "@sys.folder": ["documents", "downloads", "photos", "music", "projects", "my home folder", "ideas"],
-    "@sys.service": ["ssh", "nginx", "the web server", "docker", "the music server", "bluetooth service"],
-    "@sys.network": ["home", "office wifi", "cafe"],
-    "@sys.app": ["terminal", "firefox", "the browser", "editor", "files"],
-}
-
 
 def samples_for(kind, lists):
+    """sample values for training only (words/samples.md); real values come from the device at run time"""
     if kind == "filetype":
         return [" ".join(p) for t in lists["filetypes"] for p in t["phrases"]]
-    return SAMPLES.get(kind, SAMPLES["text"])
+    return lists["samples"].get(kind) or lists["samples"]["text"]
 
 
 def walk(nodes, lists, skill, rnd):

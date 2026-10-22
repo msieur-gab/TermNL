@@ -10,7 +10,6 @@ import os
 import subprocess
 import time
 
-HOME_NAMES = ["home", "home folder", "my home"]
 
 
 def _run(args):
@@ -21,8 +20,9 @@ def _run(args):
 
 
 class Device:
-    def __init__(self, home, fresh=3):
+    def __init__(self, home, fresh=3, home_names=("home",)):
         self.home = os.path.abspath(os.path.expanduser(home))
+        self.home_names = list(home_names)  # what people call it (conversation.md, "home folder")
         self.fresh = fresh
         self._cache = {}
 
@@ -31,7 +31,7 @@ class Device:
         return self.home + value[5:] if value.startswith("$HOME") else value
 
     def _folders(self, depth=4):
-        out = [{"value": "$HOME", "names": HOME_NAMES}]
+        out = [{"value": "$HOME", "names": self.home_names}]
         for root, dirs, _ in os.walk(self.home):
             dirs[:] = sorted(d for d in dirs if not d.startswith("."))
             if root[len(self.home):].count(os.sep) >= depth:

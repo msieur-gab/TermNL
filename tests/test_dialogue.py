@@ -4,7 +4,7 @@ import unittest
 import importlib
 import os
 
-# TERMNL_AGENT=termnl.agent_v2 python3 -m unittest: the same tests for the second version
+# TERMNL_AGENT=termnl.back_agent python3 -m unittest: the same tests for the version before
 Agent = importlib.import_module(os.environ.get("TERMNL_AGENT", "termnl.agent")).Agent
 from termnl.load import load_language
 from tests.device import device

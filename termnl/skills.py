@@ -41,7 +41,8 @@ def read_lists(files):
         filetypes.append({"value": value, "ext": m.group(2) if m else value, "label": value, "phrases": [words(w) for w in e["words"]]})
     answers = {e["key"]: [words(w) for w in e["words"]] for e in read_list(files["conversation"])}
     replies = {e["key"]: e["rest"] for e in read_list(files["conversation"], "Replies")}
-    return {"refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
+    samples = {e["key"]: e["words"] for e in read_list(files["samples"])}
+    return {"samples": samples, "refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
             "conversation": answers, "replies": replies}
 
 

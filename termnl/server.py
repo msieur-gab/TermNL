@@ -35,16 +35,17 @@ TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": 
 
 
 class TermNL:
-    def __init__(self, root=ROOT, home=None, agent="v1"):
+    def __init__(self, root=ROOT, home=None, agent="agent"):
         self.root = root
-        # v1: agent.py; v2: agent_v2.py, the same behaviour rewritten, kept side by side for testing
+        # agent: agent.py; back: back_agent.py, the version before it, kept for comparison
         self.version = agent
-        self.Agent = importlib.import_module(".agent" if agent == "v1" else ".agent_" + agent, __package__).Agent
+        self.Agent = importlib.import_module(".agent" if agent == "agent" else ".back_agent", __package__).Agent
         self.lang = load_language("en")
         if self.lang["errors"]:
             raise SystemExit("\n".join(self.lang["errors"]))
         self.settings = load_settings(root)
-        self.device = Device(home or self.settings.get("home") or "~/TermNL-home")
+        self.device = Device(home or self.settings.get("home") or "~/TermNL-home",
+                             home_names=[" ".join(p) for p in self.lang["lists"]["conversation"].get("home folder", [["home"]])])
         os.makedirs(self.device.home, exist_ok=True)
         self.sessions = {}
         self.lock = threading.Lock()
@@ -189,7 +190,7 @@ def main():
     p.add_argument("--host", default="127.0.0.1", help="address to answer on (default: this machine only)")
     p.add_argument("--port", type=int, default=8810)
     p.add_argument("--home", help="the folder home means, instead of settings.md's (for trying things out)")
-    p.add_argument("--agent", default="v1", choices=["v1", "v2"], help="which dialogue: agent.py (v1) or agent_v2.py (v2)")
+    p.add_argument("--agent", default="agent", choices=["agent", "back"], help="which dialogue: agent.py, or back_agent.py (the version before)")
     a = p.parse_args()
     app = TermNL(home=a.home, agent=a.agent)
     print("TermNL (agent %s) on http://%s:%d — home: %s" % (a.agent, a.host, a.port, app.device.home))
