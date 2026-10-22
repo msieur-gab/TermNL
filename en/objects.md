@@ -13,3 +13,4 @@ The kinds of things acted on. Each line: the object, then the words people use f
 - file: file, document, note
 - folder: folder, directory, dir
 - app: app, application, program
+- process: process, processes, task, tasks, thread, threads

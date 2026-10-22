@@ -361,6 +361,8 @@ class Agent:
         if skill["moves"] and vals.get(skill["moves"]):
             v = vals[skill["moves"]]
             self._here = {"value": v["value"], "label": v["label"]}
+        if skill["reads"]:  # the device reads itself; the reply is chosen once it has (server.py)
+            return {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"]}
         return self.with_show({"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"], self.display(skill, vals)), "command": command}, skill, vals)
 
     def fill_pending(self, text, toks):
@@ -470,6 +472,9 @@ class Agent:
             if chosen:
                 self.pending = None
                 return self.resolve(chosen["skill"], chosen["vals"])
+        # a lone yes or no with nothing waiting (an old chip, a question lost): say so, don't guess
+        if not self.pending and (self.is_(toks, "yes") or self.is_(toks, "no")):
+            return {"outcome": "abstain", "say": self.reply("nothing waiting"), "reason": "nothing waiting"}
         if self.is_(toks, "help"):
             self.pending = None
             names = [s["label"] for s in self.skills]

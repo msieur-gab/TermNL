@@ -58,7 +58,7 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(r["outcome"], "ask")
         self.assertIn("movie", r["unknown"])
         y = a.hear("yes")
-        self.assertEqual(y["command"], "df -h /")
+        self.assertEqual((y["outcome"], y["reads"]), ("act", "storage"))
         self.assertEqual(y["teach"], {"skill": "check-storage", "text": "is there enough space for a movie"})
 
     def test_nothing_understood_abstain_and_the_sentence_goes_to_the_inbox(self):
@@ -281,6 +281,25 @@ class Dialogue(unittest.TestCase):
     def test_reading_is_not_held_back_by_a_negation(self):
         for said in ["is the board not overheating", "is my memory not full"]:
             self.assertEqual(agent().hear(said)["outcome"], "act", said)
+
+
+    # Gab's first test on Eve, 22 Oct: seven "yes" in a row after his question was lost.
+    def test_a_lone_yes_or_no_with_nothing_waiting_says_so(self):
+        for said in ["yes", "no"]:
+            r = agent().hear(said)
+            self.assertEqual(r["reason"], "nothing waiting")
+            self.assertIsNone(r.get("skill"))
+
+    # A skill that only reads names its reader: no command, the reply comes from what the device says.
+    def test_a_reading_skill_reads_instead_of_running_a_command(self):
+        r = agent().hear("how hot is the board")
+        self.assertEqual((r["outcome"], r["reads"]), ("act", "temperature"))
+        self.assertIsNone(r.get("command"))
+
+    def test_gabs_new_sentences_reach_the_new_skills(self):
+        self.assertEqual(agent().hear("what is this device configuration")["skill"], "show-system")
+        for said in ["what is taking my memory", "what is consuming my ram"]:
+            self.assertEqual(agent().hear(said)["skill"], "show-process", said)
 
 
 if __name__ == "__main__":

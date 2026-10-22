@@ -1,6 +1,7 @@
 ---
 does: check storage
 label: check storage
+reads: storage
 admin: no
 approve: no
 ---
@@ -14,10 +15,15 @@ approve: no
 - `<check> [the] <storage>`
 - `<storage> [usage|left]`
 
-## Command
+## When it's fine
 
-df -h /
+- You have {@sys.storage.free} free on the main disk, out of {@sys.storage.total}.
+- Plenty of room: {@sys.storage.free} free.
 
-## Replies
+## When it's filling up
 
-- done: Storage: {output} | Here's the space: {output}
+- The disk is filling up: {@sys.storage.free} left of {@sys.storage.total}.
+
+## When it's full
+
+- The disk is almost full: only {@sys.storage.free} left. Some things may stop working until you make room.

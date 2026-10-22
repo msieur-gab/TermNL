@@ -36,4 +36,6 @@ Words for the conversation itself, outside any skill.
 - failed: That didn't work: {error} | It didn't work: {error}
 - simulated: On this device I only pretend to {label}: nothing ran. | Simulated here: I would {label}, but nothing ran.
 - negated: You said “{words}”. Do you want me to {label}, or not? | I heard “{words}”. Should I {label}?
+- nothing waiting: Nothing is waiting for an answer right now. What would you like to do? | There's no question waiting. What can I do for you?
+- cannot read: I can't read that on this device.
 - sounds like: That sounds like "{label}", which needs admin mode. You can turn it on in your settings.

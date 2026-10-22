@@ -58,3 +58,12 @@ folder goes into it.)
 - open-app: I need a terminal
 - open-app: start firefox
 - open-app: can I get the browser
+
+## Gab's own sentences, from his first test on Eve (22 Oct 2026, logs/)
+
+- check-storage: how much spac is left on my drive
+- turn-on-bluetooth: activate the bluetoth
+- show-system: what is this device configuration
+- show-process: is there any acitve threads
+- show-process: what is taking my memory
+- show-process: what is consuming my ram

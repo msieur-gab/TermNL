@@ -5,6 +5,7 @@
   admin: no          needs admin rights (only runs with admin mode on, after approval)
   approve: no        always asks for approval first (destructive, or cuts a connection)
   moves: place       after it runs, you are in that folder (open folder)
+  reads: memory      a skill that only reads: the device reads itself (readers.py), no command
   ---
   ## Sentences       templates (template.py), each in `backticks` so <action> and
                      <object> show as written on GitHub instead of vanishing as HTML tags
@@ -13,11 +14,14 @@
                        @sys.file: a file that must exist, found in the place or anywhere in home
   ## Command         one line; {value} is filled in and quoted
   ## Replies         - key: variant | variant
+  ## When it's high  (a reading skill) one reply per line, for when the reader says "high"; the
+                     reader's values are written {@sys.memory.used}, the person's name {user}
 
 Kinds: text, secret, a shared list (filetype), or a device list (@sys.folder, @sys.service,
 @sys.network, @sys.app)."""
 import re
 
+from .readers import READERS, placeholder
 from .template import compile_template, uses
 from .text import read_list, read_pairs, words
 
@@ -69,9 +73,18 @@ def read_skill(id, md):
     command = next((c for c in (re.sub(r"^`+|`+$", "", l.strip()) for l in (section(md, "Command") or []))
                     if c and not c.startswith("#")), "")
     replies = {e["key"]: e["rest"] for e in read_list(md, "Replies")}
+    when, at = {}, None
+    for line in md.split("\n"):
+        m = re.match(r"^## when (?:it's|it is) (.+?)\s*$", line.strip(), re.I)
+        if m:
+            at = when.setdefault(m.group(1).lower(), [])
+        elif line.startswith("## "):
+            at = None
+        elif at is not None and line.startswith("- "):
+            at.append(line[2:].strip())
     yes = lambda k: bool(re.match(r"^yes$", meta.get(k, ""), re.I))
     return {"id": id, "does": meta.get("does", ""), "label": meta.get("label") or meta.get("does") or id,
-            "admin": yes("admin"), "approve": yes("approve"), "moves": meta.get("moves", ""),
+            "admin": yes("admin"), "approve": yes("approve"), "moves": meta.get("moves", ""), "reads": meta.get("reads", ""), "when": when,
             "sentences": sentences, "values": values, "command": command, "replies": replies}
 
 
@@ -121,7 +134,26 @@ def check(skill, lists):
     for m in re.finditer(r"\{(\w+)\}", skill["command"]):
         if m.group(1) not in skill["values"]:
             say("command uses {%s}, not declared" % m.group(1))
-    if "done" not in skill["replies"]:
+    if skill["reads"]:
+        reader = READERS.get(skill["reads"])
+        if not reader:
+            say('reads: "%s" is no reader (termnl/readers.py: %s)' % (skill["reads"], ", ".join(READERS)))
+        else:
+            _, levels, names = reader
+            known = {placeholder(skill["reads"], n) for n in names} | {"user"}
+            for level in levels:
+                if level != "unknown" and not skill["when"].get(level):
+                    say("""no "## When it's %s" replies""" % level)
+            for level, lines in skill["when"].items():
+                if level not in levels:
+                    say("""## When it's %s: the %s reader says %s""" % (level, skill["reads"], ", ".join(levels)))
+                for l in lines:
+                    for m in re.finditer(r"\{([\w@.]+)\}", l):
+                        if m.group(1) not in known:
+                            say("""## When it's %s uses {%s}; the %s reader gives %s""" % (level, m.group(1), skill["reads"], ", ".join("{%s}" % k for k in sorted(known))))
+        if skill["command"]:
+            say("a skill that reads has no command")
+    elif "done" not in skill["replies"]:
         say('no "done" reply')
     if (skill["admin"] or skill["approve"]) and "approve" not in skill["replies"]:
         say('needs approval but has no "approve" reply')

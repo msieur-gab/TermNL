@@ -14,10 +14,17 @@ const css = `
   .simulated { color: var(--warn); } .failed { color: var(--bad); }
   .cmd { font: 13px/1.4 ui-monospace, "Departure Mono", monospace; background: var(--code); padding: 6px 10px;
          border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  table { border-collapse: collapse; font-size: 14px; background: var(--surface); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; color: var(--muted); font-size: 12px; }
+  tr:last-child td { border-bottom: 0; }
+  td.high, td.warm, td.busy, td.filling-up { color: var(--warn); } td.full, td.hot, td.struggling { color: var(--bad); }
+  .scroll { max-width: 100%; overflow-x: auto; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   button { font: inherit; cursor: pointer; }
   .chip { border: 1px solid var(--accent); background: none; color: var(--accent); border-radius: 999px; padding: 4px 12px; }
-  .chip:hover { background: var(--accent); color: var(--on-accent); }
+  .chip:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); }
+  .chip:disabled { opacity: .4; cursor: default; }
   form { display: flex; gap: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
   input { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
           background: var(--surface); color: var(--text); }
@@ -51,6 +58,8 @@ class TermNLChat extends HTMLElement {
   async say(text) {
     text = text.trim();
     if (!text) return;
+    // the question those chips answered is over: an old chip can't be tapped again
+    for (const b of this.log.querySelectorAll(".chip")) b.disabled = true;
     this.log.append(this.el("div", "you", text));
     let r;
     try { r = await this.post("/api/say", { text }); }
@@ -62,6 +71,7 @@ class TermNLChat extends HTMLElement {
   show(r) {
     const turn = this.el("div", "turn");
     turn.append(this.el("div", "say", r.say));
+    if (r.table) turn.append(this.table(r.table));
     if (r.show) turn.append(this.el("div", "cmd", (r.ran === "ran" ? "ran: " : r.outcome === "approve" ? "would run: " : r.ran ? r.ran + ": " : "") + "$ " + r.show));
     if (r.output) turn.append(this.el("div", "cmd", r.output));
     const meta = this.el("div", "meta");
@@ -79,6 +89,15 @@ class TermNLChat extends HTMLElement {
     }
     this.log.append(turn);
     this.log.scrollTop = this.log.scrollHeight;
+  }
+
+  // a reader's table: columns, then rows; a cell naming a level (high, hot…) is coloured
+  table({ columns, rows }) {
+    const wrap = this.el("div", "scroll"), t = this.el("table");
+    if (columns.some(Boolean)) { const tr = this.el("tr"); for (const c of columns) tr.append(this.el("th", "", c)); t.append(tr); }
+    for (const row of rows) { const tr = this.el("tr"); for (const c of row) tr.append(this.el("td", c.replace(/ /g, "-"), c)); t.append(tr); }
+    wrap.append(t);
+    return wrap;
   }
 
   async reset() { await this.post("/api/reset", {}); this.log.replaceChildren(); }

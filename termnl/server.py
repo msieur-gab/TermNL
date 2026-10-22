@@ -14,15 +14,18 @@ import argparse
 import datetime
 import json
 import os
+import random
 import re
 import socket
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from . import readers
 from .agent import Agent
 from .device import Device
 from .load import ROOT, load_language, load_settings
 from .runner import run
+from .text import fill
 
 WEB = os.path.join(ROOT, "web")
 LOGS = os.path.join(ROOT, "logs")
@@ -68,7 +71,9 @@ class TermNL:
             a = self.agent(session)
             r = a.hear(text)
             command = r.pop("command", None)
-            if r["outcome"] == "act" and command:
+            if r["outcome"] == "act" and r.get("reads"):
+                self.read(a, r)
+            elif r["outcome"] == "act" and command:
                 label = next(s["label"] for s in self.lang["skills"] if s["id"] == r["skill"])
                 if self.simulated(r["skill"]):
                     r["ran"] = "simulated"
@@ -93,12 +98,26 @@ class TermNL:
             r.pop("inbox", None)
             return r
 
+    def read(self, a, r):
+        """a reading skill: the device reads itself, and the reply is the one written for what it found"""
+        skill = next(s for s in self.lang["skills"] if s["id"] == r["skill"])
+        try:
+            found = readers.read(r.pop("reads"))
+        except (OSError, ValueError, KeyError, IndexError) as e:
+            r["ran"], r["say"] = "failed", a.reply("failed", {"error": str(e)})
+            return
+        lines = skill["when"].get(found["level"])
+        r["say"] = fill(random.choice(lines), {**found["values"], "user": self.settings.get("name") or ""}) if lines else a.reply("cannot read")
+        r["ran"], r["level"] = "read", found["level"]
+        if found.get("table"):
+            r["table"] = found["table"]
+
     def log(self, session, text, r, command=None):
         """every turn, one line of JSON in logs/<date>.jsonl: the real sentences people type"""
         os.makedirs(LOGS, exist_ok=True)
         now = datetime.datetime.now()
         line = {"at": now.isoformat(timespec="seconds"), "session": session[:8], "text": text,
-                **{k: r[k] for k in ("outcome", "skill", "how", "p", "unknown", "say", "ran", "show", "teach", "inbox", "reason") if r.get(k) is not None},
+                **{k: r[k] for k in ("outcome", "skill", "how", "p", "unknown", "say", "ran", "level", "show", "teach", "inbox", "reason") if r.get(k) is not None},
                 **({"command": command} if command else {})}
         with open(os.path.join(LOGS, now.strftime("%Y-%m-%d") + ".jsonl"), "a", encoding="utf-8") as f:
             f.write(json.dumps(line, ensure_ascii=False) + "\n")

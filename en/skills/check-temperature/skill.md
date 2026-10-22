@@ -1,6 +1,7 @@
 ---
 does: check temperature
 label: check the temperature
+reads: temperature
 admin: no
 approve: no
 ---
@@ -12,10 +13,15 @@ approve: no
 - `(what's|what is) the <temperature> [of the <system>]`
 - `<check> [the] <temperature>`
 
-## Command
+## When it's fine
 
-cat /sys/class/thermal/thermal_zone0/temp
+- No worries, it's at {@sys.temperature}, well below the {@sys.temperature.max} where it would slow down.
+- {@sys.temperature}. All good.
 
-## Replies
+## When it's warm
 
-- done: Temperature: {output} | It's at {output}
+- It's getting warm: {@sys.temperature}. Still fine, but keep an eye on it.
+
+## When it's hot
+
+- It's hot: {@sys.temperature}, close to the {@sys.temperature.max} where it slows down. Give it some air.

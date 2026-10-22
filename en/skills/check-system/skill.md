@@ -1,6 +1,7 @@
 ---
 does: check system
 label: check the board
+reads: health
 admin: no
 approve: no
 ---
@@ -14,10 +15,15 @@ approve: no
 - `is everything (ok|okay|fine|alright) [with the <system>]`
 - `<system> (status|health)`
 
-## Command
+## When it's fine
 
-uptime && free -h && df -h / && cat /sys/class/thermal/thermal_zone0/temp
+- All good. It has been running for {@sys.health.uptime}.
+- Everything looks fine.
 
-## Replies
+## When it's busy
 
-- done: Here's how the board is doing: {output} | The board right now: {output}
+- It works, but it's busy: have a look at what's marked below.
+
+## When it's struggling
+
+- It's struggling: something below needs your attention.

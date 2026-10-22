@@ -57,7 +57,7 @@ def pick(variants, random=_random.random):
 
 
 def fill(text, values):
-    return re.sub(r"\{(\w+)\}", lambda m: "" if values.get(m.group(1)) is None else str(values[m.group(1)]), text)
+    return re.sub(r"\{([\w@.]+)\}", lambda m: "" if values.get(m.group(1)) is None else str(values[m.group(1)]), text)
 
 
 def close(a, b):

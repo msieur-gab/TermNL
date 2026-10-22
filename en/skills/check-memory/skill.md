@@ -1,6 +1,7 @@
 ---
 does: check memory
 label: check memory
+reads: memory
 admin: no
 approve: no
 ---
@@ -12,10 +13,16 @@ approve: no
 - `<check> [the] <memory>`
 - `<memory> [usage]`
 
-## Command
+## When it's fine
 
-free -h
+- You're using {@sys.memory.used} of {@sys.memory.total}. Plenty left.
+- {@sys.memory.percent} of the memory is in use: that's fine.
 
-## Replies
+## When it's high
 
-- done: Memory: {output} | Here's the memory: {output}
+- Memory is getting full: {@sys.memory.used} of {@sys.memory.total} in use. Closing a program or two would help.
+- {@sys.memory.percent} of the memory is in use. It still works, but it's getting tight.
+
+## When it's full
+
+- Memory is almost full: only {@sys.memory.free} left. Things may slow down; close a program you don't need.
