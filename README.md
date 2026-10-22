@@ -23,4 +23,6 @@ Early. The exact layer (templates + shared lists + values from the device) works
 that understands phrasings nobody wrote down is next. `node test/measure.js` shows how many of the
 hand-written phrasings in `test/phrasings.md` are understood.
 
+Playground: `node tools/build-page.js` writes `docs/index.html`, a page where you type a request and see the reply and the command it would run (served by GitHub Pages once Pages is on for `docs/`).
+
 Run: `node core/check.js` (checks every skill file), `node --test test/*.test.js`, `node test/measure.js -v`.

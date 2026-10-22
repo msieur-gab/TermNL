@@ -1,0 +1,177 @@
+<title>TermLU playground</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a conversation on the left, the test bench (pills, settings, the pretend device) on the right; stacked on a phone. */
+:root {
+  --bg: #f2f4f3; --panel: #ffffff; --ink: #1b2422; --muted: #5c6b67; --line: #d5dcd9;
+  --accent: #1f6670; --accent-soft: #e1eef0;
+  --act: #2e7d4f; --act-soft: #e2f2e8; --ask: #2a5d9f; --ask-soft: #e3ecf8;
+  --approve: #9a6200; --approve-soft: #f8edd8; --abstain: #8a3b3b; --abstain-soft: #f6e4e4;
+  --term-bg: #18201e; --term-ink: #d8e6e1; --term-dim: #7f9690;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121816; --panel: #1a2220; --ink: #e3ebe8; --muted: #93a39f; --line: #2c3734;
+  --accent: #6fb7c0; --accent-soft: #1d3236;
+  --act: #7cc79a; --act-soft: #1c3226; --ask: #8fb4e8; --ask-soft: #1d2a3c;
+  --approve: #e3b45c; --approve-soft: #382c14; --abstain: #e39a9a; --abstain-soft: #3a2222;
+  --term-bg: #0b0f0e; --term-ink: #d8e6e1; --term-dim: #7f9690; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121816; --panel: #1a2220; --ink: #e3ebe8; --muted: #93a39f; --line: #2c3734;
+  --accent: #6fb7c0; --accent-soft: #1d3236;
+  --act: #7cc79a; --act-soft: #1c3226; --ask: #8fb4e8; --ask-soft: #1d2a3c;
+  --approve: #e3b45c; --approve-soft: #382c14; --abstain: #e39a9a; --abstain-soft: #3a2222;
+  --term-bg: #0b0f0e; --term-ink: #d8e6e1; --term-dim: #7f9690; color-scheme: dark }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px; box-sizing: border-box; }
+.wrap { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; height: 100%; }
+header { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+h1 span { font-family: var(--mono); font-weight: 600; color: var(--accent); }
+header p { margin: 0; color: var(--muted); font-size: 14px; }
+.chat { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-height: 320px; }
+.you { align-self: flex-end; max-width: 80%; background: var(--accent); color: var(--panel); padding: 8px 12px; border-radius: 12px 12px 2px 12px; }
+.turn { display: flex; flex-direction: column; gap: 8px; max-width: 92%; min-width: 0; }
+.say { background: var(--bg); padding: 10px 12px; border-radius: 12px 12px 12px 2px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.out { font: 600 11px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; }
+.out.act { color: var(--act); background: var(--act-soft); }
+.out.ask { color: var(--ask); background: var(--ask-soft); }
+.out.approve { color: var(--approve); background: var(--approve-soft); }
+.out.abstain { color: var(--abstain); background: var(--abstain-soft); }
+.tag { font-family: var(--mono); font-size: 12px; }
+.new { color: var(--approve); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: inherit; cursor: pointer; }
+.chip { border: 1px solid var(--accent); color: var(--accent); background: transparent; padding: 3px 10px; border-radius: 999px; font-size: 14px; }
+.chip:hover, .chip:focus-visible { background: var(--accent-soft); }
+.cmd { background: var(--term-bg); color: var(--term-ink); font: 13px/1.5 var(--mono); padding: 8px 12px; border-radius: 6px; overflow-x: auto; white-space: pre; }
+.cmd b { color: var(--term-dim); font-weight: 400; }
+.cmd.none { color: var(--term-dim); }
+form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+#say { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+#say:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.send { background: var(--accent); color: var(--panel); border: 0; padding: 0 16px; border-radius: 8px; font-weight: 700; }
+aside { display: flex; flex-direction: column; gap: 16px; min-width: 0; overflow-y: auto; }
+aside section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 4px 10px; border-radius: 999px; font-size: 14px; text-align: left; }
+.pill:hover, .pill:focus-visible { border-color: var(--accent); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 15px; }
+.toggle { border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 4px 12px; border-radius: 6px; font-family: var(--mono); font-size: 13px; min-width: 56px; }
+.toggle[aria-pressed="true"] { background: var(--approve-soft); color: var(--approve); border-color: var(--approve); }
+.ghost { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 6px 10px; border-radius: 6px; font-size: 14px; }
+dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 14px; }
+dt { color: var(--muted); }
+dd { margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.7; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+@media (max-width: 760px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .log { max-height: 60vh; }
+  aside { order: -1; overflow: visible; }
+}
+@media (prefers-reduced-motion: no-preference) { .turn, .you { animation: in .18s ease-out; } @keyframes in { from { opacity: .4; transform: translateY(4px); } } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><span>TermLU</span> playground</h1>
+    <p>Type a request the way you'd say it. Nothing runs: the command is only shown.</p>
+  </header>
+
+  <main class="chat">
+    <div class="log" id="log" aria-live="polite"></div>
+    <form id="form">
+      <label for="say" hidden>Your request</label>
+      <input id="say" autocomplete="off" placeholder="e.g. make a folder called bikes in documents">
+      <button class="send" type="submit">Send</button>
+    </form>
+  </main>
+
+  <aside>
+    <section>
+      <h2>Try</h2>
+      <div class="pills" id="pills"></div>
+    </section>
+    <section>
+      <h2>Settings</h2>
+      <div class="row"><span>Admin mode</span><button class="toggle" id="admin" type="button" aria-pressed="false">off</button></div>
+      <p class="note">Off: restarting, shutting down and switching Wi-Fi or Bluetooth are refused. On: each one asks for approval.</p>
+      <button class="ghost" id="reset" type="button">Start a new conversation</button>
+    </section>
+    <section>
+      <h2>Pretend device</h2>
+      <dl id="device"></dl>
+      <p class="note">The values a real board would list itself. Anything else is asked about.</p>
+    </section>
+  </aside>
+</div>
+
+<script>
+/*BUNDLE*/
+
+const PILLS = [
+  "create a file named seed.md in the ideas folder", "make a new folder", "create a python file called test",
+  "put a folder called seeds in the garden folder", "what's in my documents folder", "how much space is left",
+  "is there enough space for a movie", "how hot is the board", "is ssh running", "restart the web server",
+  "turn off the wifi", "kill the wifi", "restart the pi", "open the terminal", "I need a terminal",
+  "what's the weather tomorrow", "help", "yes", "no", "cancel",
+];
+
+const settings = { "admin mode": "off" };
+let agent;
+const fresh = () => { agent = TermLU.createAgent({ ...TermLU.lang, model: TermLU.model, settings, device: TermLU.device }); };
+fresh();
+
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+
+function send(text) {
+  text = text.trim();
+  if (!text) return;
+  const log = $("log");
+  log.append(el("div", "you", text));
+  const r = agent.hear(text);
+  const turn = el("div", "turn");
+  turn.append(el("div", "say", r.say.replace(/\{output\}/g, "…")));
+  const meta = el("div", "meta");
+  meta.append(el("span", "out " + r.outcome, r.outcome));
+  if (r.skill) meta.append(el("span", "tag", r.skill));
+  if (r.how === "template") meta.append(el("span", "", "read by a template"));
+  if (r.how === "model") meta.append(el("span", "", `model, ${Math.round(r.p * 100)}% sure`));
+  if (r.unknown && r.unknown.length) meta.append(el("span", "new", "new words: " + r.unknown.join(", ")));
+  if (r.reason) meta.append(el("span", "", r.reason));
+  if (r.teach) meta.append(el("span", "new", "to teach: “" + r.teach.text + "” → " + r.teach.skill));
+  turn.append(meta);
+  if (r.chips && r.chips.length) {
+    const chips = el("div", "chips");
+    for (const c of r.chips) { const b = el("button", "chip", c); b.type = "button"; b.onclick = () => send(c); chips.append(b); }
+    turn.append(chips);
+  }
+  if (r.command) { const c = el("div", "cmd"); c.append(el("b", "", "$ "), document.createTextNode(r.command)); turn.append(c); }
+  else turn.append(el("div", "cmd none", "no command"));
+  log.append(turn);
+  log.scrollTop = log.scrollHeight;
+}
+
+$("form").addEventListener("submit", e => { e.preventDefault(); send($("say").value); $("say").value = ""; $("say").focus(); });
+for (const p of PILLS) { const b = el("button", "pill", p); b.type = "button"; b.onclick = () => send(p); $("pills").append(b); }
+$("admin").onclick = () => {
+  const on = settings["admin mode"] !== "on";
+  settings["admin mode"] = on ? "on" : "off";
+  $("admin").textContent = on ? "on" : "off";
+  $("admin").setAttribute("aria-pressed", String(on));
+};
+$("reset").onclick = () => { fresh(); $("log").replaceChildren(); };
+for (const [kind, label] of [["folder", "Folders"], ["service", "Services"], ["app", "Apps"], ["network", "Networks"]]) {
+  $("device").append(el("dt", "", label), el("dd", "", TermLU.device.list(kind).map(d => d.names[0]).join(", ")));
+}
+send("make a folder called bikes in documents");
+send("is there enough space for a movie");
+</script>

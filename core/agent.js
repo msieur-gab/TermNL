@@ -210,7 +210,16 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     return resolve(skill, vals, approved);
   }
 
+  // what understood the last sentence: the template, or the model and how sure it was
+  let last = null;
   function hear(text) {
+    last = null;
+    const r = respond(text);
+    if (last) { r.how = last.how; if (last.p !== undefined) r.p = Math.round(last.p * 100) / 100; if (last.unknown?.length) r.unknown = last.unknown; }
+    return r;
+  }
+
+  function respond(text) {
     const toks = clean(text);
     if (!toks.length) return { outcome: "abstain", say: reply("abstain") };
     if (is(toks, "cancel")) { pending = null; return { outcome: "abstain", say: reply("cancelled"), reason: "cancelled" }; }
@@ -239,6 +248,7 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     }
 
     const u = understand(text, toks);
+    last = u && u.how !== "choose" ? u : null;
     const sure = u && (u.how === "template" || (u.how === "model" && u.p >= SURE && !u.unknown.length));
     // a clear new request replaces a pending question; anything else answers it
     if (pending?.waiting === "value" && !sure) return fillPending(text, toks);
