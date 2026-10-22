@@ -37,11 +37,14 @@ Run: `python3 -m termnl.check` · `python3 -m unittest` (60 pass) · `python3 -m
    (most weights tiny; ptiLU stored 1-byte weights).
 4. **The test set is still mostly Claude's** (`tests/phrasings.md`); Gab's sentences are its last section.
    A passing suite hid a failure Gab found in his first sentence, twice today.
-5. **Authoring** (`open-question-authoring.md`): the template grammar works but people can't write it.
-6. **Shared words in two families:** "start" (create + open), "note" (file + markdown).
-7. **Not done:** Wi-Fi, Bluetooth and network replies are still raw command output; no "undo" or
+5. **What runs when TermNL reads** (`open-question-reading-commands.md`, Gab to decide): reading skills
+   read /proc in Python (readers.py), so no skill command runs and "show commands" shows nothing for them;
+   the alternative is the skill's command really running and Python converting its output.
+6. **Authoring** (`open-question-authoring.md`): the template grammar works but people can't write it.
+7. **Shared words in two families:** "start" (create + open), "note" (file + markdown).
+8. **Not done:** Wi-Fi, Bluetooth and network replies are still raw command output; no "undo" or
    Dialogflow-style context; pairing and keys deferred until the system proves itself.
-8. **Word embeddings for unknown words: tested, not worth it now** (this morning, another session).
+9. **Word embeddings for unknown words: tested, not worth it now** (this morning, another session).
    GloVe-50 on the 26 untaught words of the phrasings: 3 useful neighbours (warm → hot), 15 wrong
    (kill → bring, stop → out), because most new words are context, not synonyms, and embeddings put
    opposites side by side. A better embedding (Model2Vec) could be tried with `tools/neighbours.py`.
