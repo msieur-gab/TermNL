@@ -127,7 +127,8 @@ const PILLS = [
   "what's the weather tomorrow", "help", "yes", "no", "cancel",
 ];
 
-const settings = { "admin mode": "off" };
+// the playground always shows commands, so it shows them at approval too
+const settings = { "admin mode": "off", "show commands": "on" };
 let agent;
 const fresh = () => { agent = TermLU.createAgent({ ...TermLU.lang, model: TermLU.model, settings, device: TermLU.device }); };
 fresh();
@@ -165,6 +166,7 @@ function send(text) {
     turn.append(chips);
   }
   if (r.command) { const c = el("div", "cmd"); c.append(el("b", "", "$ "), document.createTextNode(r.command)); turn.append(c); }
+  else if (r.show) { const c = el("div", "cmd none"); c.append(document.createTextNode("would run: "), el("b", "", "$ "), document.createTextNode(r.show)); turn.append(c); }
   else turn.append(el("div", "cmd none", "no command"));
   log.append(turn);
   log.scrollTop = log.scrollHeight;

@@ -187,10 +187,17 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     }
     if ((skill.admin || skill.approve) && !approved) {
       pending = { skill, vals, waiting: "approve" };
-      return { outcome: "approve", skill: skill.id, say: reply(skill.replies.approve, display(skill, vals)), chips: ["yes", "no"] };
+      return withShow({ outcome: "approve", skill: skill.id, say: reply(skill.replies.approve, display(skill, vals)), chips: ["yes", "no"] }, skill, vals);
     }
     return act(skill, vals);
   }
+
+  // Every value known and sure: nothing is left to ask, so an approval can name exactly what runs.
+  const complete = (skill, vals) => Object.entries(skill.values).every(([k, spec]) => {
+    const v = vals[k];
+    if (!v) return !spec.required || !!spec.default;
+    return !v.unknown && !v.fuzzy && !onlyPoints(v) && (spec.kind !== "@sys.file" || v.value !== undefined);
+  });
 
   // Files are checked on the device. A file to open must exist: here, or else anywhere in home
   // (one place: "That one?"; several: "Which one?"; none: said so). A file to create must not.
@@ -244,24 +251,37 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     vals.name = { text: `${name}.${type.ext}` };
   }
 
+  const commandFor = (skill, vals) => skill.command.split(" ").map(part => {
+    if (!part.includes("{")) return part;
+    return quote(part.replace(/\{(\w+)\}/g, (_, k) => vals[k] ? (vals[k].value ?? vals[k].text) : ""));
+  }).join(" ");
+  // "show commands" on: the command is shown when acting, and before it, when the person approves
+  const withShow = (out, skill, vals) => { if (on("show commands")) out.show = commandFor(skill, vals); return out; };
+
   function act(skill, vals) {
     pending = null;
-    const command = skill.command.split(" ").map(part => {
-      if (!part.includes("{")) return part;
-      return quote(part.replace(/\{(\w+)\}/g, (_, k) => vals[k] ? (vals[k].value ?? vals[k].text) : ""));
-    }).join(" ");
+    const command = commandFor(skill, vals);
     if (skill.moves && vals[skill.moves]) here = { value: vals[skill.moves].value, label: vals[skill.moves].label };
-    const out = { outcome: "act", skill: skill.id, say: reply(skill.replies.done, display(skill, vals)), command };
-    if (on("show commands")) out.show = command;
-    return out;
+    return withShow({ outcome: "act", skill: skill.id, say: reply(skill.replies.done, display(skill, vals)), command }, skill, vals);
   }
 
   // An answer to "Which folder?": a value on the list, or free text for a text value.
+  // "no" stops the request; "yes" answers nothing, so the question is asked again; "call it bikes"
+  // gives the name after its lead-in words (en/answers.md, "before a name").
   function fillPending(text, toks) {
     const { skill, vals, slot, approved } = pending;
+    if (is(toks, "no")) { pending = null; return { outcome: "abstain", skill: skill.id, say: reply("declined"), reason: "declined" }; }
     const list = listOf(skill.values[slot].kind);
+    if (is(toks, "yes")) {
+      const v = vals[slot];
+      const say = skill.replies["ask " + slot] ? reply(skill.replies["ask " + slot]) : reply("unknown value", { value: `“${v?.text || v?.label || ""}”` });
+      return { outcome: "ask", skill: skill.id, say, chips: list ? list.map(o => o.label).slice(0, 8) : [] };
+    }
     if (!list) {
-      vals[slot] = { text: toks.length ? original(text, toks, { start: 0, end: toks.length }) : text.trim() };
+      const lead = (lists.answers["before a name"] || []).filter(ph => ph.length < toks.length && ph.every((w, i) => toks[i].word === w))
+        .sort((a, b) => b.length - a.length)[0];
+      const start = lead ? lead.length : 0;
+      vals[slot] = { text: toks.length ? original(text, toks, { start, end: toks.length }) : text.trim() };
       return resolve(skill, vals, approved);
     }
     let hit = null;
@@ -296,8 +316,8 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
       pending = null; // something else: a new request
     }
     if (pending?.waiting === "understand") {
-      const { skill, vals, text: asked } = pending;
-      if (is(toks, "yes")) { pending = null; const r = resolve(skill, vals, true); r.teach = { skill: skill.id, text: asked }; return r; }
+      const { skill, vals, text: asked, approves } = pending;
+      if (is(toks, "yes")) { pending = null; const r = resolve(skill, vals, !!approves); r.teach = { skill: skill.id, text: asked }; return r; }
       if (is(toks, "no")) { pending = null; return { outcome: "abstain", say: reply("declined"), reason: "declined", inbox: asked }; }
       pending = null;
     }
@@ -371,15 +391,20 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     if (u.skill.admin && !on("admin mode")) {
       return { outcome: "abstain", skill: u.skill.id, say: reply("sounds like", { label: u.skill.label }), reason: "admin mode off" };
     }
-    pending = { waiting: "understand", skill: u.skill, vals: u.vals, text };
     const label = u.skill.label;
     const named = u.unknown.map(w => `“${w}”`).join(", ");
     let say = u.unknown.length ? reply("not sure", { words: named, label }) : reply("confirm", { label });
-    // a skill that needs approval asks its own question, so the person approves once, knowingly
-    if (u.skill.admin || u.skill.approve) {
-      say = (u.unknown.length ? reply("new words", { words: named }) + " " : "") + reply(u.skill.replies.approve, display(u.skill, u.vals));
+    // A skill that needs approval asks its own question, so the person approves once, knowingly, but
+    // only when every value is known: otherwise this yes only confirms the skill, and the approval
+    // comes later, naming what will run.
+    const approves = (u.skill.admin || u.skill.approve) && complete(u.skill, u.vals);
+    pending = { waiting: "understand", skill: u.skill, vals: u.vals, text, approves };
+    const out = { outcome: "ask", skill: u.skill.id, say, chips: ["yes", "no"], unknown: u.unknown, p: Math.round(u.p * 100) / 100 };
+    if (approves) {
+      out.say = (u.unknown.length ? reply("new words", { words: named }) + " " : "") + reply(u.skill.replies.approve, display(u.skill, u.vals));
+      withShow(out, u.skill, u.vals);
     }
-    return { outcome: "ask", skill: u.skill.id, say, chips: ["yes", "no"], unknown: u.unknown, p: Math.round(u.p * 100) / 100 };
+    return out;
   }
 
   return { hear, get pending() { return pending; }, get here() { return whereNow(); } };

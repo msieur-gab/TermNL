@@ -221,3 +221,58 @@ test("creating a file that already exists runs nothing", () => {
   assert.equal(r.command, undefined);
   assert.match(r.say, /already/);
 });
+
+// Review of 22 Oct: approval comes last, once every value is known, and shows the command.
+test("approval is never asked with a value missing; it comes once the value is known", () => {
+  const a = agent({ "admin mode": "on" });
+  const r = a.hear("the service is stuck, restart it");
+  assert.equal(r.outcome, "ask");
+  assert.doesNotMatch(r.say, /Restart \?/);
+  assert.equal(a.hear("yes").outcome, "ask"); // which service?
+  const p = a.hear("ssh");
+  assert.equal(p.outcome, "approve");
+  assert.match(p.say, /ssh/);
+  assert.equal(p.command, undefined);
+  assert.equal(a.hear("yes").command, "systemctl restart 'ssh'");
+});
+
+test("understood but not surely, with every value known: one question, the approval itself", () => {
+  const a = agent({ "admin mode": "on" });
+  const r = a.hear("the music server is stuck, restart it");
+  assert.equal(r.skill, "restart-service");
+  assert.match(r.say, /Restart music server\?/);
+  assert.equal(a.hear("yes").command, "systemctl restart 'mpd'");
+});
+
+test("show commands on: the approval shows the command it would run", () => {
+  const a = agent({ "admin mode": "on", "show commands": "on" });
+  const r = a.hear("restart the pi");
+  assert.equal(r.outcome, "approve");
+  assert.equal(r.show, "systemctl reboot");
+  assert.equal(r.command, undefined);
+  assert.equal(agent({ "admin mode": "on" }).hear("restart the pi").show, undefined);
+});
+
+// Review of 22 Oct: an answer to "What should I call it?" is not always a name.
+test("“no” to a name question stops; “yes” asks again; neither becomes a name", () => {
+  const a = agent();
+  a.hear("make a new folder");
+  const n = a.hear("no");
+  assert.equal(n.command, undefined);
+  assert.equal(n.outcome, "abstain");
+  assert.equal(a.pending, null);
+  const b = agent();
+  b.hear("make a new folder");
+  const y = b.hear("yes");
+  assert.equal(y.outcome, "ask");
+  assert.equal(y.command, undefined);
+  assert.equal(b.hear("bikes").command, "mkdir -p $HOME'/bikes'");
+});
+
+test("“call it bikes”, “named recipes”: the name is what follows", () => {
+  for (const [said, name] of [["call it bikes", "bikes"], ["name it recipes", "recipes"], ["called seeds", "seeds"], ["let's call it yes", "yes"]]) {
+    const a = agent();
+    a.hear("make a new folder");
+    assert.equal(a.hear(said).command, `mkdir -p $HOME'/${name}'`, said);
+  }
+});
