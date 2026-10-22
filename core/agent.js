@@ -36,6 +36,11 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
   const reply = (key, values = {}) => fill(pick(lists.replies[key] || key, random), values);
   const small = new Set((lists.answers["small words"] || []).map(p => p.join(" ")));
   const stops = new Set((lists.answers["not a name start"] || []).map(p => p.join(" ")));
+  const objectWords = new Set(lists.objects.flatMap(o => (lists.refs[o] || []).filter(ph => ph.length === 1).map(ph => ph[0])));
+  const pointing = new Set((lists.answers["pointing words"] || []).map(p => p.join(" ")));
+  // "this", "that file": a value that only points can't be known here, so it is asked for instead
+  const onlyPoints = v => v.text !== undefined && v.value === undefined &&
+    tokenize(v.text).every(t => pointing.has(t.word));
 
   // Fillers ("please", "can you", "for me") are dropped at the start and end of a sentence.
   function clean(text) {
@@ -58,7 +63,7 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     const found = [];
     for (const skill of skills) {
       const all = [];
-      for (const nodes of skill.compiled) all.push(...parses(nodes, toks, lists.refs, slotLists(skill), stops));
+      for (const nodes of skill.compiled) all.push(...parses(nodes, toks, lists.refs, slotLists(skill), stops, objectWords));
       const top = all.length ? best(all) : null;
       if (top) found.push({ skill, parse: top });
     }
@@ -139,6 +144,7 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
   }
 
   function resolve(skill, vals, approved = false) {
+    for (const [k, v] of Object.entries(vals)) if (onlyPoints(v)) delete vals[k];
     // a value close to one on the device's list (a typo): confirm it, never use it silently
     for (const [k, v] of Object.entries(vals)) {
       if (v.fuzzy) {
@@ -279,7 +285,11 @@ export function createAgent({ lists, skills, model, settings = {}, device, rando
     // else (another skill, surely understood). The same skill said again adds its values to the
     // question; then whatever is still asked for is filled from the words themselves.
     if (pending?.waiting === "value") {
-      const other = sure && u.skill.id !== pending.skill.id;
+      // another request: a skill's own sentence, or the model sure of another skill AND an action word
+      // said ("open…", "check…"); a lone word like "note" is always an answer
+      const saysAction = lists.actions.some(a => (lists.refs[a] || []).some(ph =>
+        toks.some((_, i) => ph.length && i + ph.length <= toks.length && ph.every((w, j) => toks[i + j].word === w))));
+      const other = sure && u.skill.id !== pending.skill.id && (u.how === "template" || saysAction);
       if (!other) {
         if (sure && u.skill.id === pending.skill.id) {
           for (const [k, v] of Object.entries(u.vals)) if (!pending.vals[k] || pending.vals[k].unknown) pending.vals[k] = v;

@@ -9,6 +9,7 @@ approve: no
 
 - `<show> [me] [the|my] {place} [<folder>]`
 - `(what's|what is) in [the|my] {place} [<folder>]`
+- `<open> [the|my] {place} <folder>`
 
 ## Values
 

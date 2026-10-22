@@ -137,3 +137,22 @@ test("the folder confirmed earlier is kept until the file is made (Gab's run, 22
   a.hear("Documents");
   assert.equal(a.hear("note.txt").command, "touch $HOME'/Documents/note.txt'");
 });
+
+// Gab's run, 22 Oct 10:25: opening a file.
+test("“open this file”: a pointing word is never a name, so the file is asked", () => {
+  const r = agent().hear("open this file");
+  assert.equal(r.outcome, "ask");
+  assert.equal(r.skill, "open-file");
+});
+
+test("“can you please open the note.md” opens it", () => {
+  assert.equal(agent().hear("can you please open the note.md").command, "xdg-open $HOME'/note.md'");
+});
+
+test("“open the note.md file located inside my Documents folder” opens it there", () => {
+  assert.equal(agent().hear("can you please open the note.md file located inside my Documents folder").command, "xdg-open $HOME'/Documents/note.md'");
+});
+
+test("opening an app still opens the app", () => {
+  assert.equal(agent().hear("open the terminal").command, "setsid 'x-terminal-emulator'");
+});

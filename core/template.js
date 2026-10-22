@@ -63,8 +63,9 @@ export function uses(nodes, acc = { slots: new Set(), refs: new Set() }) {
 //   slots: name → null (free text) | [{ value, label, phrases: [[word...]] }]   a list
 // A list value not on the list is still read: close to a listed one (a typo), it is marked fuzzy and
 // confirmed; otherwise marked unknown and asked about. Free text never starts with a place word
-// (stops: "in", "inside", "for"…), so a name can't swallow the place that follows it.
-export function parses(nodes, toks, refs, slots, stops = new Set()) {
+// (stops: "in", "inside", "for"…), so a name can't swallow the place that follows it, and never
+// ends with an object word (ends: "folder", "file"…), so "the ideas folder" isn't a name.
+export function parses(nodes, toks, refs, slots, stops = new Set(), ends = new Set()) {
   const out = [];
   const n = toks.length;
   const at = (phrase, pos) => phrase.length > 0 && pos + phrase.length <= n &&
@@ -94,6 +95,7 @@ export function parses(nodes, toks, refs, slots, stops = new Set()) {
       if (pos < n && stops.has(toks[pos].word)) return;
       // free text, or a list value that isn't on the list (read, but scored down)
       for (let end = pos + 1; end <= n; end++) {
+        if (!list && ends.has(toks[end - 1].word)) continue; // "the ideas folder" is a folder, not a name
         const cap = { start: pos, end };
         if (list) cap.unknown = true;
         next(end, { ...caps, [node.name]: cap }, score - (list ? 2 : 0));
