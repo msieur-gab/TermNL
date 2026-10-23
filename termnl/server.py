@@ -35,13 +35,19 @@ TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": 
 
 
 class TermNL:
-    def __init__(self, root=ROOT, home=None, agent="agent", simulate=(), screen=None):
-        """simulate and screen are for a host that holds TermNL (Symbiot): the skills (by their `does:`) it
-        simulates on top of settings.md's, never fewer, and which commands its own screen does (open a file in
-        its window): those aren't run here, the reply hands them over as "screen"."""
+    # @doc, what people keep: a sentence goes to the host's documents only when TermNL doesn't understand it,
+    # or only guesses with a word it doesn't know; they answer only above these scores. Measured on 23 Oct with
+    # the desk's MiniLM, Gab's 85 sentences and the 35 Ask test questions: 24 of 24 questions, none of his commands.
+    NOTES = {"no skill": 0.40, "guess": 0.45}
+
+    def __init__(self, root=ROOT, home=None, agent="agent", simulate=(), screen=None, doc=None):
+        """simulate, screen and doc are for a host that holds TermNL (Symbiot): the skills (by their `does:`) it
+        simulates on top of settings.md's, never fewer; which commands its own screen does (open a file in its
+        window), not run here but handed over as "screen"; and its documents, doc(question) → {best, results}."""
         self.root = root
         self.also_simulated = set(simulate)
         self.screen = screen or (lambda command: False)
+        self.doc = doc
         # agent: agent.py; back: back_agent.py, the version before it, kept for comparison
         self.version = agent
         self.Agent = importlib.import_module(".agent" if agent == "agent" else ".back_agent", __package__).Agent
@@ -80,6 +86,7 @@ class TermNL:
         with self.lock:
             a = self.agent(session)
             r = a.hear(text)
+            r = self.notes(a, r, text) or r
             command = r.pop("command", None)
             if r["outcome"] == "act" and r.get("reads"):
                 self.read(a, r, command)
@@ -101,6 +108,23 @@ class TermNL:
             r.pop("teach", None)  # the learning inbox comes next; nothing is learned yet
             r.pop("inbox", None)
             return r
+
+    def notes(self, a, r, text):
+        """the host's documents answer instead, when TermNL doesn't understand or only guesses, and they match;
+        else None. They are only read: what they hold never becomes a command."""
+        floor = self.NOTES["no skill"] if r["outcome"] == "abstain" and r.get("reason") == "no skill" else \
+            self.NOTES["guess"] if r["outcome"] == "ask" and r.get("how") == "model" and r.get("unknown") else None
+        if floor is None or not self.doc:
+            return None
+        try:
+            found = self.doc(text)
+        except Exception:  # the host's documents can't answer: TermNL's own reply stands
+            return None
+        if not found or (found.get("best") or 0) < floor or not found.get("results"):
+            return None
+        a.pending = None  # the guess's question is dropped with it
+        return {"outcome": "act", "skill": "@doc", "say": a.reply("in your documents"), "ran": "read",
+                "documents": found["results"][:5]}
 
     def execute(self, a, r, command):
         """runs a skill's command → its output, or None when it failed (the reply then says why)"""

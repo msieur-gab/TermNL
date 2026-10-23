@@ -40,6 +40,7 @@ Words for the conversation itself, outside any skill.
 - negated: You said “{words}”. Do you want me to {label}, or not? | I heard “{words}”. Should I {label}?
 - nothing waiting: Nothing is waiting for an answer right now. What would you like to do? | There's no question waiting. What can I do for you?
 - cannot read: I can't read that on this device.
+- in your documents: Here's what you keep about it: | In your notes and articles:
 - already home: You're already in your home folder. | This is your home folder: there's nothing above it here.
 - read as: I read {fixes}. | (I read {fixes}.)
 - a word read as: {typed} as {word}

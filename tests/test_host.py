@@ -40,6 +40,35 @@ class Host(unittest.TestCase):
         self.assertEqual(r["ran"], "ran")
         self.assertTrue(os.path.isdir(os.path.join(home, "bikes")))
 
+    def notes(self, best):
+        asked = []
+        def doc(question):
+            asked.append(question)
+            return {"best": best, "results": [{"title": "Permacomputing", "path": "Articles/permacomputing.md", "kind": "article", "score": best, "passage": "…"}]}
+        app, _ = self.app(doc=doc)
+        return app, asked
+
+    def test_the_documents_answer_what_termnl_does_not_understand_or_only_guesses(self):
+        app, _ = self.notes(0.5)
+        for said in ["how does AI impact democracy?", "what is permacomputing?"]:  # no skill; a guess with an unknown word
+            r = app.say(said, said)
+            self.assertEqual((r["outcome"], r["skill"]), ("act", "@doc"), said)
+            self.assertEqual(r["documents"][0]["path"], "Articles/permacomputing.md")
+            self.assertEqual(app.say("yes", said)["outcome"], "abstain")  # the guess's question went with it
+
+    def test_a_command_never_goes_to_the_documents(self):
+        app, asked = self.notes(0.9)
+        self.assertEqual(app.say("make a folder called bikes", "c")["ran"], "ran")
+        self.assertEqual(app.say("how hot is the board", "c")["skill"], "check-temperature")
+        self.assertEqual(asked, [])
+
+    def test_the_documents_stay_quiet_when_they_do_not_really_match(self):
+        app, asked = self.notes(0.42)  # over the floor for what TermNL doesn't understand, under it for a guess
+        self.assertEqual(app.say("what is permacomputing?", "q")["outcome"], "ask")
+        self.assertEqual(app.say("how does AI impact democracy?", "r")["skill"], "@doc")
+        app, _ = self.notes(0.3)
+        self.assertEqual(app.say("how does AI impact democracy?", "s")["outcome"], "abstain")
+
 
 if __name__ == "__main__":
     unittest.main()
