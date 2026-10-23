@@ -42,6 +42,7 @@ class Agent:
         self.lists, self.skills, self.model = lists, skills, model
         self.settings = settings if settings is not None else {}
         self.device, self.random = device, random
+        self._sys = {}  # kind → (the device's list, its values with their words)
         self.pending = None
         self._here = None  # where you are, like a terminal's working folder: home at first
         self.last = None
@@ -101,8 +102,14 @@ class Agent:
         return bool(re.match(r"^(on|yes|true)$", self.settings.get(key) or "", re.I))
 
     def sys(self, kind):
-        return [{"value": d["value"], "label": d["names"][0], "phrases": [words(n) for n in d["names"]]}
-                for d in (self.device.list(kind) if self.device else [])]
+        """the device's values of a kind, their names cut into words once each time the device reads them again
+        (a home's folders and services are hundreds of names: cutting them at every sentence took 0.3 s on a board)"""
+        found = self.device.list(kind) if self.device else []
+        read, values = self._sys.get(kind, (None, None))
+        if read is not found:
+            values = [{"value": d["value"], "label": d["names"][0], "phrases": [words(n) for n in d["names"]]} for d in found]
+            self._sys[kind] = (found, values)
+        return values
 
     def list_of(self, kind):
         """files aren't a list read in advance: they are looked up in the place once it is known"""
