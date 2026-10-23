@@ -35,8 +35,13 @@ TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": 
 
 
 class TermNL:
-    def __init__(self, root=ROOT, home=None, agent="agent"):
+    def __init__(self, root=ROOT, home=None, agent="agent", simulate=(), screen=None):
+        """simulate and screen are for a host that holds TermNL (Symbiot): the skills (by their `does:`) it
+        simulates on top of settings.md's, never fewer, and which commands its own screen does (open a file in
+        its window): those aren't run here, the reply hands them over as "screen"."""
         self.root = root
+        self.also_simulated = set(simulate)
+        self.screen = screen or (lambda command: False)
         # agent: agent.py; back: back_agent.py, the version before it, kept for comparison
         self.version = agent
         self.Agent = importlib.import_module(".agent" if agent == "agent" else ".back_agent", __package__).Agent
@@ -52,7 +57,7 @@ class TermNL:
 
     def simulated(self, skill_id):
         does = next((s["does"] for s in self.lang["skills"] if s["id"] == skill_id), "")
-        return does in [d.strip() for d in (self.settings.get("simulate") or "").split(",")]
+        return does in self.also_simulated or does in [d.strip() for d in (self.settings.get("simulate") or "").split(",")]
 
     def set(self, key, value):
         """a switch, kept in memory and written back to its line in settings.md"""
@@ -84,6 +89,8 @@ class TermNL:
                     r["ran"] = "simulated"
                     r["say"] = a.reply("simulated", {"label": label})
                     r["show"] = command  # what would have run, always shown when nothing ran
+                elif self.screen(command):
+                    r["ran"], r["screen"] = "screen", command  # the host's screen does it
                 else:
                     out = self.execute(a, r, command)
                     if out is not None:
