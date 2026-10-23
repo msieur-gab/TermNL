@@ -8,11 +8,18 @@ import subprocess
 
 # opening an app or a file starts a program that stays open: it is started, not waited for
 DETACHED = ("setsid ", "xdg-open ")
+# the device's own tools (iw, ip) live in /usr/sbin, which some systems leave out of a person's PATH (Debian)
+SBIN = ("/usr/local/sbin", "/usr/sbin", "/sbin")
+
+
+def path():
+    have = os.environ.get("PATH", "").split(":")
+    return ":".join(have + [d for d in SBIN if d not in have])
 
 
 def run(command, home, timeout=10):
     """→ {ran: True, code, out, err} (or ran False with err when it couldn't start)"""
-    env = {**os.environ, "HOME": home}
+    env = {**os.environ, "HOME": home, "PATH": path()}
     try:
         if command.startswith(DETACHED):
             subprocess.Popen(["bash", "-c", command], cwd=home, env=env, start_new_session=True,

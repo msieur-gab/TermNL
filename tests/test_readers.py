@@ -7,8 +7,16 @@ from termnl.load import load_language
 from termnl.server import TermNL
 
 
-# what the commands of check-wifi and show-wifi (nmcli), check-network (ip) and check-bluetooth say on Gab's laptop
-WIFI = " :Garden Network:100\n*:Garden Network:76\n :Wonderland:90\n :Wonderland:85\n :Caf\\:e:30\n ::70\n"
+# what the commands of check-wifi and show-wifi (iw), check-network (ip) and check-bluetooth say on Gab's laptop;
+# "0.-85 dBm" as the board's driver writes it
+WIFI = ("Connected to 02:00:5e:10:00:01 (on wlp1s0)\n\tSSID: Garden Network\n\tfreq: 5180.0\n\tsignal: -62 dBm\n"
+        "BSS 02:00:5e:10:00:01(on wlp1s0) -- associated\n\tsignal: -50.00 dBm\n\tSSID: Garden Network\n\t\t * SSID List\n"
+        "BSS 02:00:5e:10:00:02(on wlp1s0)\n\tsignal: -48.00 dBm\n\tSSID: Garden Network\n"
+        "BSS 11:22:33:44:55:01(on wlp1s0)\n\tsignal: -55.00 dBm\n\tSSID: Wonderland\n"
+        "BSS 11:22:33:44:55:02(on wlp1s0)\n\tsignal: -58.00 dBm\n\tSSID: Wonderland\n"
+        "BSS 11:22:33:44:55:03(on wlp1s0)\n\tsignal: 0.-85 dBm\n\tSSID: Caf\\xc3\\xa9\n"
+        "BSS 11:22:33:44:55:04(on wlp1s0)\n\tsignal: -65.00 dBm\n\tSSID: \\x00\\x00\\x00\n")
+NOT_CONNECTED = "Not connected.\n" + WIFI[WIFI.index("BSS "):].replace(" -- associated", "")
 ADDRESSES = "lo               UNKNOWN        127.0.0.1/8 \nwlp1s0           UP             192.168.1.51/24 \ndocker0  DOWN  172.17.0.1/16\n"
 BLUETOOTH = "Controller 02:00:5e:10:00:aa (public)\n\tName: my-laptop\n\tAlias: my-laptop\n\tPowered: no\n"
 
@@ -64,11 +72,12 @@ class Readers(unittest.TestCase):
         w = load_language("en")["lists"]["readings"]
         r = readers.read("wifi", words=w, output=WIFI)
         self.assertEqual((r["level"], r["values"]["@sys.wifi"], r["values"]["@sys.wifi.signal"]), ("fine", "Garden Network", "76%"))  # the access point in use, not the strongest
-        self.assertEqual(readers.read("wifi", words=w, output=WIFI.replace("*", " "))["level"], "not connected")
+        self.assertEqual(readers.read("wifi", words=w, output=NOT_CONNECTED)["level"], "not connected")
         self.assertEqual(readers.read("wifi", words=w, output="")["level"], "off")
         r = readers.read("networks", words=w, output=WIFI)
-        # one row per name, its strongest access point; a ":" in a name; a hidden network left out
-        self.assertEqual([row[:2] for row in r["table"]["rows"]], [["Wonderland", "90%"], ["Garden Network (connected)", "76%"], ["Caf:e", "30%"]])
+        # one row per name, its strongest access point (the one in use: its signal now); a name with other
+        # letters; a hidden network left out
+        self.assertEqual([row[:2] for row in r["table"]["rows"]], [["Wonderland", "90%"], ["Garden Network (connected)", "76%"], ["Café", "30%"]])
         self.assertEqual(r["table"]["levels"], [None, None, "weak"])
         r = readers.read("network", words=w, output=ADDRESSES)
         self.assertEqual((r["level"], r["values"]["@sys.network.address"], r["values"]["@sys.network.through"]), ("connected", "192.168.1.51", "Wi-Fi"))

@@ -12,7 +12,7 @@ approve: no
 
 ## Command
 
-rfkill unblock bluetooth
+bluetoothctl power on
 
 ## Replies
 

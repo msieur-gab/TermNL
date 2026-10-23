@@ -6,7 +6,7 @@
   approve: no        always asks for approval first (destructive, or cuts a connection)
   moves: place       after it runs, you are in that folder (open folder)
   reads: memory      a skill that only reads: the device reads itself (readers.py), no command;
-                     or a reader of its command's output (reads: wifi, with nmcli in ## Command)
+                     or a reader of its command's output (reads: wifi, with iw in ## Command)
   ---
   ## Sentences       templates (template.py), each in `backticks` so <action> and
                      <object> show as written on GitHub instead of vanishing as HTML tags

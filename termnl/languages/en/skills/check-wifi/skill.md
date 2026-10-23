@@ -14,7 +14,7 @@ approve: no
 
 ## Command
 
-nmcli -t -f in-use,ssid,signal dev wifi
+iw dev | grep -o 'Interface .*' | cut -d' ' -f2 | xargs -I@ sh -c 'iw dev @ link; iw dev @ scan dump' | grep -E '^(Connected|Not connected|BSS)|SSID: |signal: '
 
 ## When it's fine
 

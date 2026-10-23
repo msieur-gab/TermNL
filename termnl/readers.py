@@ -259,24 +259,42 @@ FROM_COMMAND = ("wifi", "networks", "network", "bluetooth")
 WEAK = 40  # a Wi-Fi signal under this (of 100) drops and slows down
 
 
-def _fields(line):
-    """nmcli -t: fields split by ":", a ":" inside a name written "\\:" """
-    return [f.replace("\\:", ":") for f in re.split(r"(?<!\\):", line)]
+def _quality(dbm):
+    """a signal in dBm → of 100, as NetworkManager counts it: -50 dBm or stronger is 100, -100 is 0"""
+    return max(0, min(100, 2 * (round(dbm) + 100)))
+
+
+def _ssid(name):
+    """iw writes a name's other bytes as \\xNN (Café is Caf\\xc3\\xa9); a hidden network's are all zero"""
+    if "\\x" in name:
+        name = name.encode("latin-1", "replace").decode("unicode_escape").encode("latin-1").decode("utf-8", "replace")
+    return name.strip("\x00").strip()
 
 
 def _wifi_list(output):
-    """nmcli -t -f in-use,ssid,signal → [(name, signal, in use)], one per name: the access point in use, or
-    else the strongest (a network often has several, and only the one in use gives this device's signal)"""
-    best = {}
+    """`iw dev <wifi> link`, then `iw dev <wifi> scan dump` → [(name, signal of 100, in use)], one per name:
+    the one in use with the signal it has now (link), the others with their strongest access point (a
+    network often has several). Without root, the scan dump is what the device heard last, not a new scan."""
+    blocks = []
     for line in output.splitlines():
-        f = _fields(line)
-        if len(f) < 3 or not f[1] or not f[2].isdigit():
+        if line.startswith(("Connected to ", "BSS ")):
+            blocks.append({"link": line.startswith("Connected"), "used": line.startswith("Connected") or "associated" in line})
+        elif blocks:
+            name = re.match(r"\tSSID: (.*)$", line)
+            signal = re.match(r"\tsignal: .*?(-\d+(?:\.\d+)?) dBm", line)  # one board's driver writes "0.-75 dBm"
+            if name and "name" not in blocks[-1]:
+                blocks[-1]["name"] = _ssid(name.group(1))
+            if signal:
+                blocks[-1]["signal"] = _quality(float(signal.group(1)))
+    best = {}
+    for b in blocks:
+        if not b.get("name") or "signal" not in b:
             continue  # a hidden network has no name
-        name, signal, used = f[1], int(f[2]), f[0].strip() == "*"
-        old = best.get(name)
-        if used or not old or (not old[2] and signal > old[1]):
-            best[name] = (name, signal, used)
-    return sorted(best.values(), key=lambda n: (-n[1], not n[2]))  # strongest first; the one in use first among equals
+        old = best.get(b["name"])
+        if not old or b["link"] or (not old["link"] and (b["used"], b["signal"]) > (old["used"], old["signal"])):
+            best[b["name"]] = b
+    found = [(b["name"], b["signal"], b["used"]) for b in best.values()]
+    return sorted(found, key=lambda n: (-n[1], not n[2]))  # strongest first; the one in use first among equals
 
 
 def wifi(w, output=""):

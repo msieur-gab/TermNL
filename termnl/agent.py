@@ -584,7 +584,7 @@ class Agent:
         if skill["reads"]:  # the device reads itself; the reply is chosen once it has (server.py)
             args = {k: v["value"] if v.get("value") is not None else v.get("text") for k, v in vals.items()}
             out = {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"], "args": args, "values": self.display(skill, vals)}
-            if skill["command"]:  # a reader of the command's output (check wifi: nmcli)
+            if skill["command"]:  # a reader of the command's output (check wifi: iw)
                 out["command"] = self.command_for(skill, vals)
                 self.with_show(out, skill, vals)
             return out

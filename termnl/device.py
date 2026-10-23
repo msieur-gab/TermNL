@@ -10,11 +10,13 @@ import os
 import subprocess
 import time
 
+from .readers import _wifi_list
+from .runner import path
 
 
 def _run(args):
     try:
-        return subprocess.run(args, capture_output=True, text=True, timeout=5).stdout
+        return subprocess.run(args, capture_output=True, text=True, timeout=5, env={**os.environ, "PATH": path()}).stdout
     except (OSError, subprocess.TimeoutExpired):
         return ""
 
@@ -96,11 +98,11 @@ class Device:
         return out
 
     def _networks(self):
-        names = []
-        for line in _run(["nmcli", "-t", "-f", "ssid", "dev", "wifi", "list", "--rescan", "no"]).splitlines():
-            if line and line not in names:
-                names.append(line)
-        return [{"value": n, "names": [n]} for n in names]
+        """the Wi-Fi networks this device heard last, from each of its Wi-Fi devices (iw, as check wifi)"""
+        heard = ""
+        for i in sorted(os.path.basename(os.path.dirname(w)) for w in glob.glob("/sys/class/net/*/wireless")):
+            heard += _run(["iw", "dev", i, "link"]) + _run(["iw", "dev", i, "scan", "dump"])
+        return [{"value": n, "names": [n]} for n, _, _ in _wifi_list(heard)]
 
     def forget(self):
         """after a command ran: the lists are read again next time (a folder just made is known)"""

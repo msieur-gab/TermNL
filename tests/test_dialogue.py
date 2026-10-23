@@ -51,7 +51,7 @@ class Dialogue(unittest.TestCase):
     def test_admin_mode_on_approval_every_time(self):
         a = agent({"admin mode": "on"})
         self.assertEqual(a.hear("turn off the wifi")["outcome"], "approve")
-        self.assertEqual(a.hear("yes")["command"], "nmcli radio wifi off")
+        self.assertEqual(a.hear("yes")["command"], "iw dev | grep -o 'Interface .*' | cut -d' ' -f2 | xargs -I@ ip link set @ down")
         self.assertEqual(a.hear("turn off the wifi")["outcome"], "approve")
         self.assertEqual(a.hear("no")["reason"], "declined")
 
@@ -281,7 +281,7 @@ class Dialogue(unittest.TestCase):
         a = agent({"admin mode": "on"})
         a.hear("I don't need wifi right now, switch it off")
         self.assertEqual(a.hear("yes")["outcome"], "approve")
-        self.assertEqual(a.hear("yes")["command"], "nmcli radio wifi off")
+        self.assertEqual(a.hear("yes")["command"], "iw dev | grep -o 'Interface .*' | cut -d' ' -f2 | xargs -I@ ip link set @ down")
 
     def test_reading_is_not_held_back_by_a_negation(self):
         for said in ["is the board not overheating", "is my memory not full"]:

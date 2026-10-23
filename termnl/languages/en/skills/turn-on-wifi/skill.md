@@ -12,7 +12,7 @@ approve: no
 
 ## Command
 
-nmcli radio wifi on
+iw dev | grep -o 'Interface .*' | cut -d' ' -f2 | xargs -I@ ip link set @ up
 
 ## Replies
 

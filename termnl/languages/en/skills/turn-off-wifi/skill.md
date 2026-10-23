@@ -12,7 +12,7 @@ approve: yes
 
 ## Command
 
-nmcli radio wifi off
+iw dev | grep -o 'Interface .*' | cut -d' ' -f2 | xargs -I@ ip link set @ down
 
 ## Replies
 

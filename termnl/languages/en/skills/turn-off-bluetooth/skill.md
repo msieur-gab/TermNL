@@ -12,7 +12,7 @@ approve: no
 
 ## Command
 
-rfkill block bluetooth
+bluetoothctl power off
 
 ## Replies
 
