@@ -15,3 +15,6 @@ The kinds of things acted on. Each line: the object, then the words people use f
 - app: app, application, program
 - time: time, date, day, clock
 - process: process, processes, task, tasks, thread, threads
+- music: music, playlist, tunes
+- track: track, tracks, song, songs, album, artist
+- sound: sound, audio, speaker, speakers

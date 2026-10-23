@@ -7,7 +7,6 @@ More are welcome; each one teaches the edge.
 - tell me a joke
 - who are you
 - send an email to my mother
-- play some music
 - remind me to call the dentist
 - how do I cook rice
 - translate this into french

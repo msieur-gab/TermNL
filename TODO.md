@@ -32,6 +32,13 @@ he picks it. Nothing here is decided unless it says so. The thinking behind each
 
 ## Not placed yet
 
+- **Awareness of what the device is doing** (Gab, 23 Oct: "log the idea about media or status awareness, it is a
+  good idea"): TermNL only hears the sentence, so it doesn't know whether music plays, a download runs or a
+  window is open. A bare "stop", "pause" or "next" can't mean the music; "what's playing?" can't be answered.
+  Claude's sketch: with each sentence, the host sends what it is doing ({"music": "playing", "track": "…"}),
+  read like any other @sys value. Gab: "awareness is something i should make work on every device, and here
+  we are going for a custom use case", so it is to be designed for every device TermNL runs on, not around
+  the desk's player. The music skills came first, without it.
 - **Connecting to a network** ("connect to wonderland", Gab's test of 22 Oct): no skill yet.
 - **A dataset as a takeaway** (Gab, 22 Oct): one day, sentences people can reuse to train their own model,
   apart from his private logs.

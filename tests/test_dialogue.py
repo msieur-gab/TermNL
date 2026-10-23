@@ -451,6 +451,24 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(r["skill"], "create-file")
         self.assertNotIn("mkdir", r.get("command", ""))
 
+    # Music (Gab, 23 Oct): "play daft punk or play a thousand leaves", "play music start a random playlist",
+    # then stop, pause, mute, next and previous. Ordinary commands; the desk's player does them.
+    def test_music_is_played_by_name_or_at_random(self):
+        for said in ["play some music", "could you play some music?", "play music"]:
+            self.assertEqual(agent().hear(said)["command"], "mpc play", said)
+        self.assertEqual(agent().hear("play wax tailor")["command"], "mpc searchplay any 'Wax Tailor'")
+        self.assertEqual(agent().hear("play hope and sorrow")["command"], "mpc searchplay any 'Hope & Sorrow'")
+        self.assertEqual(agent().hear("play something by wax tailor")["command"], "mpc searchplay any 'Wax Tailor'")
+
+    def test_the_player_is_steered_in_plain_words(self):
+        for said, command in [("pause", "mpc pause"), ("pause the music", "mpc pause"), ("stop the music", "mpc stop"),
+                              ("next", "mpc next"), ("next song", "mpc next"), ("skip", "mpc next"), ("previous song", "mpc prev"),
+                              ("mute", "pactl set-sink-mute @DEFAULT_SINK@ 1"), ("unmute the sound", "pactl set-sink-mute @DEFAULT_SINK@ 0")]:
+            self.assertEqual(agent().hear(said).get("command"), command, said)
+
+    def test_stop_alone_is_still_a_no(self):
+        self.assertNotEqual(agent().hear("stop").get("skill"), "stop-music")
+
 
 if __name__ == "__main__":
     unittest.main()

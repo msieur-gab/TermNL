@@ -1,5 +1,5 @@
 """The device as the agent sees it: the values it can list itself (@sys.folder, @sys.service,
-@sys.app, @sys.network) and the files in a folder, all read from this machine.
+@sys.app, @sys.network, @sys.music from ~/Music) and the files in a folder, all read from this machine.
 
 Folders and files are those under TermNL's home (settings.md, "home:"), the folder that $HOME means
 in every command. Hidden folders are skipped. Lists are read again after a few seconds, so a folder
@@ -7,6 +7,7 @@ made a moment ago is already known."""
 import configparser
 import glob
 import os
+import re
 import subprocess
 import time
 
@@ -97,6 +98,23 @@ class Device:
             out.append({"value": comm, "names": names + ([comm] if comm not in names else [])})
         return out
 
+    AUDIO = (".mp3", ".flac", ".ogg", ".opus", ".m4a", ".wav", ".aac")
+
+    def _music(self):
+        """the music in home's Music folder, named as people say it: its artists (the folders), albums (the folders
+        in them) and titles (the files, without their track number). "&" can also be said "and"."""
+        names = []
+        for folder, dirs, files in os.walk(os.path.join(self.home, "Music")):
+            dirs[:] = sorted(d for d in dirs if not d.startswith("."))
+            names += [d for d in dirs]
+            names += [re.sub(r"^\d+\s*[-.]\s*", "", os.path.splitext(f)[0]) for f in sorted(files) if f.lower().endswith(self.AUDIO)]
+        out, seen = [], set()
+        for n in names:
+            if n and n.lower() not in seen:
+                seen.add(n.lower())
+                out.append({"value": n, "names": [n] + ([n.replace("&", "and")] if "&" in n else [])})
+        return out
+
     def _networks(self):
         """the Wi-Fi networks this device heard last, from each of its Wi-Fi devices (iw, as check wifi)"""
         heard = ""
@@ -109,7 +127,7 @@ class Device:
         self._cache.clear()
 
     def list(self, kind):
-        read = {"folder": self._folders, "service": self._services, "app": self._apps, "network": self._networks,
+        read = {"folder": self._folders, "service": self._services, "app": self._apps, "network": self._networks, "music": self._music,
                 "running": self._running}.get(kind)
         if not read:
             return []

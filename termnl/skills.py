@@ -19,14 +19,14 @@
                      reader's values are written {@sys.memory.used}, the person's name {user}
 
 Kinds: text, secret, a shared list (filetype), or a device list (@sys.folder, @sys.service,
-@sys.network, @sys.app)."""
+@sys.network, @sys.app, @sys.music)."""
 import re
 
 from .readers import FROM_COMMAND, READERS, placeholder
 from .template import compile_template, uses
 from .text import read_list, read_pairs, words
 
-DEVICE_KINDS = ["folder", "file", "service", "network", "app", "running"]
+DEVICE_KINDS = ["folder", "file", "service", "network", "app", "running", "music"]
 
 
 def read_lists(files):

@@ -23,6 +23,11 @@ LISTS = {
         {"value": "bluetooth", "names": ["bluetooth"]},  # a laptop's Bluetooth service has the object's name
     ],
     "network": [{"value": "home-5g", "names": ["home-5g", "home"]}],
+    "music": [  # artists, albums and titles, as read from ~/Music
+        {"value": "Wax Tailor", "names": ["Wax Tailor"]},
+        {"value": "Hope & Sorrow", "names": ["Hope & Sorrow", "Hope and Sorrow"]},
+        {"value": "The Tune", "names": ["The Tune"]},
+    ],
     "running": [
         {"value": "firefox", "names": ["Firefox", "firefox", "browser", "web browser"]},
         {"value": "gnome-terminal-", "names": ["Terminal", "terminal", "console"]},

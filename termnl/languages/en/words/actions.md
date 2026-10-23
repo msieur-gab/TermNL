@@ -15,3 +15,10 @@ A skill names its action in `does:`; its sentences write it as `<action>`.
 - leave: leave, exit, get out of
 - rename: rename, change the name of
 - close: close, quit
+- play: play, put on, listen to
+- pause: pause
+- stop: stop
+- next: next, skip
+- previous: previous
+- mute: mute, silence
+- unmute: unmute
