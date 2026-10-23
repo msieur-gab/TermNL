@@ -32,7 +32,9 @@ def _round(x):
 
 
 def train_classifier(examples, C=8.0, max_iter=150, min_df=2):
-    """examples: [{text, label}] → a small JSON-able model {labels, bias, weights}"""
+    """examples: [{text, label}] → a small JSON-able model {labels, bias, scale, weights}: each weight a whole
+    number from -127 to 127 (one byte, as ptiLU stores them), times the model's scale. Half the size of
+    decimals, the same decisions (measured 23 Oct: 241 sentences, the tests, Gab's real turns)."""
     import numpy as np
 
     labels = sorted({e["label"] for e in examples})
@@ -81,12 +83,13 @@ def train_classifier(examples, C=8.0, max_iter=150, min_df=2):
 
     w = _lbfgs(fg, np.zeros(K * nf + K), max_iter=max_iter)
     W, b = w[:K * nf].reshape(K, nf), w[K * nf:]
+    scale = float(np.abs(W).max()) / 127 or 1
     weights = {}
     for j, f in enumerate(vocab):
-        ws = [_round(float(W[k, j])) for k in range(K)]
-        if any(abs(v) >= 0.01 for v in ws):
+        ws = [int(round(float(W[k, j]) / scale)) for k in range(K)]
+        if any(abs(v) >= 0.01 for v in W[:, j]) and any(ws):
             weights[f] = [_round(float(idf[j]))] + ws
-    return {"labels": labels, "bias": [_round(float(v)) for v in b], "weights": weights}
+    return {"labels": labels, "bias": [_round(float(v)) for v in b], "scale": scale, "weights": weights}
 
 
 def _lbfgs(fg, x, m=10, max_iter=150, tol=1e-4):
@@ -149,9 +152,10 @@ def classify(model, text, toks=None):
         norm += v * v
     norm = math.sqrt(norm) or 1
     s = list(model["bias"])
+    scale = model.get("scale", 1)  # one byte per weight (train_classifier)
     for row, v in known:
         for k in range(len(s)):
-            s[k] += row[k + 1] * v / norm
+            s[k] += row[k + 1] * scale * v / norm
     mx = max(s)
     e = [math.exp(v - mx) for v in s]
     z = sum(e)

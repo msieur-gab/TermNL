@@ -20,6 +20,12 @@ class Dialogue(unittest.TestCase):
     def test_skill_files_have_no_problems(self):
         self.assertEqual(lang["errors"], [])
 
+    def test_every_weight_of_the_model_fits_in_one_byte(self):
+        for k in ("action", "object"):
+            m = lang["model"][k]
+            self.assertGreater(m["scale"], 0)
+            self.assertTrue(all(isinstance(x, int) and -127 <= x <= 127 for row in m["weights"].values() for x in row[1:]), k)
+
     def test_a_template_request_acts_with_values_quoted(self):
         r = agent().hear("create a file named sprout.md in the ideas folder")
         self.assertEqual(r["outcome"], "act")
