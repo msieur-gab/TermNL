@@ -13,6 +13,16 @@ approve: no
 - `<check> [the] <memory>`
 - `<memory> [usage]`
 
+## Also said
+
+- how much ram is free
+- is my memory full
+- how much memory do i have
+- ram usage
+- memory usage
+- am i running out of memory
+- how much memory is used
+
 ## When it's fine
 
 - You're using {@sys.memory.used} of {@sys.memory.total}. Plenty left.

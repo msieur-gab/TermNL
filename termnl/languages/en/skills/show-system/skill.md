@@ -16,6 +16,15 @@ Gab, 22 Oct: "what is this device configuration": what the machine is, not how i
 - `tell me about [this|the|my] <system>`
 - `(what|which) <system> is this`
 
+## Also said
+
+- what is this device configuration
+- what device is this
+- which board is this
+- what os is running
+- system info
+- tell me about this computer
+
 ## When it's fine
 
 - This is a {@sys.system.model}, running {@sys.system.os}:

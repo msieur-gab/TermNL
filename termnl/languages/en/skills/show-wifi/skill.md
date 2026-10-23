@@ -12,6 +12,15 @@ approve: no
 - `(which|what) networks are (there|around|available)`
 - `<show> [me] [the|available] <wifi> networks`
 
+## Also said
+
+- list all access points
+- show me accessible wifi
+- what wifi can i join
+- available networks
+- scan for wifi
+- nearby wifi networks
+
 ## Command
 
 iw dev | grep -o 'Interface .*' | cut -d' ' -f2 | xargs -I@ sh -c 'iw dev @ link; iw dev @ scan dump' | grep -E '^(Connected|Not connected|BSS)|SSID: |signal: '

@@ -11,6 +11,14 @@ approve: no
 - `is [the] <bluetooth> (on|off|working)`
 - `<check> [the] <bluetooth>`
 
+## Also said
+
+- is bluetooth on
+- bluetooth status
+- is bluetooth enabled
+- do i have bluetooth
+- is bluetooth working
+
 ## Command
 
 bluetoothctl show

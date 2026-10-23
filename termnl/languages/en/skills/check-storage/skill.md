@@ -15,6 +15,16 @@ approve: no
 - `<check> [the] <storage>`
 - `<storage> [usage|left]`
 
+## Also said
+
+- do i still have free space
+- is the disk full
+- how much room is left
+- free space on the card
+- sd card space
+- disk usage
+- am i running out of space
+
 ## When it's fine
 
 - You have {@sys.storage.free} free on the main disk, out of {@sys.storage.total}.

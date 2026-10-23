@@ -14,6 +14,15 @@ approve: no
 - `(cd|enter) [the|my] {place} [<folder>]`
 - `<open> [a|the|my] <folder>`
 
+## Also said
+
+- go to documents
+- documents
+- cd documents
+- take me to my music folder
+- enter downloads
+- open my doc folder
+
 ## Values
 
 - place: @sys.folder, required

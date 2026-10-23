@@ -53,6 +53,10 @@ def examples(skills, lists, per_template=40, seed=7):
                     continue
                 seen.add(key)
                 out.append({"text": text, "skill": skill["id"], "action": skill["action"], "object": skill["object"]})
+        # what people really say (## Also said), each counted three times: a few plain sentences among the
+        # templates' many variations
+        for text in skill["also"]:
+            out += [{"text": text, "skill": skill["id"], "action": skill["action"], "object": skill["object"]}] * 3
     return out
 
 

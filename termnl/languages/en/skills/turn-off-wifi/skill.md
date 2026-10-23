@@ -10,6 +10,14 @@ approve: yes
 - `<turn off> [the] <wifi>`
 - `(turn|switch) [the] <wifi> off`
 
+## Also said
+
+- cut the wireless
+- switch the wifi off
+- no more wifi
+- wifi off
+- kill the wireless
+
 ## Command
 
 iw dev | grep -o 'Interface .*' | cut -d' ' -f2 | xargs -I@ ip link set @ down

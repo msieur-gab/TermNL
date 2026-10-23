@@ -15,6 +15,15 @@ player shuffles everything when nothing is loaded, and carries on when something
 - `shuffle [my|the|all] [<music>]`
 - `(i want|i'd like) [to] (hear|listen to) [some] <music>`
 
+## Also said
+
+- put on some music
+- i want music
+- music please
+- random music
+- shuffle my songs
+- play anything
+
 ## Command
 
 mpc play

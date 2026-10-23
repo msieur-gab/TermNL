@@ -13,6 +13,15 @@ approve: no
 - `(what's|what is) my ip [address]`
 - `<check> [the|my] <network>`
 
+## Also said
+
+- what is my ip address
+- my ip
+- am i online
+- is the network up
+- network status
+- ip address
+
 ## Command
 
 ip -4 -brief addr

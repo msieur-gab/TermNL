@@ -10,6 +10,8 @@
   ---
   ## Sentences       templates (template.py), each in `backticks` so <action> and
                      <object> show as written on GitHub instead of vanishing as HTML tags
+  ## Also said       how people say it, in plain sentences: for training only, never a rule (Gab's
+                     log, 23 Oct: "what is consuming my ram", "chip temperature")
   ## Values          - name: kind[, required][, new][, default: x]
                        new: must not exist yet in the place (create file); default: here = where you are
                        @sys.file: a file that must exist, found in the place or anywhere in home
@@ -74,6 +76,7 @@ def read_skill(id, md):
             elif p.startswith("default:"):
                 v["default"] = p[8:].strip()
         values[e["key"]] = v
+    also = [re.sub(r"^`(.*)`$", r"\1", l[2:].strip()) for l in (section(md, "Also said") or []) if l.startswith("- ")]
     command = next((c for c in (re.sub(r"^`+|`+$", "", l.strip()) for l in (section(md, "Command") or []))
                     if c and not c.startswith("#")), "")
     replies = {e["key"]: e["rest"] for e in read_list(md, "Replies")}
@@ -89,7 +92,7 @@ def read_skill(id, md):
     yes = lambda k: bool(re.match(r"^yes$", meta.get(k, ""), re.I))
     return {"id": id, "does": meta.get("does", ""), "label": meta.get("label") or meta.get("does") or id,
             "admin": yes("admin"), "approve": yes("approve"), "moves": meta.get("moves", ""), "reads": meta.get("reads", ""), "when": when,
-            "sentences": sentences, "values": values, "command": command, "replies": replies}
+            "sentences": sentences, "also": also, "values": values, "command": command, "replies": replies}
 
 
 def check(skill, lists):
@@ -178,9 +181,14 @@ def load(list_files, skill_files):
         s = read_skill(id, md)
         errors.extend(check(s, lists))
         skills.append(s)
-    does = {}
+    does, said = {}, {}
     for s in skills:
         if s["does"] in does:
             errors.append('%s: "does: %s" is also %s' % (s["id"], s["does"], does[s["does"]]))
         does[s["does"]] = s["id"]
+        for a in s["also"]:  # one sentence teaching two skills would teach neither
+            key = " ".join(words(a))
+            if key in said and said[key] != s["id"]:
+                errors.append('%s: "%s" is also said for %s' % (s["id"], a, said[key]))
+            said[key] = s["id"]
     return {"lists": lists, "skills": skills, "errors": errors}

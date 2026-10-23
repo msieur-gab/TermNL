@@ -16,6 +16,18 @@ Gab, 22 Oct: "what is taking my memory", "what is consuming my ram", "is there a
 - `<show> [me] [the|all] [running|active] (programs|<process>)`
 - `(who|what) is using [the|my] <memory>`
 
+## Also said
+
+- what is consuming my ram
+- what is taking my memory
+- which app uses the most memory
+- list running processes
+- top processes
+- what is hogging the memory
+- show active threads
+- threads
+- process
+
 ## When it's fine
 
 - {@sys.processes.top} uses the most memory right now:

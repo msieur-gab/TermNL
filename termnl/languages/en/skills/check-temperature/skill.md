@@ -13,6 +13,18 @@ approve: no
 - `(what's|what is) the <temperature> [of the <system>]`
 - `<check> [the] <temperature>`
 
+## Also said
+
+- chip temperature
+- cpu temperature
+- is the board too hot
+- is it overheating
+- how warm is the cpu
+- is the pi hot
+- board temperature
+- my board is warm
+- the device feels hot
+
 ## When it's fine
 
 - No worries, it's at {@sys.temperature}, well below the {@sys.temperature.max} where it would slow down.

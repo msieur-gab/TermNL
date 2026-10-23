@@ -15,6 +15,15 @@ approve: no
 - `is everything (ok|okay|fine|alright) [with the <system>]`
 - `<system> (status|health)`
 
+## Also said
+
+- is my pi ok
+- how is the board doing
+- is everything ok
+- system status
+- is the device healthy
+- how is my computer doing
+
 ## When it's fine
 
 - All good. It has been running for {@sys.health.uptime}.

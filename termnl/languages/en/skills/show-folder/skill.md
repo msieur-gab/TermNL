@@ -17,6 +17,17 @@ approve: no
 - `<show> [me] [all] [the|my] (<file>|<folder>|things) [(in|inside|of) [the|my] {place} [<folder>]]`
 - `(what|which) <file> (are|do i have) [(here|in [the|my] {place} [<folder>])]`
 
+## Also said
+
+- list al files
+- read all files
+- list all
+- list my files
+- what's in here
+- show files
+- what files do i have
+- dir
+
 ## Values
 
 - place: @sys.folder, default: here
