@@ -434,6 +434,23 @@ class Dialogue(unittest.TestCase):
         r = a.hear("ls")
         self.assertEqual((r["skill"], r["args"]["place"]), ("show-folder", "$HOME/Documents"))
 
+    # Two wrong actions in Gab's first evening with TermNL in the desk (23 Oct)
+    def test_a_typo_never_hides_a_place_inside_a_name(self):
+        a = agent()
+        r = a.hear("add a new file call gab.md insde Documents")  # made "gab.md insde Documents.md" in home
+        self.assertEqual(r["outcome"], "ask")  # a typo read is said, and asked
+        self.assertEqual(r["corrections"], [["insde", "inside"]])
+        self.assertEqual(a.hear("yes")["command"], "touch $HOME'/Documents/gab.md'")
+
+    def test_names_are_still_never_corrected(self):
+        self.assertEqual(agent().hear("create a file called chek list")["command"], "touch $HOME'/chek list.md'")
+        self.assertEqual(agent().hear("create a folder called holiday photos")["command"], "mkdir -p $HOME'/holiday photos'")
+
+    def test_a_name_ending_in_a_file_type_is_a_file_never_a_folder(self):
+        r = agent().hear("create a note.md in the Documents folder")  # was a folder called note.md
+        self.assertEqual(r["skill"], "create-file")
+        self.assertNotIn("mkdir", r.get("command", ""))
+
 
 if __name__ == "__main__":
     unittest.main()

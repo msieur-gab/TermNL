@@ -235,6 +235,21 @@ class Agent:
                 used.add(f)
         return vals, used
 
+    def as_file(self, skill, toks):
+        """a name ending in a known file type (note.md) is a file: the same action on a file, never on a folder
+        (Gab, 23 Oct: "create a note.md in the Documents folder" was read as a folder called note.md)"""
+        exts = {t["ext"] for t in self.lists["filetypes"]}
+        if skill["object"] != "folder" or not any("." in t["word"] and t["word"].rsplit(".", 1)[1] in exts for t in toks):
+            return skill
+        return next((s for s in self.skills if s["action"] == skill["action"] and s["object"] == "file"), skill)
+
+    def hid_a_place(self, u, v):
+        """a typo inside a name hid a place (Gab, 23 Oct: "add a new file call gab.md insde Documents" made a file
+        named "gab.md insde Documents.md"): corrected, the same skill reads a value the device has, a folder, that
+        the name had swallowed. The name itself is still never corrected: it is what comes before the place."""
+        return v["how"] == "template" and v["skill"]["id"] == u["skill"]["id"] and any(
+            k not in u["vals"] and x.get("value") is not None and not x.get("unknown") for k, x in v["vals"].items())
+
     def understand(self, text, toks):
         """What the sentence asks for: a template's exact reading, or the model's best action + object."""
         found = self.read(text, toks)
@@ -256,6 +271,7 @@ class Agent:
         none = max(P(pa, "none"), P(po, "none"))
         if not top or top["p"] < MAYBE or none > top["p"]:
             return None
+        top["skill"] = self.as_file(top["skill"], toks)
         vals, used = self.read_values(top["skill"], text, toks)
         taught = set(self.model["taught"].get(top["skill"]["id"], []))
         negation = {w for ph in self.lists["conversation"].get("negation", []) for w in ph}  # handled by its own rule
@@ -568,10 +584,11 @@ class Agent:
         u = self.understand(text, toks)
         # typos: only when the sentence as typed isn't read by a template, and only if the corrected
         # sentence is read better (by a template, or with fewer words unknown)
-        if not u or u["how"] == "model":
+        if not u or u["how"] != "choose":
             fixed, fixes = self.correct(toks)
             v = self.understand(text, fixed) if fixes else None
-            if v and v["how"] != "choose" and (not u or v["how"] == "template" or len(v["unknown"]) < len(u["unknown"])):
+            if v and v["how"] != "choose" and ((not u or u["how"] == "model") and (not u or v["how"] == "template" or len(v["unknown"]) < len(u["unknown"]))
+                                               or u and u["how"] == "template" and self.hid_a_place(u, v)):
                 u, toks, self.fixes = v, fixed, fixes
         self.last = u if u and u["how"] != "choose" else None
         sure = bool(u) and (u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"]))
