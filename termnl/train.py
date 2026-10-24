@@ -28,6 +28,11 @@ if __name__ == "__main__":
     lang = sys.argv[1] if len(sys.argv) > 1 else "en"
     model, n, seconds = train_language(lang)
     out = json.dumps(model, separators=(",", ":"))
-    with open(os.path.join(language_dir(lang), "model.json"), "w", encoding="utf-8") as f:
+    # the model in use is replaced only once the new one is whole; the one before is kept beside it
+    path = os.path.join(language_dir(lang), "model.json")
+    with open(path + ".new", "w", encoding="utf-8") as f:
         f.write(out)
+    if os.path.exists(path):
+        os.replace(path, os.path.join(language_dir(lang), "model.previous.json"))
+    os.replace(path + ".new", path)
     print("%d sentences, trained in %.1fs, %d KB → termnl/languages/%s/model.json" % (n, seconds, round(len(out) / 1024), lang))

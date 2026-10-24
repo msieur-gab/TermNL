@@ -113,7 +113,7 @@ def read_skill(id, md):
             "admin": yes("admin"), "approve": yes("approve"), "moves": meta.get("moves", ""), "reads": meta.get("reads", ""), "when": when,
             "sentences": sentences, "also": also, "values": values, "command": command, "replies": replies,
             "plain": plain, "needs": section(md, "What it needs"), "changes": changes,
-            "opens": meta.get("opens", "").strip(), "lists": meta.get("lists", "").strip()}
+            "opens": meta.get("opens", "").strip(), "lists": meta.get("lists", "").strip(), "trains": meta.get("trains", "").strip()}
 
 
 def check(skill, lists):
@@ -198,6 +198,8 @@ def check(skill, lists):
             say("the %s reader reads what a command says: the skill needs a ## Command" % skill["reads"])
         elif skill["reads"] not in FROM_COMMAND and skill["command"]:
             say("the %s reader reads the device itself: the skill has no command" % skill["reads"])
+    elif skill.get("trains") and skill["trains"] != "the model":
+        say('trains: "%s" — a skill can only train the model' % skill["trains"])
     elif skill.get("lists") and skill["lists"] != "skills":
         say('lists: "%s" — a skill can only list skills' % skill["lists"])
     elif "done" not in skill["replies"]:

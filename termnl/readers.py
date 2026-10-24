@@ -49,9 +49,12 @@ def _meminfo():
     return out
 
 
-def _since(seconds, w):
+def since(seconds, w):
     d, h, m = int(seconds // 86400), int(seconds % 86400 // 3600), int(seconds % 3600 // 60)
     parts = ([w("day" if d == 1 else "days", n=d)] if d else []) + ([w("hour" if h == 1 else "hours", n=h)] if h else [])
+    if not parts and not m:  # under a minute (a training on the laptop)
+        s = int(seconds)
+        return w("second" if s == 1 else "seconds", n=s)
     if not parts:
         return w("minute" if m == 1 else "minutes", n=m)
     return w("and", a=parts[0], b=parts[1]) if len(parts) == 2 else parts[0]
@@ -180,7 +183,7 @@ def system(w):
     m, d = memory(w), storage(w)
     rows = [[w("device"), _model()], [w("system"), _os()], [w("kernel"), platform.release()],
             [w("processor"), w("cores", cpu=_cpu(), count=os.cpu_count() or 1)], [w("memory"), m["values"]["total"]],
-            [w("main disk row"), d["values"]["total"]], [w("running for"), _since(_uptime(), w)]]
+            [w("main disk row"), d["values"]["total"]], [w("running for"), since(_uptime(), w)]]
     return {"level": "fine", "values": {"model": rows[0][1], "os": rows[1][1]}, "table": {"columns": ["", ""], "rows": rows}}
 
 
@@ -191,10 +194,10 @@ def health(w):
         "busy" if t["level"] == "warm" or m["level"] == "high" or d["level"] == "filling up" else "fine"
     levels = [t["level"], m["level"], d["level"], None]
     rows = [[w("temperature"), t["values"][""]], [w("memory"), w("memory used", used=m["values"]["used"], total=m["values"]["total"])],
-            [w("main disk row"), w("disk free", free=d["values"]["free"], total=d["values"]["total"])], [w("running for"), _since(_uptime(), w)]]
+            [w("main disk row"), w("disk free", free=d["values"]["free"], total=d["values"]["total"])], [w("running for"), since(_uptime(), w)]]
     rows = [row + [w("level " + lv) if lv else ""] for row, lv in zip(rows, levels)]
     return {"level": worst, "values": {"temperature": t["values"][""], "memory": m["values"]["percent"], "disk": d["values"]["percent"],
-                                       "uptime": _since(_uptime(), w)},
+                                       "uptime": since(_uptime(), w)},
             "table": {"columns": ["", w("now"), ""], "rows": rows, "levels": levels}}
 
 

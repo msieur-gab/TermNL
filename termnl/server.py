@@ -17,6 +17,9 @@ import os
 import random
 import re
 import socket
+import subprocess
+import sys
+import time
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -24,7 +27,7 @@ import importlib
 
 from . import readers
 from .device import Device
-from .load import ROOT, load_language, load_settings
+from .load import HERE, ROOT, load_language, load_settings
 from .runner import run
 from .text import fill, pick
 
@@ -59,6 +62,9 @@ class TermNL:
         self.device = Device(home or self.settings.get("home") or "~/TermNL-home",
                              home_names=[" ".join(p) for p in self.lang["lists"]["conversation"].get("home folder", [["home"]])])
         os.makedirs(self.device.home, exist_ok=True)
+        self.training = None  # learning again: {started, process}, then {done, ok, seconds, error} until it is told
+        # how the model is trained again on this device: the lowest priority, two threads, so the board stays usable
+        self.trainer = ["nice", "-n", "19", sys.executable, "-m", "termnl.train"]
         self.sessions = {}
         self.lock = threading.Lock()
 
@@ -87,11 +93,42 @@ class TermNL:
             self.sessions[session] = self.Agent(**self.lang, settings=self.settings, device=self.device)
         return self.sessions[session]
 
+    def train(self):
+        """"learn what I taught you": trains the model again from the skill files, in the background. The
+        model in use is replaced only when the new one is whole (train.py); the one before stays beside it."""
+        if self.training and "process" in self.training:
+            return False
+        env = {**os.environ, "OPENBLAS_NUM_THREADS": "2", "OMP_NUM_THREADS": "2"}
+        process = subprocess.Popen(self.trainer, cwd=os.path.dirname(HERE), env=env, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, text=True, start_new_session=True)
+        self.training = {"started": time.time(), "process": process}
+        return True
+
+    def learnt(self):
+        """once training is over: the new model is loaded, and the next reply says how it went (a note)"""
+        t = self.training
+        if not t or "process" not in t or t["process"].poll() is None:
+            return None
+        out, err = t["process"].communicate()
+        seconds = time.time() - t["started"]
+        self.training = None
+        a = self.Agent(**self.lang, settings=self.settings, device=self.device)
+        if t["process"].returncode != 0:
+            return a.reply("learning failed", {"error": (err.strip().splitlines() or ["code %d" % t["process"].returncode])[-1]})
+        self.lang = load_language("en")
+        for session in self.sessions.values():
+            session.model = self.lang["model"]
+        took = readers.since(seconds, readers.Words(self.lang["lists"]["readings"]))
+        return a.reply("learnt", {"time": took})
+
     def say(self, text, session):
         with self.lock:
+            done = self.learnt()
             a = self.agent(session)
             r = a.hear(text)
             r = self.notes(a, r, text) or r
+            if r.pop("trains", None) and not self.train():
+                r["say"] = a.reply("still learning")
             command = r.pop("command", None)
             for key, value in (r.get("changes") or {}).items():  # "call me Gab", "turn admin mode on"
                 self.set(key, value)
@@ -111,6 +148,8 @@ class TermNL:
                         r["ran"] = "ran"
                         r["say"] = r["say"].replace("{output}", out.strip())
             r["here"] = a.here["label"]
+            if done:  # training ended since the last turn: said before the reply
+                r["say"] = done + " " + r["say"]
             self.log(session, text, r, command)
             r.pop("teach", None)  # the learning inbox comes next; nothing is learned yet
             r.pop("inbox", None)

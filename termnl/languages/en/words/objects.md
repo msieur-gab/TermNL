@@ -24,6 +24,7 @@ The kinds of things acted on. Each line: the object, then the words people use f
 - name: name
 - settings: settings, preferences, options
 - help: help
+- model: model, brain
 
 ## Topics
 
@@ -33,5 +34,5 @@ How "help" groups what TermNL can do. Each line: a topic, then its objects; a to
 - This device: system, storage, memory, temperature, time, uptime, process, app, service
 - Network: network, wifi, bluetooth
 - Music and sound: music, track, sound
-- You and me: name, commands, settings
+- You and me: name, commands, settings, model
 - Something else:

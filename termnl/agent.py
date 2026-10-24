@@ -749,6 +749,8 @@ class Agent:
 
     def act(self, skill, vals):
         self.pending = None
+        if skill.get("trains"):  # the server trains the model again, in the background (server.py, train)
+            return {"outcome": "act", "skill": skill["id"], "trains": True, "say": self.reply(skill["replies"]["done"])}
         if skill.get("opens"):  # a panel of the page: the settings' toggles
             return {"outcome": "act", "skill": skill["id"], "opens": skill["opens"], "say": self.reply(skill["replies"]["done"])}
         if skill.get("lists") == "skills":  # help: what TermNL can do, by topic (words/objects.md, Topics)

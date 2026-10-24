@@ -25,7 +25,11 @@ Python 3.9 or newer, standard library only. Training the model needs numpy (`pyt
 this with `changes: show commands to on` in its header instead of a command. Admin mode is never changed by a
 sentence (the checker refuses a skill that tries): "open my settings" opens the settings panel, where it is a
 toggle beside the commands and your name. "help" lists what TermNL can do, by the topics in
-`words/objects.md`. Replies can say `{user}`: "Hey {user}, no problem: your CPU is at…"; a variant
+`words/objects.md`.
+
+"learn what I taught you" (approved first) trains the model again from the skill files, in the background, at
+the lowest priority and on two threads: the board stays usable, and the next reply says when it is done. The
+model in use is replaced only once the new one is whole; the one before is kept as `model.previous.json`. Replies can say `{user}`: "Hey {user}, no problem: your CPU is at…"; a variant
 with `{user}` is only used once a name is set.
 
 ## Layout

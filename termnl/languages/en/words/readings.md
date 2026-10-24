@@ -13,6 +13,8 @@ follows it. `{n}`, `{used}`… are filled in with the numbers.
 - hours: {n} hours
 - minute: {n} minute
 - minutes: {n} minutes
+- second: {n} second
+- seconds: {n} seconds
 - and: {a} and {b}
 - today: today {time}
 - date: {day} {month} {year}

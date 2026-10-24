@@ -580,5 +580,41 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(b.hear("make a folder called bikes")["skill"], "create-folder")  # the chips don't hold the next request
 
 
+    def test_learning_again_is_asked_for_in_words_and_approved_first(self):
+        """Gab, 24 Oct: "give a specific command to user within TermNL to retrain their model"; then "let us
+        build this one and then i will test on the eve device later on" """
+        for said in ("learn what i taught you", "retrain your model", "train the model again"):
+            a = agent()
+            self.assertEqual(a.hear(said)["outcome"], "approve", said)
+            r = a.hear("yes")
+            self.assertEqual((r["outcome"], r.get("trains")), ("act", True), said)
+
+    def test_the_server_learns_in_the_background_and_says_when_it_is_done(self):
+        import shutil
+        import tempfile
+        import time
+        from termnl.server import TermNL
+        root = tempfile.mkdtemp()
+        try:
+            shutil.copy(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "settings.md"), root)
+            app = TermNL(root=root, home=os.path.join(root, "home"))
+            app.log = lambda *a, **k: None
+            app.trainer = ["sleep", "1"]  # a stand-in that takes a moment
+            app.say("learn what i taught you", "t")
+            self.assertIn("learning now", app.say("yes", "t")["say"])
+            app.say("retrain your model", "t")
+            self.assertIn("still learning", app.say("yes", "t")["say"])  # one training at a time
+            app.training["process"].wait()
+            self.assertRegex(app.say("what time is it", "t")["say"], r"learn.* 1 second\b")  # the next reply says it is done
+            self.assertIsNone(app.training)
+            app.trainer = ["sh", "-c", "echo no numpy here >&2; exit 1"]
+            app.say("learn what i taught you", "t")
+            app.say("yes", "t")
+            app.training["process"].wait()
+            self.assertIn("kept what I knew before: no numpy here", app.say("what time is it", "t")["say"])
+        finally:
+            shutil.rmtree(root)
+
+
 if __name__ == "__main__":
     unittest.main()

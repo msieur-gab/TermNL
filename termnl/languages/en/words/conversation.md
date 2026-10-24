@@ -22,6 +22,9 @@ Words for the conversation itself, outside any skill.
 ## Replies
 
 - and more: and {count} more
+- learnt: I've learnt what you taught me (it took {time}). | Done learning, in {time}.
+- learning failed: I couldn't learn this time, so I kept what I knew before: {error}
+- still learning: I'm still learning from the last time. I'll tell you when I'm done.
 - help topic: In {topic}, I can:
 - abstain: I can't do that yet. | I don't know how to do that yet. | Sorry {user}, I can't do that yet.
 - admin off: That needs admin mode, which is off. You can turn it on in your settings.

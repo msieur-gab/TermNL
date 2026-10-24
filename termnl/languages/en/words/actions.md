@@ -30,6 +30,7 @@ A skill names its action in `does:`; its sentences write it as `<action>`.
 - compress: compress, zip, pack
 - download: download, fetch
 - set: set, change
+- train: train, retrain, learn
 
 ## Opposites
 
