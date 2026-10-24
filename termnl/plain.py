@@ -3,7 +3,8 @@
 A skill's `## People say` holds sentences as people say them. Four marks, all from everyday writing:
 
   words         written as said; a word for an action or an object (words/actions.md, words/objects.md)
-                stands for all its words: "make a folder" also hears "create a directory"
+                stands for all its words: "make a folder" also hears "create a directory" (an action once
+                per sentence: in "make a new folder", "new" is just the word new)
   a/b           one of these words: "called/named"
   ( … )         may be left out: "make a (new) folder"
   {value}       a value, said under ## What it needs
@@ -47,14 +48,28 @@ def ref(names, own, said):
 def to_template(sentence, lists, own=()):
     """a plain sentence → the template it means: "make a (new) folder called/named {name}" →
     "<create> a [new] <folder> (called|named) {name}". Raises ValueError, as compile_template does."""
-    known, out, run = phrases_of(lists), [], []
+    known, out, run, said = phrases_of(lists), [], [], set()
+
+    def family(words_):
+        """the family a phrase stands for, or None: an action already said in the sentence is a plain word
+        the second time ("make a new folder": "new" is a word for create, but nobody means "make a make")"""
+        names = known.get(tuple(words_))
+        if not names:
+            return None
+        name = ref(names, own, " ".join(words_))
+        if name in said:
+            return None
+        if name in lists["actions"]:  # an object may come back ("a folder in the projects folder")
+            said.add(name)
+        return name
 
     def flush():
         i = 0
         while i < len(run):
             hit = next((n for n in range(len(run) - i, 0, -1) if tuple(run[i:i + n]) in known), 0)
-            if hit:
-                out.append("<%s>" % ref(known[tuple(run[i:i + hit])], own, " ".join(run[i:i + hit])))
+            name = family(run[i:i + hit]) if hit else None
+            if name:
+                out.append("<%s>" % name)
                 i += hit
             else:
                 out.append(run[i])
@@ -83,7 +98,9 @@ def to_template(sentence, lists, own=()):
             alts = []
             for w in items:
                 names = known.get(tuple(words(w)))
-                alts.append("<%s>" % ref(names, own, w) if names else words(w)[0])
+                name = ref(names, own, w) if names else None
+                alts.append("<%s>" % name if name and name not in said else words(w)[0])
+            said.update(n for n in (ref(known[tuple(words(w))], own, w) for w in items if tuple(words(w)) in known) if n in lists["actions"])
             out.append("(%s)" % "|".join(alts))
         else:
             run.extend(words(tok))

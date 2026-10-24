@@ -8,11 +8,14 @@
   reads: memory      a skill that only reads: the device reads itself (readers.py), no command;
                      or a reader of its command's output (reads: wifi, with iw in ## Command)
   ---
-  ## Sentences       templates (template.py), each in `backticks` so <action> and
+  ## People say     plain sentences (plain.py): a word for the action or object stands for all its
+                     words, a/b one of these words, ( ) may be left out, {value} a value
+  ## Sentences       or, the older form: templates (template.py), each in `backticks` so <action> and
                      <object> show as written on GitHub instead of vanishing as HTML tags
   ## Also said       how people say it, in plain sentences: for training only, never a rule (Gab's
                      log, 23 Oct: "what is consuming my ram", "chip temperature")
-  ## Values          - name: kind[, required][, new][, default: x]
+  ## What it needs  - {place}: a folder on the device. If it's not said: where you are. (words/values.md)
+  ## Values          or, the older form: - name: kind[, required][, new][, default: x]
                        new: must not exist yet in the place (create file); default: here = where you are
                        @sys.file: a file that must exist, found in the place or anywhere in home
   ## Command         one line; {value} is filled in and quoted
