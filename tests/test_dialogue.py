@@ -475,6 +475,41 @@ class Dialogue(unittest.TestCase):
     def test_stop_alone_is_still_a_no(self):
         self.assertNotEqual(agent().hear("stop").get("skill"), "stop-music")
 
+    # ---- 24 Oct 2026, feat/improvements: act with confidence, ask to tell apart, or abstain
+
+    def test_turn_on_is_told_apart_by_its_object(self):
+        """Gab, 24 Oct: "turn on the wifi, turn on the music, turn on bluetooth should be clearly
+        disambiguated. TermNL should be able to act with confidence or ask for disambiguation or abstain." """
+        a = {"admin mode": "on"}
+        for said, skill, outcome in [("turn on the wifi", "turn-on-wifi", "approve"), ("turn on the music", "play-music", "act"),
+                                     ("turn on bluetooth", "turn-on-bluetooth", "approve"), ("turn the music on", "play-music", "act"),
+                                     ("turn the music off", "stop-music", "act"), ("turn off the sound", "mute-sound", "act"),
+                                     ("start bluetooth", "turn-on-bluetooth", "approve"), ("stop the wifi", "turn-off-wifi", "approve"),
+                                     ("stop bluetooth", "turn-off-bluetooth", "approve")]:
+            r = agent(a).hear(said)
+            self.assertEqual((r.get("skill"), r["outcome"]), (skill, outcome), said)
+
+    def test_an_action_without_its_object_asks_which_one(self):
+        for said in ("turn on", "turn it on", "turn off", "switch it off"):
+            r = agent().hear(said)
+            self.assertEqual(r["outcome"], "ask", said)
+            self.assertIsNone(r.get("skill"), said)
+            self.assertGreaterEqual(len(r["chips"]), 2, said)
+        a = agent({"admin mode": "on"})
+        self.assertIn("turn Wi-Fi on", a.hear("turn on")["chips"])
+        self.assertEqual(a.hear("turn Wi-Fi on")["skill"], "turn-on-wifi")
+
+    def test_a_template_the_model_doubts_asks_which_of_two(self):
+        """24 Oct: both silent wrong actions found by the probes came from templates, never from the model."""
+        for said, labels in [("rename the folder photos to pictures", {"rename a file", "rename a folder"}),
+                             ("is bluetooth running", {"check a service", "check Bluetooth"})]:
+            r = agent().hear(said)
+            self.assertEqual(r["outcome"], "ask", said)
+            self.assertEqual(set(r["chips"]), labels, said)
+        a = agent()
+        a.hear("is bluetooth running")
+        self.assertEqual(a.hear("check Bluetooth")["skill"], "check-bluetooth")
+
 
 if __name__ == "__main__":
     unittest.main()

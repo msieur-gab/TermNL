@@ -1,0 +1,141 @@
+# Held-out sentences — never trained on, never tuned against
+
+Written on 24 Oct 2026, before any change on the `feat/improvements` branch, by an instance that had
+read the skills' names but wrote these as a person might type them, typos included (about one in six,
+as in Gab's log). Frozen: no sentence here goes into a skill file, and nothing is tuned while looking at
+its failures. `tests/probes.md` is the set used for tuning instead. `python3 -m tests.measure heldout`.
+
+Each line: the skill that should answer (or `none`: TermNL should not act), then the sentence.
+
+- check-storage: how full is my disk
+- check-storage: do i have room for more files
+- check-storage: disk space left?
+- check-storage: is the storage running out
+- check-memory: how much ram do i have free
+- check-memory: is the memory ok
+- check-memory: check the ram
+- check-memory: memroy usage
+- check-temperature: is the board too hot
+- check-temperature: what's the temperature
+- check-temperature: how warm is the cpu right now
+- check-temperature: temprature?
+- check-system: is everything ok with the computer
+- check-system: how is my board doing
+- check-system: run a quick check of the system
+- check-network: am i connected to the internet
+- check-network: is the network ok
+- check-network: what is my ip address
+- check-wifi: which wifi network is this
+- check-wifi: am i on the wifi
+- check-wifi: is wifi working
+- show-wifi: which wifi networks are around
+- show-wifi: show the wifi networks
+- show-wifi: find wifi networks
+- turn-on-wifi: switch on the wifi
+- turn-on-wifi: enable wireless
+- turn-on-wifi: put the wifi back on
+- turn-on-wifi: turn wifi on
+- turn-off-wifi: turn the wifi off
+- turn-off-wifi: disable the wireless
+- turn-off-wifi: wifi off
+- turn-off-wifi: cut the wifi
+- check-bluetooth: is bluetooth on
+- check-bluetooth: is the bluetooth enabled
+- check-bluetooth: bluetooth status
+- turn-on-bluetooth: turn bluetooth on
+- turn-on-bluetooth: enable bluetooth please
+- turn-on-bluetooth: switch the bluetooth on
+- turn-off-bluetooth: turn the bluetooth off
+- turn-off-bluetooth: disable bluetooth
+- turn-off-bluetooth: switch off bluetoth
+- check-service: is nginx running
+- check-service: check the ssh service
+- check-service: is the web server working
+- restart-service: restart nginx
+- restart-service: restart the web server please
+- restart-service: reload the ssh service
+- restart-system: restart the board
+- restart-system: reboot the pi
+- restart-system: please restart my computer
+- shut-down-system: shut down the computer
+- shut-down-system: power down the board
+- shut-down-system: turn the pi off
+- show-system: what is this computer made of
+- show-system: tell me about this board
+- show-system: show me the specs
+- check-time: what time is it
+- check-time: what's the time
+- check-time: which day is it
+- check-time: what is the date today
+- create-folder: make a folder called music in documents
+- create-folder: create a new folder named travel
+- create-folder: add a folder called photos inside ideas
+- create-folder: i need a new folder
+- create-folder: make a new directory called work
+- create-file: create a file called shopping.md
+- create-file: make a new note called plans
+- create-file: new text file named list in documents
+- create-file: add a markdown file called draft
+- open-file: open todo.txt
+- open-file: open the report.pdf file in documents
+- open-file: open my note.md
+- open-folder: open documents
+- open-folder: go into the projects folder
+- open-folder: open the ideas folder
+- leave-folder: leave this folder
+- leave-folder: go back to the folder above
+- leave-folder: exit the folder
+- show-folder: what's in documents
+- show-folder: show me my downloads
+- show-folder: what do i have in projects
+- show-folder: what's in here
+- rename-file: rename todo.txt to tasks.txt
+- rename-file: change the name of note.md to journal.md
+- rename-folder: rename the ideas folder to thoughts
+- rename-folder: rename folder projects to work
+- open-app: open the terminal
+- open-app: open firefox
+- open-app: launch the browser
+- open-app: start the console
+- close-app: close firefox
+- close-app: close the terminal
+- close-app: quit the browser
+- show-process: what is running right now
+- show-process: show me the running programs
+- show-process: list the processes
+- play-music: play music
+- play-music: play something
+- play-music: put on some music
+- play-track: play wax tailor
+- play-track: play the tune
+- play-track: i want to listen to hope and sorrow
+- pause-music: pause the music please
+- pause-music: pause the song
+- stop-music: stop playing
+- stop-music: stop the song
+- next-track: next track
+- next-track: skip to the next song
+- next-track: play the next one
+- previous-track: previous song
+- previous-track: go back to the last track
+- mute-sound: mute the sound
+- mute-sound: silence the speakers
+- mute-sound: mute audio
+- unmute-sound: unmute
+- unmute-sound: turn the sound back on
+- unmute-sound: unmute the speakers
+- none: delete the documents folder
+- none: remove todo.txt
+- none: kill firefox
+- none: format the disk
+- none: install vlc
+- none: update the system
+- none: what's the weather like
+- none: tell me something funny
+- none: send a message to anna
+- none: turn on the kitchen lights
+- none: set a timer for ten minutes
+- none: how do i make pasta
+- none: connect to my phone
+- none: change my password
+- none: make the screen brighter

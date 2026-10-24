@@ -1,0 +1,98 @@
+# Probes — the tuning set
+
+Written on 24 Oct 2026 to diagnose TermNL (see IMPROVEMENTS.md). Unlike `heldout.md`, these were
+looked at while changing the code: their score is optimistic. `python3 -m tests.measure probes`.
+
+- check-storage: is my sd card almost full
+- check-storage: how many gigs are free
+- check-storage: am I out of space
+- check-storage: what's eating my disk
+- check-memory: why is everything so slow, is it the ram
+- check-memory: how much memory is left
+- check-memory: ram?
+- check-temperature: how hot is the cpu
+- check-temperature: is it too warm in there
+- check-temperature: cpu temp please
+- check-system: give me a health check
+- check-system: how is the computer doing
+- check-system: status report
+- check-network: am I online
+- check-network: is the internet working
+- check-network: what's my ip
+- check-wifi: which wifi am I on
+- check-wifi: is the wifi connected
+- check-wifi: wifi status
+- show-wifi: what networks can you see
+- show-wifi: show me available wifi
+- turn-off-wifi: switch the wireless off
+- turn-off-wifi: stop the wifi
+- turn-off-wifi: disconnect from wifi
+- turn-on-wifi: wifi on please
+- turn-on-wifi: bring the wifi back up
+- turn-off-bluetooth: bluetooth off
+- turn-off-bluetooth: stop bluetooth
+- turn-off-bluetooth: kill bluetooth
+- turn-on-bluetooth: start bluetooth
+- turn-on-bluetooth: i need bluetooth for my headphones
+- check-bluetooth: is bluetooth running
+- check-service: is ssh running
+- check-service: is the ssh service up
+- restart-service: restart ssh
+- restart-service: bounce the ssh service
+- restart-system: reboot
+- restart-system: restart the computer please
+- restart-system: can you reboot the board
+- shut-down-system: power off
+- shut-down-system: turn off the computer
+- shut-down-system: switch the pi off
+- create-folder: new folder called recipes
+- create-folder: make a directory named photos in documents
+- create-folder: I want a folder for my taxes
+- create-folder: add a folder recipes
+- create-file: create a file called todo.txt
+- create-file: new note called groceries
+- create-file: write a new markdown file named ideas
+- create-file: make an empty text file in documents
+- open-file: open notes.md
+- open-file: show me the file called notes.md
+- open-file: can you open my todo list file
+- open-folder: go to documents
+- open-folder: take me to the documents folder
+- open-folder: cd documents
+- leave-folder: go back
+- leave-folder: go up a folder
+- leave-folder: get me out of here
+- show-folder: what's in this folder
+- show-folder: list the files here
+- show-folder: ls
+- rename-file: rename notes.md to ideas.md
+- rename-folder: rename the folder photos to pictures
+- open-app: open the browser
+- open-app: launch firefox
+- open-app: start the terminal
+- open-app: fire up the browser
+- close-app: close the browser
+- close-app: quit firefox
+- show-process: what's running
+- show-process: which programs are open
+- check-time: what's the date
+- check-time: what day is it today
+- play-music: play some music
+- play-music: put some tunes on
+- pause-music: pause
+- pause-music: pause the music
+- stop-music: stop the music
+- stop-music: turn the music off
+- next-track: next song
+- next-track: skip this one
+- previous-track: go back a song
+- previous-track: play the previous track
+- mute-sound: mute
+- mute-sound: turn the sound off
+- unmute-sound: sound back on
+- unmute-sound: unmute please
+- none: turn off the lights
+- none: what's the weather in paris
+- none: delete all my files
+- none: stop
+- none: install python

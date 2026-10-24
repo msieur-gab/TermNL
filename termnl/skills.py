@@ -42,13 +42,19 @@ def read_lists(files):
         m = re.match(r"^(.+?)\s*\((\w+)\)$", e["key"])
         value = m.group(1).strip() if m else e["key"]
         filetypes.append({"value": value, "ext": m.group(2) if m else value, "label": value, "phrases": [words(w) for w in e["words"]]})
+    # "- music, track: turn on, switch on → play": words that mean another action with these objects
+    in_context = []
+    for e in read_list(files["actions"], "Meaning with an object"):
+        said, _, action = e["rest"].partition("→")
+        in_context.append({"objects": [o.strip() for o in e["key"].split(",") if o.strip()], "action": action.strip(),
+                           "phrases": [words(w) for w in said.split(",") if w.strip()]})
     answers = {e["key"]: [words(w) for w in e["words"]] for e in read_list(files["conversation"])}
     replies = {e["key"]: e["rest"] for e in read_list(files["conversation"], "Replies")}
     samples = {e["key"]: e["words"] for e in read_list(files["samples"])}
     # every "- name: words" line of readings.md, whatever its section
     readings = {m.group(1).strip(): m.group(2).strip() for m in re.finditer(r"^- ([^:]+):\s*(.*)$", files["readings"], re.M)}
     return {"samples": samples, "readings": readings, "refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
-            "conversation": answers, "replies": replies}
+            "conversation": answers, "replies": replies, "in_context": in_context}
 
 
 def section(md, name):
@@ -181,6 +187,15 @@ def load(list_files, skill_files):
         s = read_skill(id, md)
         errors.extend(check(s, lists))
         skills.append(s)
+    for c in lists["in_context"]:
+        where = "words/actions.md, Meaning with an object"
+        if c["action"] not in lists["actions"]:
+            errors.append('%s: "%s" is not an action' % (where, c["action"]))
+        for o in c["objects"]:
+            if o not in lists["objects"]:
+                errors.append('%s: "%s" is not an object' % (where, o))
+        if not c["phrases"]:
+            errors.append("%s: a line for %s has no words before →" % (where, ", ".join(c["objects"])))
     does, said = {}, {}
     for s in skills:
         if s["does"] in does:

@@ -1,0 +1,135 @@
+# Blind held-out sentences — never trained on, never tuned against
+
+Written on 24 Oct 2026 by an agent that saw only each skill's name and purpose and the device's names, never the skill files or templates. Frozen: no sentence here goes into a skill file. `python3 -m tests.measure blind`.
+
+- check-storage: how much space is left on this thing
+- check-storage: is my disk getting full? i keep downloading stuff and im a bit worried
+- check-storage: storage
+- check-memory: how much ram am I using right now
+- check-memory: everything feels slow, is the memory full or what
+- check-memory: free memroy?
+- check-temperature: is the board running hot
+- check-temperature: how warm is the cpu
+- check-temperature: it feels really toasty when I touch it, can you tell me the temprature
+- check-system: give the whole computer a quick checkup
+- check-system: is everything ok with my pi overall
+- check-system: health check please
+- show-system: what kind of computer is this exactly
+- show-system: tell me the specs of this board
+- show-system: which model am i runing on
+- check-network: am I online
+- check-network: is this thing even connected to the internet? pages won't load
+- check-network: what's my ip adress
+- check-wifi: which wifi am I on right now
+- check-wifi: is the wifi connected
+- check-wifi: are we on the home wi-fi or not
+- show-wifi: what wifi networks can you see around here
+- show-wifi: scan for wifi
+- show-wifi: list the nearby wifi netwroks pls, I'm trying to find the cafe one
+- turn-on-wifi: turn the wifi on
+- turn-on-wifi: can you switch wi-fi back on, I need it
+- turn-on-wifi: wifi on please
+- turn-off-wifi: kill the wifi
+- turn-off-wifi: no more wifi for now please
+- turn-off-wifi: can you get rid of the wifi for a while, I want to save battery
+- check-bluetooth: is bluetooth on
+- check-bluetooth: does this have bluetooth running at the moment
+- check-bluetooth: bluetooth status?
+- turn-on-bluetooth: turn on bluetooth, I want to connect my speaker
+- turn-on-bluetooth: switch the bluetooth on
+- turn-on-bluetooth: blutooth on
+- turn-off-bluetooth: disable bluetooth
+- turn-off-bluetooth: shut off the bluetooth please, I never use it
+- turn-off-bluetooth: bluetooth off
+- check-service: is ssh running
+- check-service: is nginx up at the moment
+- check-service: is the music server workng
+- restart-service: restart the web server
+- restart-service: can you give mpd a kick and restart it
+- restart-service: restart ssh, I can't log in from my laptop
+- restart-system: restart the computer
+- restart-system: reboot
+- restart-system: can you turn it off and on again, the whole thing is acting weird
+- shut-down-system: shut down
+- shut-down-system: power off the pi please, I'm done for the day
+- shut-down-system: turn the computer of
+- check-time: what time is it
+- check-time: what's the date today
+- check-time: what day is it?
+- create-folder: make a new folder called recipes
+- create-folder: create a folder named photos inside Documents
+- create-folder: can you make me a direcotry for my school stuff in projects
+- create-file: create a new note called shopping.md
+- create-file: make a text file in ideas called poems.txt
+- create-file: I want to write something down, start a new markdown note in Documents
+- open-file: open note.md
+- open-file: can you pull up groceries.md for me
+- open-file: I want to look at report.pdf
+- open-folder: go to Downloads
+- open-folder: open the projects folder
+- open-folder: take me into ideas
+- leave-folder: go back
+- leave-folder: get me out of this folder
+- leave-folder: go up one levle
+- show-folder: what's in Documents
+- show-folder: list the files here
+- show-folder: show me what's inside the downloads folder
+- rename-file: rename todo.txt to tasks.txt
+- rename-file: change the name of note.md to diary.md
+- rename-file: can you call seed.md something else, like garden.md
+- rename-folder: rename the ideas folder to brainstorm
+- rename-folder: change the Downloads folder name to inbox
+- rename-folder: i want the projects folder to be called work instead
+- open-app: open firefox
+- open-app: start the browser, i want to look something up
+- open-app: lauch the terminal
+- close-app: close firefox
+- close-app: quit the terminal
+- close-app: get rid of the browser window, I'm done with it
+- show-process: what programs are running
+- show-process: show me running processes
+- show-process: what's going on in the backgroud, which programs are open
+- play-music: play some music
+- play-music: put on something, anything
+- play-music: I'm bored, play a random song
+- play-track: play Wax Tailor
+- play-track: put on the album Hope & Sorrow
+- play-track: can I hear The Tune please
+- pause-music: pause
+- pause-music: hold the music a sec, someone's at the door
+- pause-music: pasue the song
+- stop-music: stop the music
+- stop-music: my music won't stop, make it stop
+- stop-music: enough music for today, stop playing
+- next-track: next song
+- next-track: skip this one
+- next-track: I don't like this track, play the next one
+- previous-track: go back to the last song
+- previous-track: previous track
+- previous-track: play the one before again, I missed the begining
+- mute-sound: mute
+- mute-sound: silence the speakers
+- mute-sound: mute the speakers, the baby is sleeping
+- unmute-sound: unmute
+- unmute-sound: turn the sound back on
+- unmute-sound: I can't hear anything, unmute the speakers
+- none: what's the weather like tomorrow
+- none: tell me a joke
+- none: send a message to my mom
+- none: turn on the living room lights
+- none: delete groceries.md
+- none: remove the ideas folder
+- none: kill the process with id 4312
+- none: format the sd card
+- none: install vlc
+- none: update all the sofware
+- none: change my password
+- none: wipe the whole disk
+- none: set an alarm for 7am
+- none: add a new user account
+- none: who won the football game last night
+- none: erase everything in Downloads
+- none: order a pizza
+- none: upgrade the system to the latest version
+- none: give me root access
+- none: translate hello into spanish

@@ -12,7 +12,9 @@ One turn (respond):
   1. clean       fillers off ("please", "can you"…)
   2. answer      a question is waiting: yes, no, one of its chips, or a value for "Which one?"
   3. understand  a skill's template reads the sentence exactly; else the model recognises its action
-                 and object; a typo is read as a known word when that reads better
+                 and object; a typo is read as a known word, and a word in its context ("turn on the
+                 music" plays it), when that reads better; when the model doubts a template, or an
+                 action comes without its object ("turn off"), the person chooses
   4. safety      not sure, a typo in a change, "don't…": ask before anything
   5. next_step   the next value to ask, a file to find, the settings, the approval; or act
 
@@ -39,6 +41,8 @@ def quote(p):
 
 # how sure the model must be of its action × object pair: to act, and to ask at all
 SURE, MAYBE = 0.5, 0.15
+# how sure the model must be of another action or object to doubt a template's reading (doubts)
+DOUBT = 0.6
 
 
 def at(toks, phrase, i):
@@ -320,10 +324,21 @@ class Agent:
     def understand(self, text, toks):
         """What the sentence asks for → {how, skill, vals, p, unknown, sure, fixes, toks}, or None.
         A typo is read as a known word only when the sentence as typed isn't read by a template, and only
-        if the corrected sentence reads better (by a template, or with fewer words unknown)."""
+        if the corrected sentence reads better (by a template, or with fewer words unknown). Words are read
+        in their context the same way (in_context). An action said alone asks which one (bare_action); a
+        template the model doubts asks which of two skills (doubts)."""
         u = self.recognise(text, toks)
+        if not u or u["how"] == "model":
+            # as typed, no template reads it: the words read in their context may ("turn on the music")
+            said = self.in_context(toks)
+            v = self.recognise(text, said) if said is not toks else None
+            if v and (not u or v["how"] != "model" or (v["p"] > u["p"] and len(v["unknown"]) <= len(u["unknown"]))):
+                v["toks"] = said
+                u = v
         if not u or u["how"] != "choose":
-            fixed, fixes = self.correct(toks)
+            base = u["toks"] if u and "toks" in u else toks
+            fixed, fixes = self.correct(base)
+            fixed = self.in_context(fixed) if fixes else fixed  # "stop the bluetoth"
             v = self.recognise(text, fixed) if fixes else None
             if v and v["how"] != "choose" and ((not u or u["how"] == "model") and (not u or v["how"] == "template" or len(v["unknown"]) < len(u["unknown"]))
                                                or u and u["how"] == "template" and self.hid_a_place(u, v)):
@@ -333,7 +348,86 @@ class Agent:
             u.setdefault("fixes", [])
             u.setdefault("toks", toks)
             u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"])
+        bare = self.bare_action(text, self.in_context(toks)) if not u or u["how"] == "model" else None
+        if bare:
+            return bare
+        if u:
+            other = self.doubts(text, u) if u["how"] == "template" else None
+            if other:  # two readings: the person chooses ("Do you mean rename a file or rename a folder?")
+                said = u["toks"]
+                u = {"how": "choose", "options": [{"skill": u["skill"], "vals": u["vals"]},
+                                                  {"skill": other, "vals": self.values_in(other, text, said)[0]}],
+                     "toks": said, "fixes": u["fixes"], "sure": False}
         return u
+
+    def in_context(self, toks):
+        """Words read in their context, tried when the sentence as typed isn't read by a template. A split
+        verb is joined ("turn the music off" → "turn off the music"; conversation.md, "split verbs" and
+        "verb ends"), then a word that means another action with an object said in the sentence becomes
+        that action ("turn on the music" → "play the music", "stop the wifi" → "turn off the wifi";
+        words/actions.md, "Meaning with an object"). The offsets stay, so a name keeps what was typed.
+        → the same list when nothing changed."""
+        out, changed = list(toks), False
+        verbs, ends = {w for ph in self.words("split verbs") for w in ph}, {w for ph in self.words("verb ends") for w in ph}
+        for i in range(len(out)):
+            if out[i]["word"] in verbs and not (i + 1 < len(out) and out[i + 1]["word"] in ends):
+                j = next((j for j in range(i + 2, min(i + 5, len(out))) if out[j]["word"] in ends), None)
+                if j is not None:
+                    out.insert(i + 1, out.pop(j))
+                    changed = True
+        refs = self.lists["refs"]
+        for rule in self.lists.get("in_context", []):
+            if not any(where(out, ph) for o in rule["objects"] for ph in refs.get(o, [])):
+                continue
+            to = refs[rule["action"]][0]
+            for ph in sorted(rule["phrases"], key=len, reverse=True):
+                for i in reversed(where(out, ph)):
+                    span = out[i:i + len(ph)]
+                    out[i:i + len(ph)] = [{"word": w, "start": span[0]["start"], "end": span[-1]["end"]} for w in to]
+                    changed = True
+        return out if changed else toks
+
+    def bare_action(self, text, toks):
+        """An action said without its object ("turn on", "switch it off"): the person chooses among the skills
+        that do it, those of the action and those the action means with an object (words/actions.md,
+        "Meaning with an object": "turn off" also stops the music). Only when nothing else is said but small
+        and pointing words, and two to six skills fit; otherwise the model's reading goes on."""
+        refs, lists = self.lists["refs"], self.lists
+        said = [a for a in lists["actions"] for ph in refs.get(a, []) if where(toks, ph)]
+        if not said or any(where(toks, ph) for o in lists["objects"] for ph in refs.get(o, [])):
+            return None
+        longest = max((len(ph) for a in said for ph in refs[a] if where(toks, ph)))
+        action = next(a for a in said for ph in refs[a] if len(ph) == longest and where(toks, ph))
+        covered = {i for ph in refs[action] for at_ in where(toks, ph) for i in range(at_, at_ + len(ph))}
+        if any(i not in covered and t["word"] not in self.small | self.pointing for i, t in enumerate(toks)):
+            return None
+        pairs = {(action, s["object"]) for s in self.skills if s["action"] == action}
+        spoken = [ph for ph in refs[action] if where(toks, ph)]
+        for rule in lists.get("in_context", []):
+            if any(ph in spoken for ph in rule["phrases"]):
+                pairs |= {(rule["action"], o) for o in rule["objects"]}
+        fit = [s for s in self.skills if (s["action"], s["object"]) in pairs]
+        if not 2 <= len(fit) <= 6:
+            return None
+        return {"how": "choose", "options": [{"skill": s, "vals": {}} for s in fit], "toks": toks, "fixes": [], "sure": False}
+
+    def doubts(self, text, u):
+        """A template's reading is a strong vote, not a verdict: when the model is sure (DOUBT) of another
+        action or object, and a skill does that action on that object, the person chooses between the two
+        readings. → that other skill, or None. (24 Oct: "is bluetooth running" was read by check-service's
+        template as a service called bluetooth; "rename the folder photos to pictures" renamed a file
+        called "folder photos".)"""
+        if not self.model:
+            return None
+        ws, s = [t["word"] for t in u["toks"]], u["skill"]
+        pa, po = classify(self.model["action"], text, ws)[0], classify(self.model["object"], text, ws)[0]
+        action = pa["label"] if pa["p"] >= DOUBT and pa["label"] != "none" else s["action"]
+        obj = po["label"] if po["p"] >= DOUBT and po["label"] != "none" else s["object"]
+        # only when another skill is that action on that object: "show the files here" names files, but
+        # there is no "show file" skill, so show folder's reading stands
+        if (action, obj) == (s["action"], s["object"]):
+            return None
+        return next((o for o in self.skills if o["action"] == action and o["object"] == obj), None)
 
     def recognise(self, text, toks):
         """a template's exact reading (several, if they tie: "choose"), or the model's best action + object"""

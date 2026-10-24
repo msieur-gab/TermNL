@@ -16,6 +16,8 @@ Words for the conversation itself, outside any skill.
 - reading actions: check, show, find
 - before a name: call it, name it, let's call it, called, named, titled, it's called, the name is
 - pointing words: this, that, it, these, those, here, there
+- split verbs: turn, switch, shut, power, bring
+- verb ends: on, off, up, down
 - small words: the, a, an, my, me, i, i'm, it, it's, is, are, am, be, to, of, in, on, at, for, with, from, and, or, please, can, could, would, you, do, does, what, what's, whats, which, how, how's, there, this, that, some, any, up, now, right, still, just, all, so, again, back, get, got, have, has, need, want, let, let's, us, we, will, should, much, very, really, bit, little, too
 
 ## Replies

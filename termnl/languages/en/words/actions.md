@@ -22,3 +22,17 @@ A skill names its action in `does:`; its sentences write it as `<action>`.
 - previous: previous
 - mute: mute, silence
 - unmute: unmute
+
+## Meaning with an object
+
+Some words mean another action with some objects: "turn on the music" plays it, "stop the wifi" turns it
+off, "turn off the sound" mutes it. Each line: the objects, then the words and the action they mean
+there, after an arrow. A word only changes its meaning when one of these objects is in the sentence.
+
+- music: turn on, switch on, start → play
+- music, track: turn off, switch off, shut off, end → stop
+- wifi, bluetooth: start, bring up, put on → turn on
+- wifi, bluetooth: stop, kill, cut, shut off, disconnect, close → turn off
+- sound: turn on, switch on, bring back → unmute
+- sound: turn off, switch off, cut, kill → mute
+- service: bounce, kick → restart
