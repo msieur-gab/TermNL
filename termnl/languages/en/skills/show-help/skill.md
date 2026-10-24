@@ -20,4 +20,4 @@ Lists every skill, grouped by the topics in words/objects.md.
 
 ## Replies
 
-- done: Here's what I can do. Ask in your own words. | Hi {user}, here's what I can do. Ask in your own words.
+- done: Here's what I can do. Tap a topic to see all of it, or just ask in your own words. | Hi {user}, here's what I can do. Tap a topic to see all of it, or just ask in your own words.

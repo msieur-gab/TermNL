@@ -690,6 +690,39 @@ class Agent:
         kind = next((t for t in self.lists["filetypes"] if t["value"] in (said.get("value"), said.get("text"))), self.lists["filetypes"][0])
         vals["name"] = {"text": "%s.%s" % (name, kind["ext"])}
 
+    def topics(self, exclude=None):
+        """the skills by topic (words/objects.md, Topics), the most ordinary actions first (the order of
+        words/actions.md: check, show, find, create…); a topic with no objects holds the rest"""
+        order = {a: i for i, a in enumerate(self.lists["actions"])}
+        out, shown = [], set()
+        for topic, objects in self.lists.get("topics", []):
+            found = [s for s in self.skills if (s["object"] in objects or not objects) and s["id"] not in shown and s is not exclude]
+            shown.update(s["id"] for s in found)
+            rank = {o: i for i, o in enumerate(objects)}
+            found.sort(key=lambda s: (order.get(s["action"], 99), rank.get(s["object"], 99)))
+            if found:
+                out.append((topic, found))
+        return out
+
+    def help(self, skill):
+        """One line per topic: two of its skills, and how many more; the topics as chips, a tap shows the topic
+        whole (24 Oct, Gab: "perhaps we could try a denser version")."""
+        topics = self.topics(exclude=skill)
+        rows = []
+        for topic, found in topics:
+            first = [found[0]] + [s for s in found[1:] if s["object"] != found[0]["object"]][:1] or found[:2]
+            first = (first + [s for s in found if s not in first])[:2]
+            more = len(found) - len(first)
+            rows.append([topic, ", ".join(s["label"] for s in first) + (" " + self.reply("and more", {"count": more}) if more else "")])
+
+        def whole(topic, found):
+            return lambda: {"outcome": "act", "skill": skill["id"], "say": self.reply("help topic", {"topic": topic}),
+                            "table": {"columns": [""], "rows": [[s["label"]] for s in found]}}
+
+        self.question("topic", options=[(topic, whole(topic, found)) for topic, found in topics])
+        return {"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"]),
+                "table": {"columns": ["", ""], "rows": rows}, "chips": [t for t, _ in topics]}
+
     def display(self, skill, vals):
         out = {"output": "{output}"}
         for k, v in vals.items():
@@ -713,14 +746,7 @@ class Agent:
         if skill.get("opens"):  # a panel of the page: the settings' toggles
             return {"outcome": "act", "skill": skill["id"], "opens": skill["opens"], "say": self.reply(skill["replies"]["done"])}
         if skill.get("lists") == "skills":  # help: what TermNL can do, by topic (words/objects.md, Topics)
-            rows, shown = [], set()
-            for topic, objects in self.lists.get("topics", []):  # a topic with no objects holds the rest
-                labels = [s["label"] for s in self.skills if (s["object"] in objects or not objects) and s["id"] not in shown and s is not skill]
-                shown.update(s["id"] for s in self.skills if s["label"] in labels)
-                if labels:
-                    rows.append([topic, ", ".join(labels)])
-            return {"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"]),
-                    "table": {"columns": ["", ""], "rows": rows}}
+            return self.help(skill)
         if skill.get("changes"):  # a setting, changed here at once; the server writes it to settings.md
             key, value = skill["changes"]
             value = fill(value, {k: v.get("text") or v.get("label") for k, v in vals.items()}).strip()

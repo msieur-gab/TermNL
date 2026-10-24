@@ -21,6 +21,8 @@ Words for the conversation itself, outside any skill.
 
 ## Replies
 
+- and more: and {count} more
+- help topic: In {topic}, I can:
 - abstain: I can't do that yet. | I don't know how to do that yet. | Sorry {user}, I can't do that yet.
 - admin off: That needs admin mode, which is off. You can turn it on in your settings.
 - declined: OK, I won't. | Fine, nothing done. | OK {user}, I won't.

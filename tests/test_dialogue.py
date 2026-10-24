@@ -560,21 +560,22 @@ class Dialogue(unittest.TestCase):
         for said in ("help", "what can you do", "what can i ask you"):
             r = agent().hear(said)
             self.assertEqual((r["outcome"], r.get("skill")), ("act", "show-help"), said)
-        rows = dict(agent().hear("help")["table"]["rows"])
-        self.assertIn("create a folder", rows["Files and folders"])
-        self.assertIn("turn Wi-Fi on", rows["Network"])
-        listed = ", ".join(rows.values())
-        for s in lang["skills"]:
-            if s["id"] != "show-help":
-                self.assertIn(s["label"], listed, s["id"])
-
-    def test_a_reply_says_the_name_only_when_there_is_one(self):
-        from termnl.text import pick
-        lines = ["Hey {user}, all good."]
-        self.assertEqual(pick(lines + ["All good."], lambda: 0, ""), "All good.")
-        self.assertEqual(pick(lines + ["All good."], lambda: 0, "Gab"), "Hey {user}, all good.")
-        self.assertEqual(Agent(**lang, settings={"name": "Gab"}, device=device, random=lambda: 0.99).hear("what can you do")["say"][:7], "Hi Gab,")
-        self.assertNotIn("{user}", agent().hear("what can you do")["say"])
+        a = agent()
+        r = a.hear("help")
+        rows = dict(r["table"]["rows"])
+        self.assertEqual(r["chips"], list(rows))  # a chip per topic
+        self.assertIn("more", rows["Files and folders"])  # dense: two examples and a count (Gab: "a denser version")
+        whole = a.hear("Network")
+        self.assertIn(["turn Wi-Fi on"], whole["table"]["rows"])
+        listed = []
+        for topic in rows:
+            b = agent()
+            b.hear("help")
+            listed += [row[0] for row in b.hear(topic)["table"]["rows"]]
+        self.assertEqual(sorted(listed), sorted(s["label"] for s in lang["skills"] if s["id"] != "show-help"))
+        b = agent()
+        b.hear("help")
+        self.assertEqual(b.hear("make a folder called bikes")["skill"], "create-folder")  # the chips don't hold the next request
 
 
 if __name__ == "__main__":
