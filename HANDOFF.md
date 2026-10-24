@@ -1,4 +1,79 @@
-# Handoff — 22 October 2026, afternoon
+# Handoff — 24 October 2026, evening
+
+Read this first, then `IMPROVEMENTS.md` and `SCALE-TEST.md` (what the merged branches did, and their open
+questions), then the brain: `projects/termlu/` (decisions, design seeds, and `.inbox.md`, where today's items
+wait for Gab's ratification) and `knowledge/hardware/orange-pi-zero-2w-termnl-training.md`. Gab's decisions
+are his; don't rework them. The section of 22 October below is history.
+
+## Where things stand
+
+- **`main` holds everything.** `feat/improvements` → `feat/scale-test` → `feat/personal` were merged on
+  24 Oct (Gab: "merge"; a fast-forward, c2d8d66 → 8a7f60d), then four fixes from Gab's own test on the board
+  (21fcca3, c7590c3). The three branches still exist on GitHub; deleting them is Gab's call.
+- **56 skills, 96 tests pass.** Since the merge: "kill pipewire" says why it can't ("“pipewire” isn't an
+  app I can stop. Running now:", the running apps as chips; Gab: apps only, say why); "are you learning"
+  (check learning); "what is my name" (say your name; "gab" becomes Gab); "Done learning" goes to the
+  conversation that asked, as it happens (`GET /api/learning`, asked by the chat page every 5 s); "list"
+  alone shows the folder (Gab's choice).
+- **Scores** (`python3 -m tests.measure all`): 330 of 466 handled, 16 not understood, one wrong skill
+  acted on, which only reads ("I want to look at report.pdf" finds it instead of opening it), 46 of 57 out of
+  scope refused and none acted on. `main` before the merge: 282 handled, 56 not understood, one wrong
+  action. Gab's real sentences (`python3 -m tests.real`, his laptop only): 104 of 117 as Claude guessed.
+  The `should (Claude):` lines are guesses; Gab hasn't judged them.
+
+## Measured on the board (Orange Pi Zero 2W, 4× Cortex-A53, 1.5 GB), 24 Oct
+
+- **Training needs numpy, and only the official wheel works.** Debian's `python3-numpy` crashes with
+  "Illegal instruction"; numpy 2.5.3 from PyPI (cp313, aarch64) runs. It sits in `~/.models/shared/python`
+  (downloaded on the laptop with `pip download --platform … --only-binary`, unpacked with
+  `python3 -m zipfile -e`): run with `PYTHONPATH=$HOME/.models/shared/python:.`. The board has no pip, no
+  venv (`ensurepip` missing), no git, and sudo asks for Gab's password.
+- **Training:** 212 s for 5,446 sentences at normal priority (main before the merge: 59 s for 2,723; the
+  laptop: 24 s). Through "learn what I taught you" (nice 19, two threads) 215 s, while replies stayed at
+  32 ms (218 ms at most); the trainer peaks at 111 MB. Priority costs nothing; the time grows faster than
+  the sentences (twice the sentences, 3.6× the time). The skill file still says "a couple of minutes".
+- **Same model:** trained on the board, every weight equals the laptop's; all five test sets score the same.
+- **Replies:** server ready in 0.9 s, 26–33 MB; a reply takes 29 ms typically, 150 ms at most.
+- **On the board now:** `~/TermNL` is the old `main` (c2d8d66), used by the desk. `~/TermNL-personal` is
+  `feat/personal` before the four fixes, with Gab's test log in its `logs/`. Nothing is installed.
+
+## Open issues, for the next instance
+
+1. **Not seen in a browser:** the chat page waiting for "Done learning" (`web/termnl-chat.js`,
+   `waitLearning`). Tested over HTTP only. Open the page in Brave (`/chrome`) and learn once.
+2. **The desk (kiosk) and the companion don't have the new features.** The desk answers only `/api/say` and
+   `/api/reset`: `/api/settings` and `/api/learning` aren't forwarded, `opens: "settings"` is ignored, so
+   "open my settings" replies but nothing opens; "Done learning" arrives with the asker's next reply only.
+   Retraining from the kiosk would fail: the desk service has no numpy on its path (`PYTHONPATH`, or numpy
+   unpacked into `~/.local/lib/python3.13/site-packages`). Files: the desk's `server.py`,
+   `app/js/components/app-assistant.js`; the companion's `app.js`, `index.html`, `sw.js` (bump KEPT).
+   Gab's calls first: does TermNL's admin mode replace the desk's `--allow` groups? does "show commands"
+   apply where the desk always shows the command? where does the settings panel live (chat, the
+   companion's Settings, both)?
+3. **The device writes tracked files.** "call me Gab" and the settings panel rewrite `settings.md`;
+   retraining rewrites `termnl/languages/en/model.json`. A new copy or a `git pull` would overwrite or
+   conflict with them. The person's settings and a model trained on the device need their own place,
+   out of git, with the shipped files as defaults.
+4. **What the retrained model moved** (none acts): "go back to the last track" and "something has hung, can
+   you force quit firefox" are no longer understood; "fire up the browser" asks about closing an app; "who
+   won the football game last night" reads "game" as "name" and asks about the name instead of refusing.
+5. **Still open from `IMPROVEMENTS.md`** ("Open, for Gab"): should reading ask first ("what is currently
+   running" asks at 73%), the plain form and the old one, the front matter's words, Claude's object list
+   and the 247 sentences from a larger model to review, "start the browser…", three template over-reaches,
+   `back_agent.py` (port or retire).
+6. **Training time** will keep growing with skills; measure it on the board when skills are added.
+
+## Gotchas met on 24 Oct
+
+- `pkill -f "<pattern>"` run through `ssh … '…'` also matches the shell running it and kills it: kill by
+  process number.
+- Python's output through ssh is buffered: use `python3 -u`, or write to a log on the board.
+- `ssh host 'nohup … &'` can keep the ssh session open: start servers with output redirected and
+  `< /dev/null`, and don't wait on it.
+- To reach a TermNL on the board from the laptop without opening it to the Wi-Fi:
+  `ssh -f -N -L 8811:127.0.0.1:8811 <board>` (TermNL has no sign-in yet).
+
+# Handoff — 22 October 2026, afternoon (history)
 
 TermNL (born this morning as TermLU, from ptiLU). The design lives in Gab's brain repo, `projects/termlu/`:
 read `intention.md`, `brief.md`, `decisions.md`, `review-2026-10-22.md`, both `prior-art-2026-10-22*.md`

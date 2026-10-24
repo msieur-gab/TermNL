@@ -4,6 +4,14 @@ Gab's list of 22 October 2026. The next tasks have briefs in `briefs/`; everythi
 he picks it. Nothing here is decided unless it says so. The thinking behind each item is in his brain,
 `projects/termlu/` (and `.inbox.md` for what isn't ratified yet).
 
+## From Gab's test on the board, 24 Oct (details in HANDOFF.md, "Open issues")
+
+- The new features in the desk's kiosk and the companion (settings panel, learning, numpy for the desk
+  service), after Gab's three calls (admin mode and `--allow`, "show commands", where the panel lives)
+- The person's settings and the device's own model out of git, the shipped files as defaults
+- See the chat page wait for "Done learning" in a browser
+- Look at the four sentences the retrained model moved
+
 ## Next (with a brief)
 
 - ~~The clock, network replies in plain words, a test set from real sentences~~ → done 22 Oct, evening
