@@ -17,11 +17,34 @@ A skill names its action in `does:`; its sentences write it as `<action>`.
 - close: close, quit
 - play: play, put on, listen to
 - pause: pause
-- stop: stop
+- stop: stop, kill, force quit
 - next: next, skip
 - previous: previous
 - mute: mute, silence
 - unmute: unmute
+- move: move, relocate
+- copy: copy, duplicate
+- delete: delete, remove, erase, trash, get rid of
+- install: install
+- update: update, upgrade
+- compress: compress, zip, pack
+- download: download, fetch
+
+## Opposites
+
+An action said in so many words is never answered with its opposite: "turn the board on" doesn't offer to
+shut it down. Each line: an action, then its opposites.
+
+- turn on: turn off, shut down
+- turn off: turn on
+- shut down: turn on
+- play: stop, pause
+- mute: unmute
+- unmute: mute
+- open: close
+- close: open
+- next: previous
+- previous: next
 
 ## Meaning with an object
 
@@ -36,3 +59,4 @@ there, after an arrow. A word only changes its meaning when one of these objects
 - sound: turn on, switch on, bring back → unmute
 - sound: turn off, switch off, cut, kill → mute
 - service: bounce, kick → restart
+- system: turn off, switch off → shut down

@@ -23,6 +23,8 @@ against what the device really has, and offered as choices.
 - a running app: @sys.running
 - music on the device: @sys.music
 - a network around: @sys.network
+- a program name: text
+- a web address: text
 
 ## When it's missing
 

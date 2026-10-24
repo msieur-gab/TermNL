@@ -52,13 +52,14 @@ def read_lists(files):
         said, _, action = e["rest"].partition("→")
         in_context.append({"objects": [o.strip() for o in e["key"].split(",") if o.strip()], "action": action.strip(),
                            "phrases": [words(w) for w in said.split(",") if w.strip()]})
+    opposites = {e["key"]: set(e["words"]) for e in read_list(files["actions"], "Opposites")}
     answers = {e["key"]: [words(w) for w in e["words"]] for e in read_list(files["conversation"])}
     replies = {e["key"]: e["rest"] for e in read_list(files["conversation"], "Replies")}
     samples = {e["key"]: e["words"] for e in read_list(files["samples"])}
     # every "- name: words" line of readings.md, whatever its section
     readings = {m.group(1).strip(): m.group(2).strip() for m in re.finditer(r"^- ([^:]+):\s*(.*)$", files["readings"], re.M)}
     return {"samples": samples, "readings": readings, "refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
-            "conversation": answers, "replies": replies, "in_context": in_context, "values_md": files.get("values", "")}
+            "conversation": answers, "replies": replies, "in_context": in_context, "opposites": opposites, "values_md": files.get("values", "")}
 
 
 def section(md, name):
@@ -211,6 +212,10 @@ def load(list_files, skill_files):
                 errors.append('%s: "%s" is not an object' % (where, o))
         if not c["phrases"]:
             errors.append("%s: a line for %s has no words before →" % (where, ", ".join(c["objects"])))
+    for a, opp in lists["opposites"].items():
+        for b in {a} | opp:
+            if b not in lists["actions"]:
+                errors.append('words/actions.md, Opposites: "%s" is not an action' % b)
     does, said = {}, {}
     for s in skills:
         if s["does"] in does:

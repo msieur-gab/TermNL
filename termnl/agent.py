@@ -457,12 +457,27 @@ class Agent:
         skill, p = max(((s, P(pa, s["action"]) * P(po, s["object"])) for s in self.skills), key=lambda x: x[1], default=(None, 0))
         if not skill or p < MAYBE or max(P(pa, "none"), P(po, "none")) > p:
             return None
+        # an action said in so many words is never answered with its opposite (words/actions.md, Opposites)
+        # (24 Oct: "turn the board on" asked "Shut the board down?")
+        said = self.actions_said(self.in_context(toks))
+        if any(skill["action"] in self.lists.get("opposites", {}).get(a, ()) for a in said):
+            return None
         skill = self.as_file(skill, toks)
         vals, used = self.values_in(skill, text, toks)
         taught = set(self.model["taught"].get(skill["id"], []))
         negation = {w for ph in self.words("negation") for w in ph}  # handled by its own rule
         unknown = [t["word"] for i, t in enumerate(toks) if i not in used and t["word"] not in self.small | taught | negation]
         return {"how": "model", "skill": skill, "vals": vals, "p": p, "unknown": unknown}
+
+    def actions_said(self, toks):
+        """the actions a sentence names in so many words, each by a phrase of one action only (words/actions.md):
+        "turn on" names turn on; "start" names none, as it is a word for both create and open"""
+        refs, out = self.lists["refs"], set()
+        for a in self.lists["actions"]:
+            for ph in refs.get(a, []):
+                if where(toks, ph) and sum(1 for b in self.lists["actions"] if ph in refs.get(b, [])) == 1:
+                    out.add(a)
+        return out
 
     def as_file(self, skill, toks):
         """a name ending in a known file type (note.md) is a file: the same action on a file, never on a folder

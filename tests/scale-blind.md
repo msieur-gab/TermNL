@@ -1,0 +1,112 @@
+# Scale test, blind — never trained on, never tuned against
+
+Written on 24 Oct 2026 by an agent that saw only skill names and purposes. `python3 -m tests.measure scale-blind`.
+
+- move-file: put report.pdf in Documents
+- move-file: can you shift note.md over to the ideas folder please
+- move-file: i want groceries.md out of Downloads and into home
+- move-file: take todo.txt and stick it in projects, thx
+- copy-file: make a copy of seed.md in ideas
+- copy-file: could you duplicate website.html into projects? i want to keep the original where it is
+- copy-file: copy report.pdf to Documents but leave the one in Downlaods
+- copy-file: I need a second todo.txt inside home
+- delete-file: delete groceries.md
+- delete-file: get rid of movie.mkv, I've watched it already
+- delete-file: can you throw todo.txt in the bin
+- delete-file: remvoe note.md please
+- delete-folder: delete the ideas folder
+- delete-folder: I don't need projects anymore, can you trash the whole folder?
+- delete-folder: bin the Downloads folder
+- delete-folder: wipe out that ideas folder, all of it
+- find-file: where is report.pdf
+- find-file: I lost seed.md somewhere, can you look for it?
+- find-file: search the whole computer for website.html
+- find-file: can u find my groceries list file, groceries.md
+- none: connect to home-5g
+- none: hey can you get me on the home-5g wifi
+- none: join the network called home-5g
+- none: log me into home-5g please, the internet isnt working without it
+- none: louder
+- none: I can barely hear Wax Tailor, turn it up a bit
+- none: can you raise the volume?
+- none: crank up the sound pls
+- none: too loud!
+- none: could you lower the volume a little, my neighbours are complaining
+- none: bring the sound down
+- none: make it quiter please
+- install-app: install vlc
+- install-app: I'd like to have gimp on this computer, can you put it on?
+- install-app: can you get me the vlc player
+- install-app: please instal gimp for me
+- update-system: update everything
+- update-system: are there any updates? if so install them all
+- update-system: bring all my software up to date please
+- update-system: can you upgrade the whole system, it's been ages
+- stop-process: firefox is frozen, kill it
+- stop-process: the terminal is stuck and won't respond, force it to stop
+- stop-process: something has hung, can you force quit firefox
+- stop-process: firefox isnt responding at all, just make it stop
+- check-uptime: how long has this been on?
+- check-uptime: when did I last turn the computer on
+- check-uptime: how long has the machine been running for
+- check-uptime: whats the uptime
+- compress-folder: zip the projects folder
+- compress-folder: can you squash ideas into one zip file so I can send it?
+- compress-folder: make an archive of Documents
+- compress-folder: compres my Downloads folder please
+- download-file: download https://example.com/manual.pdf
+- download-file: can you grab this file for me: https://example.org/photo.jpg
+- download-file: save the file at http://example.com/song.mp3 to my computer
+- download-file: i need this one off the internet https://example.net/guide.zip
+- close-app: close firefox
+- close-app: I'm done with the terminal, you can shut it
+- rename-file: rename note.md to journal.md
+- rename-file: call todo.txt chores.txt instead
+- open-folder: go to Documents
+- open-folder: take me into the projects folder
+- show-folder: what's in Downloads?
+- show-folder: show me everything in ideas
+- turn-on-wifi: turn the wifi on
+- turn-on-wifi: switch on wi-fi please
+- turn-off-wifi: turn off the wifi
+- turn-off-wifi: disable wifi for now, i want to be offline
+- mute-sound: mute
+- mute-sound: silence the speakers please
+- unmute-sound: unmute
+- unmute-sound: bring the sound back on, I muted it earlier
+- check-system: is my computer ok?
+- check-system: give me a quick health check of the whole system
+- check-wifi: am I connected to the wifi?
+- check-wifi: which network am i on right now
+- stop-music: stop the music
+- stop-music: enough of The Tune, turn the music off
+- restart-system: restart the computer
+- restart-system: can you reboot it please, it's acting weird
+- none: make the screen brighter
+- none: format my usb stick
+- none: change my password
+- none: create a new user account for my daughter
+- none: set an alarm for 7am tomorrow
+- none: what's the weather like today?
+- none: send an email to my boss saying I'm late
+- none: empty the trash completly
+- none: uninstall everything
+- none: turn on the living room lights
+- none: set a timer for 10 minutes
+- none: can you dim the screen a bit, it hurts my eyes
+- restart-system: reboot
+- restart-system: restart the pi
+- restart-system: can you give the board a restart, its acting weird
+- restart-system: plz reboot the computer
+- restart-system: restrat it
+- restart-system: hey could you turn it off and back on again for me
+- shut-down-system: shut down
+- shut-down-system: turn off the board
+- shut-down-system: power off the pi please, im done for today
+- shut-down-system: switch the computer off
+- shut-down-system: ok shut it all down for the night
+- shut-down-system: can u turn evrything off now
+- none: turn the board on
+- none: wake up the pi
+- none: turn of the screen
+- none: can you switch the display off but keep it running

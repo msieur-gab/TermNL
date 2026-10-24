@@ -34,19 +34,14 @@ More are welcome; each one teaches the edge.
 
 Near misses and more, from a larger model (24 Oct 2026, briefs/2026-10-24-also-said-paraphrases.md):
 
-- delete note.md
-- erase todo.txt
 - empty the downloads folder
 - kill process 1234
 - kill the process using the most cpu
 - wipe the disk
-- install a new app
 - uninstall nginx
-- upgrade all packages
 - reset the password for ssh
 - create a new user
 - add a user called guest
-- move note.md to documents
 - move the projects folder into home
 - set the volume to 50 percent
 - what's the weather tomorrow

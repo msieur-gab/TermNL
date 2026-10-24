@@ -16,7 +16,7 @@ from termnl.agent import Agent
 from termnl.load import ROOT, load_language
 from tests.device import device
 
-SETS = ("phrasings", "probes", "heldout", "blind")
+SETS = ("phrasings", "probes", "heldout", "blind", "scale-blind")
 
 
 def lines_of(name):

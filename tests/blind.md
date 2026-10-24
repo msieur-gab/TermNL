@@ -117,12 +117,12 @@ Written on 24 Oct 2026 by an agent that saw only each skill's name and purpose a
 - none: tell me a joke
 - none: send a message to my mom
 - none: turn on the living room lights
-- none: delete groceries.md
-- none: remove the ideas folder
+- delete-file: delete groceries.md
+- delete-folder: remove the ideas folder
 - none: kill the process with id 4312
 - none: format the sd card
-- none: install vlc
-- none: update all the sofware
+- install-app: install vlc
+- update-system: update all the sofware
 - none: change my password
 - none: wipe the whole disk
 - none: set an alarm for 7am
@@ -130,6 +130,6 @@ Written on 24 Oct 2026 by an agent that saw only each skill's name and purpose a
 - none: who won the football game last night
 - none: erase everything in Downloads
 - none: order a pizza
-- none: upgrade the system to the latest version
+- update-system: upgrade the system to the latest version
 - none: give me root access
 - none: translate hello into spanish

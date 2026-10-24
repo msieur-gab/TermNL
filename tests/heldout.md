@@ -124,12 +124,12 @@ Each line: the skill that should answer (or `none`: TermNL should not act), then
 - unmute-sound: unmute
 - unmute-sound: turn the sound back on
 - unmute-sound: unmute the speakers
-- none: delete the documents folder
-- none: remove todo.txt
-- none: kill firefox
+- delete-folder: delete the documents folder
+- delete-file: remove todo.txt
+- stop-process: kill firefox
 - none: format the disk
-- none: install vlc
-- none: update the system
+- install-app: install vlc
+- update-system: update the system
 - none: what's the weather like
 - none: tell me something funny
 - none: send a message to anna

@@ -18,3 +18,4 @@ The kinds of things acted on. Each line: the object, then the words people use f
 - music: music, playlist, tunes
 - track: track, tracks, song, songs, album, artist
 - sound: sound, audio, speaker, speakers
+- uptime: uptime, up time

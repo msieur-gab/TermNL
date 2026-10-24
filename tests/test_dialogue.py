@@ -511,5 +511,18 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(a.hear("check Bluetooth")["skill"], "check-bluetooth")
 
 
+    def test_the_board_is_never_offered_the_opposite_of_what_was_said(self):
+        """Gab, 24 Oct, for the scale test: "reboot, turn off the board, restart the board"."""
+        a = {"admin mode": "on"}
+        for said, skill in [("reboot", "restart-system"), ("restart the board", "restart-system"),
+                            ("turn off the board", "shut-down-system"), ("turn the pi off", "shut-down-system")]:
+            r = agent(a).hear(said)
+            self.assertEqual((r.get("skill"), r["outcome"]), (skill, "approve"), said)
+        for said in ("turn the board on", "turn on the pi"):
+            r = agent(a).hear(said)
+            self.assertEqual((r["outcome"], r.get("skill")), ("abstain", None), said)
+        self.assertIn("shut the board down", agent(a).hear("turn off")["chips"])
+
+
 if __name__ == "__main__":
     unittest.main()

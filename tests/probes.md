@@ -95,4 +95,4 @@ looked at while changing the code: their score is optimistic. `python3 -m tests.
 - none: what's the weather in paris
 - none: delete all my files
 - none: stop
-- none: install python
+- install-app: install python
