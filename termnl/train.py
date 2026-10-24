@@ -21,7 +21,8 @@ def train_language(lang="en", languages=LANGUAGES):
     action = train_classifier([{"text": e["text"], "label": e["action"]} for e in exs] + [{"text": t, "label": "none"} for t in none_ex])
     obj = train_classifier([{"text": e["text"], "label": e["object"]} for e in exs] + [{"text": t, "label": "none"} for t in none_ex])
     taught = {k: sorted(s) for k, s in taught_words(exs).items()}
-    return {"lang": lang, "action": action, "object": obj, "taught": taught}, len(exs), time.time() - t0
+    # when it was trained, read back by "are you learning?" (readers.py, learning)
+    return {"lang": lang, "trained": int(time.time()), "action": action, "object": obj, "taught": taught}, len(exs), time.time() - t0
 
 
 if __name__ == "__main__":

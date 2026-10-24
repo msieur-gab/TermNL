@@ -20,6 +20,7 @@ approve: no
 - what do i have in/inside (the/my) {place} (folder)
 - what do i have here
 - ls ((the/my) {place} (folder))
+- list (all)
 - show (me) (all) (the/my) files/folders/things (in/inside/of (the/my) {place} (folder))
 - what/which files are
 - what/which files are here

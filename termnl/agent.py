@@ -281,6 +281,13 @@ class Agent:
         self.pending = {"waiting": "value", "skill": skill, "vals": vals, "slot": slot, "approved": approved}
         return {"outcome": "ask", "skill": skill["id"], "say": say, "chips": chips}
 
+    def not_there(self, skill, slot, said, found):
+        """ "I don't see pipewire. Which one?": a value said but not on the device's list. A skill can say why in
+        its own words, before the list as chips (stop process, "unknown name": "pipewire isn't an app I can
+        stop. Running now:"); with nothing on the list, the plain reply."""
+        own = skill["replies"].get("unknown " + slot)
+        return self.reply(own, {slot: self.quoted(said)}) if own and found else self.reply("unknown value", {"value": self.quoted(said)})
+
     def fill_value(self, text, toks, u):
         """An answer to "Which one?" or "What should I call it?". The same request said again adds its
         values; "no" stops; "yes" asks again; "call it bikes" gives the name after its lead-in words
@@ -313,7 +320,7 @@ class Agent:
             return self.next_step(skill, vals, approved)
         hit = best_in(toks, found)
         if not hit:
-            return {"outcome": "ask", "skill": skill["id"], "say": self.reply("unknown value", {"value": self.quoted(text.strip())}), "chips": self.chips(found)}
+            return {"outcome": "ask", "skill": skill["id"], "say": self.not_there(skill, slot, text.strip(), found), "chips": self.chips(found)}
         vals[slot] = {"value": hit["o"]["value"], "label": hit["o"]["label"]}
         return self.next_step(skill, vals, approved)
 
@@ -465,8 +472,17 @@ class Agent:
         vals, used = self.values_in(skill, text, toks)
         taught = set(self.model["taught"].get(skill["id"], []))
         negation = {w for ph in self.words("negation") for w in ph}  # handled by its own rule
-        unknown = [t["word"] for i, t in enumerate(toks) if i not in used and t["word"] not in self.small | taught | negation]
-        return {"how": "model", "skill": skill, "vals": vals, "p": p, "unknown": unknown}
+        new = [i for i, t in enumerate(toks) if i not in used and t["word"] not in self.small | taught | negation]
+        # the new words, side by side, are the value the skill still lacks from the device's list ("kill pipewire":
+        # no app of that name): kept as said, so it is answered as not there, never asked for again (Gab, 24 Oct).
+        # When the model is sure of the skill they are no longer new; when it isn't, the question still names them.
+        missing = [k for k, spec in skill["values"].items() if k not in vals and spec["required"] and not spec.get("default")]
+        if len(missing) == 1 and skill["values"][missing[0]]["kind"].startswith("@sys.") and self.list_of(skill["values"][missing[0]]["kind"]) is not None \
+                and new and new == list(range(new[0], new[-1] + 1)):
+            vals[missing[0]] = {"text": self.original(text, toks, new[0], new[-1] + 1), "unknown": True}
+            if p >= SURE:
+                new = []
+        return {"how": "model", "skill": skill, "vals": vals, "p": p, "unknown": [toks[i]["word"] for i in new]}
 
     def actions_said(self, toks):
         """the actions a sentence names in so many words, each by a phrase of one action only (words/actions.md):
@@ -564,8 +580,8 @@ class Agent:
             return self.confirm_typo(skill, vals, gap[1], approved)
         if gap and gap[0] == "unknown":  # said, but not on the device's list: which one, with the list as chips
             k = gap[1]
-            return self.ask_value(skill, vals, k, approved, self.reply("unknown value", {"value": self.quoted(vals[k]["text"])}),
-                                  self.chips(self.list_of(skill["values"][k]["kind"])))
+            found = self.list_of(skill["values"][k]["kind"])
+            return self.ask_value(skill, vals, k, approved, self.not_there(skill, k, vals[k]["text"], found), self.chips(found))
         for k, spec in skill["values"].items():
             d = spec.get("default") or ""
             if vals.get(k):
@@ -607,8 +623,8 @@ class Agent:
             return self.next_step(skill, vals, approved)
 
         def refuse():
-            return self.ask_value(skill, vals, k, approved, self.reply("unknown value", {"value": self.quoted(v.get("text") or v["label"])}),
-                                  self.chips(self.list_of(skill["values"][k]["kind"])))
+            found = self.list_of(skill["values"][k]["kind"])
+            return self.ask_value(skill, vals, k, approved, self.not_there(skill, k, v.get("text") or v["label"], found), self.chips(found))
 
         self.question("fuzzy", yes=take, no=refuse, options=[(v["label"], take)],
                       otherwise=lambda: setattr(self, "pending", {"waiting": "value", "skill": skill, "vals": vals, "slot": k, "approved": approved}))
@@ -758,6 +774,9 @@ class Agent:
         if skill.get("changes"):  # a setting, changed here at once; the server writes it to settings.md
             key, value = skill["changes"]
             value = fill(value, {k: v.get("text") or v.get("label") for k, v in vals.items()}).strip()
+            if key == "name" and value == value.lower():  # "call me gab" → Gab; "McKenzie" stays as written (Gab, 24 Oct)
+                value = " ".join(w[:1].upper() + w[1:] for w in value.split())
+                vals = {k: {"text": value} if k == "name" else v for k, v in vals.items()}
             self.settings[key] = value
             return {"outcome": "act", "skill": skill["id"], "changes": {key: value},
                     "say": self.reply(skill["replies"]["done"], self.display(skill, vals))}

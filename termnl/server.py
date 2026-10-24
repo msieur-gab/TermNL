@@ -5,6 +5,7 @@
     GET  /api/settings     the settings panel: show commands, admin mode (switches), name
     POST /api/settings     {"show commands": "on"}, {"name": "Gab"} — written back to settings.md
     POST /api/say          {"text": "...", "session": "..."} → the reply
+    GET  /api/learning     ?session=…: learning still? and "Done learning…" for the conversation that asked
     POST /api/reset        {"session": "..."} — a new conversation
 
 The API takes sentences and gives replies: never a command. The commands are the skills' own,
@@ -22,6 +23,7 @@ import sys
 import time
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlsplit
 
 import importlib
 
@@ -62,7 +64,8 @@ class TermNL:
         self.device = Device(home or self.settings.get("home") or "~/TermNL-home",
                              home_names=[" ".join(p) for p in self.lang["lists"]["conversation"].get("home folder", [["home"]])])
         os.makedirs(self.device.home, exist_ok=True)
-        self.training = None  # learning again: {started, process}, then {done, ok, seconds, error} until it is told
+        self.training = None  # learning again: {started, process, session}
+        self.told = {}  # session → "Done learning…", until its page asks (GET /api/learning) or it speaks again
         # how the model is trained again on this device: the lowest priority, two threads, so the board stays usable
         self.trainer = ["nice", "-n", "19", sys.executable, "-m", "termnl.train"]
         self.sessions = {}
@@ -93,42 +96,61 @@ class TermNL:
             self.sessions[session] = self.Agent(**self.lang, settings=self.settings, device=self.device)
         return self.sessions[session]
 
-    def train(self):
+    def train(self, session):
         """"learn what I taught you": trains the model again from the skill files, in the background. The
-        model in use is replaced only when the new one is whole (train.py); the one before stays beside it."""
+        model in use is replaced only when the new one is whole (train.py); the one before stays beside it.
+        The conversation that asked is the one told when it is done (Gab, 24 Oct: "asker, as it happens")."""
         if self.training and "process" in self.training:
             return False
         env = {**os.environ, "OPENBLAS_NUM_THREADS": "2", "OMP_NUM_THREADS": "2"}
         process = subprocess.Popen(self.trainer, cwd=os.path.dirname(HERE), env=env, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, text=True, start_new_session=True)
-        self.training = {"started": time.time(), "process": process}
+        self.training = {"started": time.time(), "process": process, "session": session}
         return True
 
     def learnt(self):
-        """once training is over: the new model is loaded, and the next reply says how it went (a note)"""
+        """once training is over: the new model is loaded, and how it went waits for the conversation that asked"""
         t = self.training
-        if not t or "process" not in t or t["process"].poll() is None:
-            return None
+        if not t or t["process"].poll() is None:
+            return
         out, err = t["process"].communicate()
         seconds = time.time() - t["started"]
         self.training = None
         a = self.Agent(**self.lang, settings=self.settings, device=self.device)
         if t["process"].returncode != 0:
-            return a.reply("learning failed", {"error": (err.strip().splitlines() or ["code %d" % t["process"].returncode])[-1]})
+            self.told[t["session"]] = a.reply("learning failed", {"error": (err.strip().splitlines() or ["code %d" % t["process"].returncode])[-1]})
+            return
         self.lang = load_language("en")
         for session in self.sessions.values():
             session.model = self.lang["model"]
         took = readers.since(seconds, readers.Words(self.lang["lists"]["readings"]))
-        return a.reply("learnt", {"time": took})
+        self.told[t["session"]] = a.reply("learnt", {"time": took})
+
+    def learning(self, session):
+        """what the chat page asks every few seconds while learning: still at it, and this conversation's note"""
+        with self.lock:
+            self.learnt()
+            return {"learning": self.training is not None, "say": self.told.pop(session, None)}
+
+    def state(self, reads):
+        """what only the server knows, for the readers of TermNL itself (readers.py: learning, name)"""
+        if reads == "learning":
+            return {"started": (self.training or {}).get("started"), "trained": self.lang["model"].get("trained")}
+        if reads == "name":
+            return {"person": self.settings.get("name") or ""}
+        return {}
 
     def say(self, text, session):
         with self.lock:
-            done = self.learnt()
+            self.learnt()
+            done = self.told.pop(session, None)
             a = self.agent(session)
             r = a.hear(text)
             r = self.notes(a, r, text) or r
-            if r.pop("trains", None) and not self.train():
-                r["say"] = a.reply("still learning")
+            if r.pop("trains", None):
+                if not self.train(session):
+                    r["say"] = a.reply("still learning")
+                r["learning"] = True  # the page asks until it is done (GET /api/learning)
             command = r.pop("command", None)
             for key, value in (r.get("changes") or {}).items():  # "call me Gab", "turn admin mode on"
                 self.set(key, value)
@@ -148,7 +170,7 @@ class TermNL:
                         r["ran"] = "ran"
                         r["say"] = r["say"].replace("{output}", out.strip())
             r["here"] = a.here["label"]
-            if done:  # training ended since the last turn: said before the reply
+            if done:  # training ended since this conversation last spoke, and its page didn't ask: said before the reply
                 r["say"] = done + " " + r["say"]
             self.log(session, text, r, command)
             r.pop("teach", None)  # the learning inbox comes next; nothing is learned yet
@@ -191,6 +213,7 @@ class TermNL:
         try:
             kinds = {k: v["kind"] for k, v in skill["values"].items()}
             args = {k: self.device.path(v) if kinds.get(k) == "@sys.folder" else v for k, v in r.pop("args", {}).items()}
+            args.update(self.state(skill["reads"]))
             if command:
                 out = self.execute(a, r, command)
                 if out is None:
@@ -249,6 +272,8 @@ def handler(app):
                 return self.send({"termnl": True, "host": socket.gethostname()})
             if path == "/api/settings":
                 return self.send(app.panel())
+            if path == "/api/learning":
+                return self.send(app.learning((parse_qs(urlsplit(self.path).query).get("session") or ["default"])[0]))
             f = os.path.normpath(os.path.join(WEB, "index.html" if path == "/" else path.lstrip("/")))
             if not f.startswith(WEB + os.sep) or not os.path.isfile(f):
                 return self.send({"error": "not found"}, code=404)

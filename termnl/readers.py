@@ -15,6 +15,7 @@ import os
 import platform
 import re
 import subprocess
+import time
 
 from .text import fill
 
@@ -256,6 +257,21 @@ def clock(w):
                                        "date": w("clock date", day=now.day, month=month, year=now.year)}}
 
 
+# TermNL reads itself too: the server gives what only it knows (server.py, state)
+
+def learning(w, started=None, trained=None):
+    """learning again now, for how long so far; or when the model in use was trained (train.py writes it in)"""
+    now = time.time()
+    if started:
+        return {"level": "learning", "values": {"": since(now - started, w)}}
+    return {"level": "fine" if trained else "unknown", "values": {"": since(now - trained, w) if trained else ""}}
+
+
+def name(w, person=""):
+    """the person's name, when they gave one ("call me Gab")"""
+    return {"level": "known" if person else "unknown", "values": {"": person}}
+
+
 # Wi-Fi, the network and Bluetooth have no file to read: their skill's command runs (and is what "show
 # commands" shows), and these readers turn its output into words. Each gets it as `output`.
 FROM_COMMAND = ("wifi", "networks", "network", "bluetooth")
@@ -369,6 +385,8 @@ READERS = {
     "folder": (folder, ["fine", "empty"], ["count"]),
     "health": (health, ["fine", "busy", "struggling"], ["temperature", "memory", "disk", "uptime"]),
     "clock": (clock, ["fine", "unsure", "wrong"], ["", "day", "date"]),
+    "learning": (learning, ["learning", "fine", "unknown"], [""]),
+    "name": (name, ["known", "unknown"], [""]),
     "wifi": (wifi, ["fine", "weak", "not connected", "off"], ["", "signal", "count"]),
     "networks": (networks, ["fine", "none"], ["count", "best"]),
     "network": (network, ["connected", "not connected"], ["address", "through"]),

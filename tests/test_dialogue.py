@@ -580,6 +580,33 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(b.hear("make a folder called bikes")["skill"], "create-folder")  # the chips don't hold the next request
 
 
+    def test_a_program_that_isnt_a_running_app_is_said_so_with_the_apps_running(self):
+        """Gab, 24 Oct, on the board: "kill pipewire", yes → "Which one should I stop?", the name lost. Only apps
+        are stopped, and TermNL says why (his choice: "apps only, say why")."""
+        for said in ("kill pipewire", "stop pipewire", "force quit pipewire"):
+            a = agent()
+            r = a.hear(said)
+            self.assertEqual((r["outcome"], r["skill"]), ("ask", "stop-process"), said)
+            self.assertEqual(r["say"], "“pipewire” isn't an app I can stop. Running now:", said)
+            self.assertEqual(r["chips"], ["Firefox", "Terminal"], said)
+            self.assertEqual(a.hear("Terminal")["outcome"], "approve", said)
+            self.assertEqual(a.hear("yes")["command"], "pkill -9 -x 'gnome-terminal-'", said)
+
+    def test_a_name_given_in_small_letters_gets_its_capital_and_is_read_back(self):
+        """Gab, 24 Oct: "what is my name" offered to set it, and "gab" stayed in small letters"""
+        settings = {"admin mode": "off"}
+        a = agent(settings)
+        self.assertEqual(a.hear("what is my name")["skill"], "say-name")
+        self.assertEqual(a.hear("call me gab")["changes"], {"name": "Gab"})
+        self.assertEqual(a.hear("my name is McKenzie")["changes"], {"name": "McKenzie"})
+        self.assertEqual(settings["name"], "McKenzie")
+
+    def test_list_alone_shows_the_folder(self):
+        """Gab, 24 Oct: "list" alone shows the folder, as before the help and process skills shared the word"""
+        for said in ("list", "list all"):
+            r = agent().hear(said)
+            self.assertEqual((r["outcome"], r["skill"]), ("act", "show-folder"), said)
+
     def test_learning_again_is_asked_for_in_words_and_approved_first(self):
         """Gab, 24 Oct: "give a specific command to user within TermNL to retrain their model"; then "let us
         build this one and then i will test on the eve device later on" """
@@ -604,9 +631,21 @@ class Dialogue(unittest.TestCase):
             self.assertIn("learning now", app.say("yes", "t")["say"])
             app.say("retrain your model", "t")
             self.assertIn("still learning", app.say("yes", "t")["say"])  # one training at a time
+            self.assertRegex(app.say("are you learning", "other")["say"], r"^I'm still learning: \d+ seconds? so far")
             app.training["process"].wait()
-            self.assertRegex(app.say("what time is it", "t")["say"], r"learn.* 1 second\b")  # the next reply says it is done
+            self.assertNotIn("learn", app.say("what time is it", "other")["say"])  # not the one that asked
+            self.assertEqual(app.learning("other"), {"learning": False, "say": None})
+            self.assertRegex(app.learning("t")["say"], r"learn.* 1 second\b")  # the page that asked fetches it
+            self.assertNotIn("learn", app.say("what time is it", "t")["say"])  # told once
             self.assertIsNone(app.training)
+            self.assertRegex(app.say("are you learning", "t")["say"], r"^I'm not learning right now\.")
+            self.assertIn("haven't told me your name", app.say("what is my name", "t")["say"])
+            app.say("call me gab", "t")
+            self.assertRegex(app.say("what is my name", "t")["say"], r"\bGab\.$")
+            app.say("learn what i taught you", "t")
+            self.assertTrue(app.say("yes", "t")["learning"])  # the page starts asking
+            app.training["process"].wait()
+            self.assertRegex(app.say("what time is it", "t")["say"], r"learn.* 1 second\b")  # or its next reply says it
             app.trainer = ["sh", "-c", "echo no numpy here >&2; exit 1"]
             app.say("learn what i taught you", "t")
             app.say("yes", "t")

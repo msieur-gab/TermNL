@@ -2,6 +2,7 @@
 // It only knows the API's address, so any page can hold it (this one, a phone app, desk's kiosk).
 // Each turn shows the reply; under it, small, what happened: understood how, and what ran. A reply that
 // opens a panel (opens: "settings") is passed on in the "reply" event: the page holding the chat opens it.
+// While TermNL learns again, it asks when it is done (GET /api/learning) and shows it as a turn.
 
 const css = `
   :host { display: flex; flex-direction: column; min-height: 0; font: inherit; color: var(--text); }
@@ -67,6 +68,22 @@ class TermNLChat extends HTMLElement {
     catch { r = { outcome: "abstain", say: "I can't reach TermNL." }; }
     this.show(r);
     this.dispatchEvent(new CustomEvent("reply", { detail: r }));
+    if (r.learning) this.waitLearning();
+  }
+
+  // learning again in the background: asked every few seconds, so "Done learning" comes when it happens,
+  // in the conversation that asked (Gab, 24 Oct); if TermNL can't be reached, its next reply says it
+  async waitLearning() {
+    if (this.waiting) return;
+    this.waiting = true;
+    try {
+      for (;;) {
+        await new Promise(ok => setTimeout(ok, 5000));
+        const r = await (await fetch(`${this.api}/api/learning?session=${encodeURIComponent(session)}`)).json();
+        if (r.say) this.show({ outcome: "act", skill: "train-model", say: r.say });
+        if (!r.learning) break;
+      }
+    } catch {} finally { this.waiting = false; }
   }
 
   show(r) {

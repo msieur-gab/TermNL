@@ -5,7 +5,8 @@ admin: no
 approve: yes
 ---
 
-For a program that is stuck. Closing an app normally is close app.
+For a program that is stuck. Closing an app normally is close app. Only apps, never the system's own
+programs (Gab, 24 Oct, on "kill pipewire": apps only, and say why).
 
 ## People say
 
@@ -35,5 +36,6 @@ pkill -9 -x {name}
 
 ## Replies
 
+- unknown name: {name} isn't an app I can stop. Running now:
 - approve: Force {name} to stop? Anything not saved in it will be lost.
 - done: {name} is stopped. | Stopped {name}.

@@ -28,7 +28,9 @@ toggle beside the commands and your name. "help" lists what TermNL can do, by th
 `words/objects.md`.
 
 "learn what I taught you" (approved first) trains the model again from the skill files, in the background, at
-the lowest priority and on two threads: the board stays usable, and the next reply says when it is done. The
+the lowest priority and on two threads: the board stays usable. The conversation that asked is told when it is
+done: its chat page asks every few seconds (`GET /api/learning`), or its next reply says it; "are you learning?"
+says how far along it is, or when it last learnt (Gab, 24 Oct: about 3½ minutes on the board). The
 model in use is replaced only once the new one is whole; the one before is kept as `model.previous.json`. Replies can say `{user}`: "Hey {user}, no problem: your CPU is at…"; a variant
 with `{user}` is only used once a name is set.
 
