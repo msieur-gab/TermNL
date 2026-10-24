@@ -567,6 +567,8 @@ class Dialogue(unittest.TestCase):
         self.assertIn("more", rows["Files and folders"])  # dense: two examples and a count (Gab: "a denser version")
         whole = a.hear("Network")
         self.assertIn(["turn Wi-Fi on"], whole["table"]["rows"])
+        self.assertNotIn("Network", whole["chips"])
+        self.assertIn(["play music"], a.hear("Music and sound")["table"]["rows"])  # another topic, tapped next
         listed = []
         for topic in rows:
             b = agent()

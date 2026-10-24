@@ -716,10 +716,16 @@ class Agent:
             rows.append([topic, ", ".join(s["label"] for s in first) + (" " + self.reply("and more", {"count": more}) if more else "")])
 
         def whole(topic, found):
-            return lambda: {"outcome": "act", "skill": skill["id"], "say": self.reply("help topic", {"topic": topic}),
-                            "table": {"columns": [""], "rows": [[s["label"]] for s in found]}}
+            def show():
+                ask()  # the other topics stay a tap away
+                return {"outcome": "act", "skill": skill["id"], "say": self.reply("help topic", {"topic": topic}),
+                        "table": {"columns": [""], "rows": [[s["label"]] for s in found]}, "chips": [t for t, _ in topics if t != topic]}
+            return show
 
-        self.question("topic", options=[(topic, whole(topic, found)) for topic, found in topics])
+        def ask():
+            self.question("topic", options=[(topic, whole(topic, found)) for topic, found in topics])
+
+        ask()
         return {"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"]),
                 "table": {"columns": ["", ""], "rows": rows}, "chips": [t for t, _ in topics]}
 
