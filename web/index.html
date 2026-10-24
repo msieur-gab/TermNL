@@ -25,6 +25,23 @@
   label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); }
   button.ghost { font: inherit; font-size: 14px; background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; }
   termnl-chat { flex: 1; min-height: 0; }
+  dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text);
+           padding: 18px; width: min(380px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgb(0 0 0 / .35); }
+  dialog h2 { font-size: 16px; margin: 0 0 14px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .row span { display: flex; flex-direction: column; }
+  .row small { color: var(--muted); font-size: 13px; }
+  .row input[type=text] { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line);
+                          background: var(--bg); color: var(--text); width: 150px; }
+  .switch { appearance: none; width: 42px; height: 24px; border-radius: 999px; background: var(--line); position: relative;
+            cursor: pointer; flex: none; margin: 0; transition: background .15s; }
+  .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+                   background: var(--surface); transition: left .15s; }
+  .switch:checked { background: var(--accent); }
+  .switch:checked::after { left: 21px; }
+  .done { margin-top: 14px; width: 100%; border: 0; background: var(--accent); color: var(--on-accent); border-radius: 10px;
+          padding: 9px; font: inherit; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -32,23 +49,43 @@
   <header>
     <h1>TermNL</h1>
     <span class="where">You're in <b id="here">home</b></span>
-    <label><input type="checkbox" id="show commands"> show commands</label>
-    <label><input type="checkbox" id="admin mode"> admin mode</label>
+    <button class="ghost" id="open-settings" type="button">Settings</button>
     <button class="ghost" id="reset" type="button">New conversation</button>
   </header>
   <termnl-chat api=""></termnl-chat>
 </main>
+<dialog id="settings">
+  <h2>Settings</h2>
+  <label class="row"><span>Your name<small>I'll use it in my replies</small></span>
+    <input type="text" id="name" maxlength="40" autocomplete="off"></label>
+  <label class="row"><span>Show the commands<small>Under each reply, what ran in the terminal</small></span>
+    <input type="checkbox" class="switch" id="show commands"></label>
+  <label class="row"><span>Admin mode<small>Lets me restart, shut down and install. I still ask you each time.</small></span>
+    <input type="checkbox" class="switch" id="admin mode"></label>
+  <button class="done" type="button" id="close-settings">Done</button>
+</dialog>
 <script type="module">
 import "./termnl-chat.js";
 const chat = document.querySelector("termnl-chat");
+// the settings panel: opened by its button or by asking ("open my settings"); admin mode only changes here
+const panel = document.getElementById("settings"), name = document.getElementById("name");
 const boxes = ["show commands", "admin mode"].map(id => document.getElementById(id));
-const showSettings = s => boxes.forEach(b => { b.checked = s[b.id] === "on"; });
-fetch("/api/settings").then(r => r.json()).then(showSettings);
-for (const b of boxes) b.onchange = async () => {
-  const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [b.id]: b.checked ? "on" : "off" }) });
+const showSettings = s => { boxes.forEach(b => { b.checked = s[b.id] === "on"; }); name.value = s.name || ""; };
+const loadSettings = () => fetch("/api/settings").then(r => r.json()).then(showSettings);
+const save = async change => {
+  const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(change) });
   showSettings(await r.json());
 };
-chat.addEventListener("reply", e => { if (e.detail.here) document.getElementById("here").textContent = e.detail.here; });
+loadSettings();
+for (const b of boxes) b.onchange = () => save({ [b.id]: b.checked ? "on" : "off" });
+name.onchange = () => save({ name: name.value });
+document.getElementById("open-settings").onclick = () => panel.showModal();
+document.getElementById("close-settings").onclick = () => panel.close();
+chat.addEventListener("reply", e => {
+  if (e.detail.here) document.getElementById("here").textContent = e.detail.here;
+  if (e.detail.changes) loadSettings();  // "call me Gab", "show me the commands"
+  if (e.detail.opens === "settings") panel.showModal();
+});
 document.getElementById("reset").onclick = () => { chat.reset(); document.getElementById("here").textContent = "home"; };
 </script>
 </body>

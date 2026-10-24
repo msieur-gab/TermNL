@@ -1,6 +1,7 @@
 // <termnl-chat api="http://board:8810"> — the chat: a log of turns, chips to tap, a line to type in.
 // It only knows the API's address, so any page can hold it (this one, a phone app, desk's kiosk).
-// Each turn shows the reply; under it, small, what happened: understood how, and what ran.
+// Each turn shows the reply; under it, small, what happened: understood how, and what ran. A reply that
+// opens a panel (opens: "settings") is passed on in the "reply" event: the page holding the chat opens it.
 
 const css = `
   :host { display: flex; flex-direction: column; min-height: 0; font: inherit; color: var(--text); }

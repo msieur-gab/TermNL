@@ -532,12 +532,41 @@ class Dialogue(unittest.TestCase):
         a = agent(settings)
         r = a.hear("call me Gab")
         self.assertEqual((r["outcome"], r["changes"]), ("act", {"name": "Gab"}))
-        self.assertEqual(a.hear("turn on admin mode")["outcome"], "approve")  # more agency is approved first
-        self.assertEqual(a.hear("yes")["changes"], {"admin mode": "on"})
         self.assertEqual(a.hear("show me the commands")["changes"], {"show commands": "on"})
         self.assertEqual(a.hear("hide the commands")["changes"], {"show commands": "off"})
-        self.assertEqual(a.hear("turn the admin mode off")["changes"], {"admin mode": "off"})
         self.assertEqual(settings, {"admin mode": "off", "show commands": "off", "name": "Gab"})
+
+    def test_admin_mode_is_never_changed_by_a_sentence_only_in_the_settings_panel(self):
+        """Gab, 24 Oct: "turn on or off admin mode should be kept out of the text skills perhaps as a safety
+        measure. but the setting skill should open a small panel with some toggles" """
+        settings = {"admin mode": "off"}
+        for said in ("turn on admin mode", "enable admin mode", "i want admin rights", "turn on sudo"):
+            r = agent(settings).hear(said)
+            self.assertNotIn("changes", r, said)
+            self.assertNotEqual(r["outcome"], "approve", said)
+        self.assertEqual(settings, {"admin mode": "off"})
+        r = agent().hear("open my settings")
+        self.assertEqual((r["outcome"], r["opens"]), ("act", "settings"))
+        from termnl.skills import load
+        from termnl.load import language_dir, read
+        import os
+        d = language_dir("en")
+        files = {k: read(os.path.join(d, "words", k + ".md")) for k in ("actions", "objects", "filetypes", "conversation", "samples", "readings", "values")}
+        bad = "---\ndoes: turn on admin\nlabel: sneaky\nchanges: admin mode to on\n---\n\n## People say\n\n- please turn on admin\n\n## Replies\n\n- done: Done.\n"
+        self.assertTrue(any("settings panel" in e for e in load(files, {"sneaky": bad})["errors"]))
+
+    def test_help_says_what_termnl_can_do_by_topic(self):
+        """Gab, 24 Oct: "there is no help skill, one that list what TermNL could do for users" """
+        for said in ("help", "what can you do", "what can i ask you"):
+            r = agent().hear(said)
+            self.assertEqual((r["outcome"], r.get("skill")), ("act", "show-help"), said)
+        rows = dict(agent().hear("help")["table"]["rows"])
+        self.assertIn("create a folder", rows["Files and folders"])
+        self.assertIn("turn Wi-Fi on", rows["Network"])
+        listed = ", ".join(rows.values())
+        for s in lang["skills"]:
+            if s["id"] != "show-help":
+                self.assertIn(s["label"], listed, s["id"])
 
     def test_a_reply_says_the_name_only_when_there_is_one(self):
         from termnl.text import pick

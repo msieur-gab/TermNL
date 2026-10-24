@@ -172,10 +172,6 @@ class Agent:
         if not self.pending and (self.is_(toks, "yes") or self.is_(toks, "no")):
             # a lone yes or no with nothing waiting (an old chip, a question lost): say so, don't guess
             return {"outcome": "abstain", "say": self.reply("nothing waiting"), "reason": "nothing waiting"}
-        if self.is_(toks, "help"):
-            self.pending = None
-            names = [s["label"] for s in self.skills]
-            return {"outcome": "act", "say": self.reply("help", {"skills": ", ".join(names)}), "chips": names}
 
         # 3. understand
         u = self.understand(text, toks)
@@ -714,6 +710,17 @@ class Agent:
 
     def act(self, skill, vals):
         self.pending = None
+        if skill.get("opens"):  # a panel of the page: the settings' toggles
+            return {"outcome": "act", "skill": skill["id"], "opens": skill["opens"], "say": self.reply(skill["replies"]["done"])}
+        if skill.get("lists") == "skills":  # help: what TermNL can do, by topic (words/objects.md, Topics)
+            rows, shown = [], set()
+            for topic, objects in self.lists.get("topics", []):  # a topic with no objects holds the rest
+                labels = [s["label"] for s in self.skills if (s["object"] in objects or not objects) and s["id"] not in shown and s is not skill]
+                shown.update(s["id"] for s in self.skills if s["label"] in labels)
+                if labels:
+                    rows.append([topic, ", ".join(labels)])
+            return {"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"]),
+                    "table": {"columns": ["", ""], "rows": rows}}
         if skill.get("changes"):  # a setting, changed here at once; the server writes it to settings.md
             key, value = skill["changes"]
             value = fill(value, {k: v.get("text") or v.get("label") for k, v in vals.items()}).strip()

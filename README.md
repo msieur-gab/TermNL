@@ -21,9 +21,11 @@ Python 3.9 or newer, standard library only. Training the model needs numpy (`pyt
 
 ## Said in words: your name and your settings
 
-"call me Gab", "turn on admin mode" (asked first), "turn admin mode off", "show me the commands", "hide the
-commands": each changes its line in `settings.md`. A skill does this with `changes: admin mode to on` in its
-header instead of a command. Replies can say `{user}`: "Hey {user}, no problem: your CPU is at…"; a variant
+"call me Gab", "show me the commands", "hide the commands": each changes its line in `settings.md`. A skill does
+this with `changes: show commands to on` in its header instead of a command. Admin mode is never changed by a
+sentence (the checker refuses a skill that tries): "open my settings" opens the settings panel, where it is a
+toggle beside the commands and your name. "help" lists what TermNL can do, by the topics in
+`words/objects.md`. Replies can say `{user}`: "Hey {user}, no problem: your CPU is at…"; a variant
 with `{user}` is only used once a name is set.
 
 ## Layout

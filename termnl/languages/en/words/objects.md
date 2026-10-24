@@ -22,3 +22,16 @@ The kinds of things acted on. Each line: the object, then the words people use f
 - admin: admin, admin mode, admin rights, sudo
 - commands: commands, command, command lines
 - name: name
+- settings: settings, preferences, options
+- help: help
+
+## Topics
+
+How "help" groups what TermNL can do. Each line: a topic, then its objects; a topic with none holds the rest.
+
+- Files and folders: file, folder
+- This device: system, storage, memory, temperature, time, uptime, process, app, service
+- Network: network, wifi, bluetooth
+- Music and sound: music, track, sound
+- You and me: name, commands, settings
+- Something else:

@@ -53,13 +53,14 @@ def read_lists(files):
         in_context.append({"objects": [o.strip() for o in e["key"].split(",") if o.strip()], "action": action.strip(),
                            "phrases": [words(w) for w in said.split(",") if w.strip()]})
     opposites = {e["key"]: set(e["words"]) for e in read_list(files["actions"], "Opposites")}
+    topics = [(e["key"], e["words"]) for e in read_list(files["objects"], "Topics")]  # how help groups the skills
     answers = {e["key"]: [words(w) for w in e["words"]] for e in read_list(files["conversation"])}
     replies = {e["key"]: e["rest"] for e in read_list(files["conversation"], "Replies")}
     samples = {e["key"]: e["words"] for e in read_list(files["samples"])}
     # every "- name: words" line of readings.md, whatever its section
     readings = {m.group(1).strip(): m.group(2).strip() for m in re.finditer(r"^- ([^:]+):\s*(.*)$", files["readings"], re.M)}
     return {"samples": samples, "readings": readings, "refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
-            "conversation": answers, "replies": replies, "in_context": in_context, "opposites": opposites, "values_md": files.get("values", "")}
+            "conversation": answers, "replies": replies, "in_context": in_context, "opposites": opposites, "topics": topics, "values_md": files.get("values", "")}
 
 
 def section(md, name):
@@ -111,7 +112,8 @@ def read_skill(id, md):
     return {"id": id, "does": meta.get("does", ""), "label": meta.get("label") or meta.get("does") or id,
             "admin": yes("admin"), "approve": yes("approve"), "moves": meta.get("moves", ""), "reads": meta.get("reads", ""), "when": when,
             "sentences": sentences, "also": also, "values": values, "command": command, "replies": replies,
-            "plain": plain, "needs": section(md, "What it needs"), "changes": changes}
+            "plain": plain, "needs": section(md, "What it needs"), "changes": changes,
+            "opens": meta.get("opens", "").strip(), "lists": meta.get("lists", "").strip()}
 
 
 def check(skill, lists):
@@ -167,6 +169,9 @@ def check(skill, lists):
     for m in re.finditer(r"\{(\w+)\}", skill["command"]):
         if m.group(1) not in skill["values"]:
             say("command uses {%s}, not declared" % m.group(1))
+    if skill.get("changes") and skill["changes"][0] in ("admin mode", "simulate", "home"):
+        # a safety: what TermNL may do on the device is never changed by a sentence, only in the settings panel
+        say("%s can only be changed in the settings panel, not by a skill" % skill["changes"][0])
     if skill.get("changes") and skill["command"]:
         say("a skill changes a setting or runs a command, not both")
     for m in re.finditer(r"\{(\w+)\}", skill["changes"][1] if skill.get("changes") else ""):
@@ -193,6 +198,8 @@ def check(skill, lists):
             say("the %s reader reads what a command says: the skill needs a ## Command" % skill["reads"])
         elif skill["reads"] not in FROM_COMMAND and skill["command"]:
             say("the %s reader reads the device itself: the skill has no command" % skill["reads"])
+    elif skill.get("lists") and skill["lists"] != "skills":
+        say('lists: "%s" — a skill can only list skills' % skill["lists"])
     elif "done" not in skill["replies"]:
         say('no "done" reply')
     if (skill["admin"] or skill["approve"]) and "approve" not in skill["replies"]:

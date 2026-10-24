@@ -2,8 +2,8 @@
 
     GET  /                 the chat page (web/)
     GET  /api/hello        "TermNL is here", for a client looking for it on the network
-    GET  /api/settings     the switches: show commands, admin mode
-    POST /api/settings     {"show commands": "on"} — written back to settings.md
+    GET  /api/settings     the settings panel: show commands, admin mode (switches), name
+    POST /api/settings     {"show commands": "on"}, {"name": "Gab"} — written back to settings.md
     POST /api/say          {"text": "...", "session": "..."} → the reply
     POST /api/reset        {"session": "..."} — a new conversation
 
@@ -31,6 +31,7 @@ from .text import fill, pick
 WEB = os.path.join(ROOT, "web")
 LOGS = os.path.join(ROOT, "logs")
 SWITCHES = ("show commands", "admin mode")
+WORDS = ("name",)  # settings that hold words, set in the settings panel or by "call me Gab"
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml"}
 
 
@@ -76,6 +77,10 @@ class TermNL:
         text = pattern.sub(line, text, count=1) if pattern.search(text) else text.rstrip("\n") + "\n" + line + "\n"
         with open(path, "w", encoding="utf-8") as f:
             f.write(text)
+
+    def panel(self):
+        """what the settings panel shows: the switches, and the words (the person's name)"""
+        return {**{k: self.settings.get(k) or "off" for k in SWITCHES}, **{k: self.settings.get(k) or "" for k in WORDS}}
 
     def agent(self, session):
         if session not in self.sessions:
@@ -204,7 +209,7 @@ def handler(app):
             if path == "/api/hello":
                 return self.send({"termnl": True, "host": socket.gethostname()})
             if path == "/api/settings":
-                return self.send({k: app.settings.get(k) or "off" for k in SWITCHES})
+                return self.send(app.panel())
             f = os.path.normpath(os.path.join(WEB, "index.html" if path == "/" else path.lstrip("/")))
             if not f.startswith(WEB + os.sep) or not os.path.isfile(f):
                 return self.send({"error": "not found"}, code=404)
@@ -225,7 +230,9 @@ def handler(app):
                     for k, v in b.items():
                         if k in SWITCHES and v in ("on", "off"):
                             app.set(k, v)
-                return self.send({k: app.settings.get(k) or "off" for k in SWITCHES})
+                        elif k in WORDS and isinstance(v, str):
+                            app.set(k, " ".join(v.split())[:40])
+                return self.send(app.panel())
             return self.send({"error": "not found"}, code=404)
     return Handler
 
