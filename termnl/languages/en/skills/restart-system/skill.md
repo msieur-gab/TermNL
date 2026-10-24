@@ -10,6 +10,13 @@ approve: no
 - `<restart> [the] <system>`
 - `(reboot|restart) [now|everything|it all]`
 
+## Also said
+
+- restart
+- turn the board off and on again
+- give the board a fresh start
+- can you reboot the device
+
 ## Command
 
 systemctl reboot

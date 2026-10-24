@@ -16,6 +16,13 @@ Gab, 22 Oct: "cd ..", "go back".
 - `go to the (parent|upper) <folder>`
 - `<leave> [this|the] <folder>`
 
+## Also said
+
+- cd ..
+- up one level
+- back out of here
+- go up
+
 ## Values
 
 - place: @sys.folder, default: parent

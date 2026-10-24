@@ -11,6 +11,17 @@ approve: no
 - `<create> [me] [a|an|the] [new] [{type}] <file> (in|inside) [the|my] {place} [<folder>] [(named|called|call|name|titled) {name}]`
 - `<create> [me] [a|an|the] [new] [{type}] <file>`
 
+## Also said
+
+- create a file
+- make a new file
+- new file note.md
+- create todo.txt
+- start a file called groceries.md
+- make an empty file named seed.md
+- i need a new text file
+- add a file called note.md in documents
+
 ## Values
 
 - name: text, required, new

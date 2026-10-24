@@ -11,6 +11,15 @@ approve: no
 - `<play> [the] <next> [<track>|one]`
 - `go to the <next> [<track>|one]`
 
+## Also said
+
+- next
+- skip
+- play the next track
+- i don't like this song, next
+- go to the next one
+- skip this track please
+
 ## Command
 
 mpc next

@@ -22,6 +22,11 @@ approve: no
 - memory usage
 - am i running out of memory
 - how much memory is used
+- free memory
+- is the ram almost full
+- memory
+- tell me about the ram usage right now
+- do i have enough memory free
 
 ## When it's fine
 

@@ -10,6 +10,16 @@ approve: no
 - `<restart> [the] {name} [<service>]`
 - `<restart> [the|a] <service>`
 
+## Also said
+
+- restart a service
+- restart nginx please
+- relaunch the web server
+- give mpd a restart
+- the music server needs restarting
+- turn ssh off and on again
+- can you restart the music server
+
 ## Values
 
 - name: @sys.service, required

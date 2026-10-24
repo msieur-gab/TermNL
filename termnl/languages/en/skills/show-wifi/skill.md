@@ -20,6 +20,13 @@ approve: no
 - available networks
 - scan for wifi
 - nearby wifi networks
+- show wifi networks
+- which networks are around
+- what wifi networks can you see
+- list the wifi
+- any wifi around here
+- look for wireless networks
+- find wifi nearby
 
 ## Command
 

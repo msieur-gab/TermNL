@@ -11,6 +11,13 @@ approve: yes
 - `<turn off> [the] <system>`
 - `(turn|switch) [the] <system> off`
 
+## Also said
+
+- shut the board down
+- switch off the device
+- i am done, power down the board
+- shut everything down for tonight
+
 ## Command
 
 systemctl poweroff

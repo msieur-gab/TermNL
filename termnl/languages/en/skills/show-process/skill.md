@@ -27,6 +27,13 @@ Gab, 22 Oct: "what is taking my memory", "what is consuming my ram", "is there a
 - show active threads
 - threads
 - process
+- show what's running
+- what programs are running right now
+- running apps
+- what is the board busy with
+- show the processes
+- what's using the cpu
+- list everything that's running
 
 ## When it's fine
 

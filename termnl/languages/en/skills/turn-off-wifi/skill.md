@@ -17,6 +17,12 @@ approve: yes
 - no more wifi
 - wifi off
 - kill the wireless
+- disable wifi
+- get rid of the wifi for now
+- shut off the wireless
+- disconnect the wifi
+- i don't want wifi right now
+- the wifi can go off now
 
 ## Command
 

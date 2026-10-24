@@ -24,6 +24,14 @@ approve: no
 - board temperature
 - my board is warm
 - the device feels hot
+- temperature
+- how hot is the board
+- check the heat
+- is the cpu cooking
+- what temperature is the chip at
+- is the processor running hot
+- tell me how warm the board is
+- is it getting too warm in there
 
 ## When it's fine
 

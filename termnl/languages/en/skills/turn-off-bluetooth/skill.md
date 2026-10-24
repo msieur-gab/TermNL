@@ -10,6 +10,14 @@ approve: no
 - `<turn off> [the] <bluetooth>`
 - `(turn|switch) [the] <bluetooth> off`
 
+## Also said
+
+- turn bluetooth off
+- switch off the bluetooth
+- no more bluetooth
+- i don't need bluetooth anymore
+- can you shut bluetooth off
+
 ## Command
 
 bluetoothctl power off

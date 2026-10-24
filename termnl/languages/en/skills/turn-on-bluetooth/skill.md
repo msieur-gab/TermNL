@@ -10,6 +10,13 @@ approve: no
 - `<turn on> [the] <bluetooth>`
 - `(turn|switch) [the] <bluetooth> [back] on`
 
+## Also said
+
+- enable bluetooth
+- i need bluetooth
+- activate bluetooth please
+- can you put bluetooth on
+
 ## Command
 
 bluetoothctl power on

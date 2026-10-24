@@ -27,6 +27,12 @@ approve: no
 - show files
 - what files do i have
 - dir
+- show a folder
+- show me what's in downloads
+- list the projects folder
+- what files are in ideas
+- show the contents of home
+- let me see this folder
 
 ## Values
 

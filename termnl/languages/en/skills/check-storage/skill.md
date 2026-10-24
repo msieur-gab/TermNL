@@ -24,6 +24,12 @@ approve: no
 - sd card space
 - disk usage
 - am i running out of space
+- how full is my storage
+- how much space is left on the disk
+- check the disk space
+- is there room for more files
+- how much free space do i have
+- can i still save stuff on the card
 
 ## When it's fine
 

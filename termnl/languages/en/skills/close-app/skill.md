@@ -12,6 +12,14 @@ Gab's log, 22 Oct: "close expressvpn". Approved first: anything not saved in the
 - `<close> [the|my] {name} [<app>]`
 - `<close> [an|a|the] <app>`
 
+## Also said
+
+- close an app
+- exit firefox
+- shut the browser
+- i am done with the terminal, close it
+- get out of firefox
+
 ## Values
 
 - name: @sys.running, required

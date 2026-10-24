@@ -12,6 +12,17 @@ approve: no
 - `<create> [me] [a|the] [new] <folder>`
 - `<create> [me] [a|the] [new] {name} <folder> [(in|inside|into) [the|my] {place} [<folder>]]`
 
+## Also said
+
+- create a folder
+- make a new folder
+- new folder
+- make a folder named ideas in documents
+- add a folder called projects
+- create a directory
+- i need a new folder in downloads
+- mkdir ideas
+
 ## Values
 
 - name: text, required, new

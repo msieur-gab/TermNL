@@ -23,6 +23,14 @@ approve: no
 - system status
 - is the device healthy
 - how is my computer doing
+- check the board
+- health check
+- is the board doing fine
+- quick checkup please
+- is anything wrong with the pi
+- how is the system holding up
+- run a health check on the board
+- is my device in good shape
 
 ## When it's fine
 

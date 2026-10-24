@@ -14,6 +14,17 @@ that is already there; a new name without an extension keeps the old one's (note
 - `<rename> [the|my] [<file>] {name} [<file>] (in|inside) [the|my] {place} [<folder>] (to|as|into) {new}`
 - `<rename> [a|the|this|that] <file>`
 
+## Also said
+
+- rename a file
+- rename note.md to seed.md
+- change the name of todo.txt
+- call groceries.md something else
+- give report.pdf a new name
+- i want to rename seed.md
+- todo.txt needs a new name
+- rename this file
+
 ## Values
 
 - name: @sys.file, required

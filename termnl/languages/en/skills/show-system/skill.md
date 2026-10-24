@@ -24,6 +24,14 @@ Gab, 22 Oct: "what is this device configuration": what the machine is, not how i
 - what os is running
 - system info
 - tell me about this computer
+- describe this device
+- what am i running on
+- what hardware is this
+- which linux is this
+- tell me the specs
+- what kind of computer is this
+- show me the device details
+- what model is this board
 
 ## When it's fine
 

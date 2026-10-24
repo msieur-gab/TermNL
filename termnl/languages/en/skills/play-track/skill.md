@@ -13,6 +13,15 @@ Gab, 23 Oct: "say play daft punk or play a thousand leaves". The names are the M
 - `<play> [some|the|something] [<music>|<track>] (by|from) {name}`
 - `(i want|i'd like) [to] (hear|listen to) {name}`
 
+## Also said
+
+- play hope & sorrow
+- put on some wax tailor
+- i want to hear the album hope & sorrow
+- play the song the tune
+- something by wax tailor please
+- play hope & sorrow by wax tailor
+
 ## Values
 
 - name: @sys.music, required

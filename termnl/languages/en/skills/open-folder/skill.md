@@ -22,6 +22,14 @@ approve: no
 - take me to my music folder
 - enter downloads
 - open my doc folder
+- go into a folder
+- go into downloads
+- open projects
+- cd ideas
+- switch to the home folder
+- take me to ideas
+- i want to be in the projects folder
+- jump into documents
 
 ## Values
 

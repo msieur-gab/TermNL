@@ -11,6 +11,16 @@ approve: no
 - `<check> [the] {name} <service>`
 - `<check> [the|a] <service>`
 
+## Also said
+
+- check a service
+- is the web server up
+- check nginx
+- is the music server working
+- is mpd running
+- status of ssh
+- is nginx still alive
+
 ## Values
 
 - name: @sys.service, required

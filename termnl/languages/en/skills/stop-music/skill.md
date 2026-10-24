@@ -12,6 +12,14 @@ approve: no
 - `<stop> [the|my|this] (<music>|<track>)`
 - `<stop> playing [<music>]`
 
+## Also said
+
+- no more music
+- that's enough music
+- end the music
+- music off
+- stop the song please
+
 ## Command
 
 mpc stop

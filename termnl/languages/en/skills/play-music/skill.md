@@ -23,6 +23,12 @@ player shuffles everything when nothing is loaded, and carries on when something
 - random music
 - shuffle my songs
 - play anything
+- music
+- start the music
+- play me something
+- i'd like to hear some songs
+- give me some tunes
+- surprise me with a song
 
 ## Command
 

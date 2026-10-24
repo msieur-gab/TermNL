@@ -18,6 +18,14 @@ approve: no
 - is bluetooth enabled
 - do i have bluetooth
 - is bluetooth working
+- check bluetooth
+- is bluetooth turned on
+- bluetooth check
+- what is the bluetooth doing
+- is bluetooth on or off
+- tell me if bluetooth is running
+- is the bluetooth active
+- bluetooth
 
 ## Command
 

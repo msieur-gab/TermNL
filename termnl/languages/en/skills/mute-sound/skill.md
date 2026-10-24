@@ -9,6 +9,14 @@ approve: no
 
 - `<mute> [the|my] [<sound>|<music>]`
 
+## Also said
+
+- silence
+- sound off
+- mute the speakers
+- make it quiet
+- mute everything
+
 ## Command
 
 pactl set-sink-mute @DEFAULT_SINK@ 1

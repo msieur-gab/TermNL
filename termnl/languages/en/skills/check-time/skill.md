@@ -17,6 +17,13 @@ about the machine: without a clock battery, it can be wrong after a power cut.
 - `(what's|what is) today's date`
 - `<check> [the] <time>`
 
+## Also said
+
+- the time
+- time please
+- tell me the time
+- check the time
+
 ## When it's fine
 
 - It's {@sys.clock}, {@sys.clock.day} {@sys.clock.date}.

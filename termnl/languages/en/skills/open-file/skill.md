@@ -11,6 +11,16 @@ approve: no
 - `<open> [the|my] {name} [<file>] (located|that is|which is) (in|inside) [the|my] {place} [<folder>]`
 - `<open> [a|the|my|this|that] <file>`
 
+## Also said
+
+- open a file
+- show me todo.txt
+- open report.pdf
+- let me read groceries.md
+- open the file seed.md
+- can you open my todo file
+- view report.pdf
+
 ## Values
 
 - name: @sys.file, required

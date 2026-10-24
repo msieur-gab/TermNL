@@ -21,6 +21,11 @@ approve: no
 - is the network up
 - network status
 - ip address
+- check the network
+- what is my local ip
+- can i reach the internet
+- network check
+- is the connection up
 
 ## Command
 

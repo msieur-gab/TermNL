@@ -20,6 +20,12 @@ approve: no
 - wifi status
 - how strong is the wifi signal
 - is the wifi ok
+- check the wifi
+- wifi check
+- how good is my wifi signal
+- what is the name of the wifi i am on
+- is the wifi still connected
+- tell me about my wifi connection
 
 ## Command
 

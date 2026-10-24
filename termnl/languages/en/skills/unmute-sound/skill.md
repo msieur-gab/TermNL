@@ -10,6 +10,14 @@ approve: no
 - `<unmute> [the|my] [<sound>|<music>]`
 - `turn [the] <sound> back on`
 
+## Also said
+
+- unmute the sound
+- sound on
+- bring the sound back
+- i can't hear anything, unmute
+- give me the sound back
+
 ## Command
 
 pactl set-sink-mute @DEFAULT_SINK@ 0
