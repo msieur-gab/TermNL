@@ -45,7 +45,8 @@ class Readers(unittest.TestCase):
                     reply = staticmethod(lambda k, v=None: k)
                 app.read(A, r)
                 self.assertIn(t, r["say"])
-                self.assertIn(r["say"], [l.replace("{@sys.temperature}", t).replace("{@sys.temperature.max}", "80 °C") for l in skill["when"][level]])
+                self.assertIn(r["say"], [l.replace("{@sys.temperature}", t).replace("{@sys.temperature.max}", "80 °C").replace("{user}", "Gab")
+                                         for l in skill["when"][level]])
         finally:
             readers.READERS["temperature"] = real
 

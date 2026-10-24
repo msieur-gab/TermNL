@@ -38,6 +38,7 @@ approve: no
 
 - All good. It has been running for {@sys.health.uptime}.
 - Everything looks fine.
+- All good, {user}. It has been running for {@sys.health.uptime}.
 
 ## When it's busy
 

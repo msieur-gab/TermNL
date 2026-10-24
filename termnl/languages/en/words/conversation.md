@@ -22,9 +22,9 @@ Words for the conversation itself, outside any skill.
 
 ## Replies
 
-- abstain: I can't do that yet. | I don't know how to do that yet.
+- abstain: I can't do that yet. | I don't know how to do that yet. | Sorry {user}, I can't do that yet.
 - admin off: That needs admin mode, which is off. You can turn it on in your settings.
-- declined: OK, I won't. | Fine, nothing done.
+- declined: OK, I won't. | Fine, nothing done. | OK {user}, I won't.
 - cancelled: OK, cancelled. | Cancelled.
 - choose: Do you mean {options}?
 - unknown value: I don't see {value}. Which one?
@@ -33,7 +33,7 @@ Words for the conversation itself, outside any skill.
 - several: There are {count} files called {file}, in {folders}. Which one?
 - not found: I can't find {file} in {here}, or anywhere in your home folder.
 - did you mean: Did you mean {value}? | {value}, right?
-- help: I can: {skills}.
+- help: I can: {skills}. | Hi {user}, I can: {skills}.
 - not sure: I don't know {words} yet. Do you want me to {label}? | I haven't learned {words} yet. Should I {label}?
 - new words: I don't know {words} yet.
 - confirm: Do you want me to {label}? | Should I {label}?

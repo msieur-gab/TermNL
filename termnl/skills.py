@@ -105,10 +105,13 @@ def read_skill(id, md):
         elif at is not None and line.startswith("- "):
             at.append(line[2:].strip())
     yes = lambda k: bool(re.match(r"^yes$", meta.get(k, ""), re.I))
+    # "changes: admin mode to on": a skill that changes a setting (settings.md) instead of running a command
+    m = re.match(r"^(.+?)\s+to\s+(.+)$", meta.get("changes", "").strip())
+    changes = (m.group(1).strip().lower(), m.group(2).strip()) if m else None
     return {"id": id, "does": meta.get("does", ""), "label": meta.get("label") or meta.get("does") or id,
             "admin": yes("admin"), "approve": yes("approve"), "moves": meta.get("moves", ""), "reads": meta.get("reads", ""), "when": when,
             "sentences": sentences, "also": also, "values": values, "command": command, "replies": replies,
-            "plain": plain, "needs": section(md, "What it needs")}
+            "plain": plain, "needs": section(md, "What it needs"), "changes": changes}
 
 
 def check(skill, lists):
@@ -164,6 +167,11 @@ def check(skill, lists):
     for m in re.finditer(r"\{(\w+)\}", skill["command"]):
         if m.group(1) not in skill["values"]:
             say("command uses {%s}, not declared" % m.group(1))
+    if skill.get("changes") and skill["command"]:
+        say("a skill changes a setting or runs a command, not both")
+    for m in re.finditer(r"\{(\w+)\}", skill["changes"][1] if skill.get("changes") else ""):
+        if m.group(1) not in skill["values"]:
+            say("changes: uses {%s}, not said under What it needs" % m.group(1))
     if skill["reads"]:
         reader = READERS.get(skill["reads"])
         if not reader:
@@ -191,7 +199,7 @@ def check(skill, lists):
         say('needs approval but has no "approve" reply')
     for key, text in skill["replies"].items():
         for m in re.finditer(r"\{(\w+)\}", text):
-            if m.group(1) not in skill["values"] and m.group(1) != "output":
+            if m.group(1) not in skill["values"] and m.group(1) not in ("output", "user"):
                 say('reply "%s" uses {%s}, which is no value' % (key, m.group(1)))
     return errs
 

@@ -37,6 +37,7 @@ approve: no
 
 - You have {@sys.storage.free} free on the main disk, out of {@sys.storage.total}.
 - Plenty of room: {@sys.storage.free} free.
+- Plenty of room, {user}: {@sys.storage.free} free on the main disk.
 
 ## When it's filling up
 

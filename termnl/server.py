@@ -26,7 +26,7 @@ from . import readers
 from .device import Device
 from .load import ROOT, load_language, load_settings
 from .runner import run
-from .text import fill
+from .text import fill, pick
 
 WEB = os.path.join(ROOT, "web")
 LOGS = os.path.join(ROOT, "logs")
@@ -88,6 +88,8 @@ class TermNL:
             r = a.hear(text)
             r = self.notes(a, r, text) or r
             command = r.pop("command", None)
+            for key, value in (r.get("changes") or {}).items():  # "call me Gab", "turn admin mode on"
+                self.set(key, value)
             if r["outcome"] == "act" and r.get("reads"):
                 self.read(a, r, command)
             elif r["outcome"] == "act" and command:
@@ -157,7 +159,8 @@ class TermNL:
             return
         lines = skill["when"].get(found["level"])
         said = {k: v for k, v in r.pop("values", {}).items() if k != "output"}
-        r["say"] = fill(random.choice(lines), {**said, **found["values"], "user": self.settings.get("name") or ""}) if lines else a.reply("cannot read")
+        user = self.settings.get("name") or ""
+        r["say"] = fill(pick(lines, random.random, user), {**said, **found["values"], "user": user}) if lines else a.reply("cannot read")
         if r.get("note"):
             r["say"] = r["note"] + " " + r["say"]
         r["ran"], r["level"] = "read", found["level"]

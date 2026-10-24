@@ -32,6 +32,7 @@ approve: no
 
 - You're using {@sys.memory.used} of {@sys.memory.total}. Plenty left.
 - {@sys.memory.percent} of the memory is in use: that's fine.
+- Don't worry {user}: you're using {@sys.memory.used} of {@sys.memory.total}. Plenty left.
 
 ## When it's high
 

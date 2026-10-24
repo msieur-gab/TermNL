@@ -19,3 +19,6 @@ The kinds of things acted on. Each line: the object, then the words people use f
 - track: track, tracks, song, songs, album, artist
 - sound: sound, audio, speaker, speakers
 - uptime: uptime, up time
+- admin: admin, admin mode, admin rights, sudo
+- commands: commands, command, command lines
+- name: name

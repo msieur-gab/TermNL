@@ -524,5 +524,29 @@ class Dialogue(unittest.TestCase):
         self.assertIn("shut the board down", agent(a).hear("turn off")["chips"])
 
 
+    def test_the_person_sets_their_name_and_their_agency_in_words(self):
+        """Gab, 24 Oct: "a specific command to edit their settings or preferences (admin mode, adding their
+        name, etc)"; "The TermNL chat system was imagined to be personal, so saying Hey Gab, no problems your
+        CPU is at 58 degrees"."""
+        settings = {"admin mode": "off", "show commands": "off"}
+        a = agent(settings)
+        r = a.hear("call me Gab")
+        self.assertEqual((r["outcome"], r["changes"]), ("act", {"name": "Gab"}))
+        self.assertEqual(a.hear("turn on admin mode")["outcome"], "approve")  # more agency is approved first
+        self.assertEqual(a.hear("yes")["changes"], {"admin mode": "on"})
+        self.assertEqual(a.hear("show me the commands")["changes"], {"show commands": "on"})
+        self.assertEqual(a.hear("hide the commands")["changes"], {"show commands": "off"})
+        self.assertEqual(a.hear("turn the admin mode off")["changes"], {"admin mode": "off"})
+        self.assertEqual(settings, {"admin mode": "off", "show commands": "off", "name": "Gab"})
+
+    def test_a_reply_says_the_name_only_when_there_is_one(self):
+        from termnl.text import pick
+        lines = ["Hey {user}, all good."]
+        self.assertEqual(pick(lines + ["All good."], lambda: 0, ""), "All good.")
+        self.assertEqual(pick(lines + ["All good."], lambda: 0, "Gab"), "Hey {user}, all good.")
+        self.assertEqual(Agent(**lang, settings={"name": "Gab"}, device=device, random=lambda: 0.99).hear("what can you do")["say"][:7], "Hi Gab,")
+        self.assertNotIn("{user}", agent().hear("what can you do")["say"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -130,7 +130,9 @@ class Agent:
         return [o["label"] for o in found][:8] if found else []
 
     def reply(self, key, values=None):
-        return fill(pick(self.lists["replies"].get(key) or key, self.random), values or {})
+        """a written reply, in the person's name when they gave one ("call me Gab")"""
+        user = self.settings.get("name") or ""
+        return fill(pick(self.lists["replies"].get(key) or key, self.random, user), {"user": user, **(values or {})})
 
     def quoted(self, word):
         """a word as the person typed it, in the language's quotation marks (conversation.md, "quoted")"""
@@ -391,7 +393,8 @@ class Agent:
         """An action said without its object ("turn on", "switch it off"): the person chooses among the skills
         that do it, those of the action and those the action means with an object (words/actions.md,
         "Meaning with an object": "turn off" also stops the music). Only when nothing else is said but small
-        and pointing words, and two to six skills fit; otherwise the model's reading goes on."""
+        and pointing words, and two to eight skills fit, as many as the chips show (24 Oct: with the settings
+        skills, "turn off" fits seven); otherwise the model's reading goes on."""
         refs, lists = self.lists["refs"], self.lists
         said = [a for a in lists["actions"] for ph in refs.get(a, []) if where(toks, ph)]
         if not said or any(where(toks, ph) for o in lists["objects"] for ph in refs.get(o, [])):
@@ -407,7 +410,7 @@ class Agent:
             if any(ph in spoken for ph in rule["phrases"]):
                 pairs |= {(rule["action"], o) for o in rule["objects"]}
         fit = [s for s in self.skills if (s["action"], s["object"]) in pairs]
-        if not 2 <= len(fit) <= 6:
+        if not 2 <= len(fit) <= 8:
             return None
         return {"how": "choose", "options": [{"skill": s, "vals": {}} for s in fit], "toks": toks, "fixes": [], "sure": False}
 
@@ -711,6 +714,12 @@ class Agent:
 
     def act(self, skill, vals):
         self.pending = None
+        if skill.get("changes"):  # a setting, changed here at once; the server writes it to settings.md
+            key, value = skill["changes"]
+            value = fill(value, {k: v.get("text") or v.get("label") for k, v in vals.items()}).strip()
+            self.settings[key] = value
+            return {"outcome": "act", "skill": skill["id"], "changes": {key: value},
+                    "say": self.reply(skill["replies"]["done"], self.display(skill, vals))}
         if skill["moves"] and vals.get(skill["moves"]):
             v = vals[skill["moves"]]
             self._here = {"value": v["value"], "label": v["label"]}

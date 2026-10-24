@@ -40,11 +40,14 @@ approve: no
 
 - No worries, it's at {@sys.temperature}, well below the {@sys.temperature.max} where it would slow down.
 - {@sys.temperature}. All good.
+- Hey {user}, no problem: your CPU is at {@sys.temperature}, well below the {@sys.temperature.max} where it would slow down.
 
 ## When it's warm
 
 - It's getting warm: {@sys.temperature}. Still fine, but keep an eye on it.
+- {user}, it's getting warm: {@sys.temperature}. Still fine, but keep an eye on it.
 
 ## When it's hot
 
 - It's hot: {@sys.temperature}, close to the {@sys.temperature.max} where it slows down. Give it some air.
+- {user}, it's hot: {@sys.temperature}, close to the {@sys.temperature.max} where it slows down. Give it some air.

@@ -50,9 +50,12 @@ def read_pairs(md):
     return out
 
 
-def pick(variants, random=_random.random):
-    """One of several written variants ("A | B | C"), picked at random so the agent doesn't repeat itself."""
-    found = [v.strip() for v in variants.split("|") if v.strip()]
+def pick(variants, random=_random.random, user=None):
+    """One of several written variants ("A | B | C", or a list), picked at random so the agent doesn't repeat
+    itself. A variant that says the person's name ({user}) is only picked when a name is set (settings.md)."""
+    found = [v.strip() for v in (variants.split("|") if isinstance(variants, str) else variants) if v.strip()]
+    if not user:
+        found = [v for v in found if "{user}" not in v] or found
     return found[int(random() * len(found))] if found else ""
 
 
