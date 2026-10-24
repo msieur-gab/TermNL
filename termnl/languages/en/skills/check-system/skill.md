@@ -6,14 +6,16 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `how is the <system> [doing]`
-- `how's the <system> [doing]`
-- `<check> [the] <system>`
-- `[give me|run] [a] (health|system|status) (check|report)`
-- `is everything (ok|okay|fine|alright) [with the <system>]`
-- `<system> (status|health)`
+- how is the system (doing)
+- how's the system (doing)
+- check (the) system
+- (a) health/system/status check/report
+- give me (a) health/system/status check/report
+- "run" (a) health/system/status check/report
+- is everything ok/okay/fine/alright (with the system)
+- system status/health
 
 ## Also said
 

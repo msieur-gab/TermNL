@@ -25,6 +25,7 @@ Kinds: text, secret, a shared list (filetype), or a device list (@sys.folder, @s
 import re
 
 from .readers import FROM_COMMAND, READERS, placeholder
+from .plain import read_needs, to_template
 from .template import compile_template, uses
 from .text import read_list, read_pairs, words
 
@@ -54,7 +55,7 @@ def read_lists(files):
     # every "- name: words" line of readings.md, whatever its section
     readings = {m.group(1).strip(): m.group(2).strip() for m in re.finditer(r"^- ([^:]+):\s*(.*)$", files["readings"], re.M)}
     return {"samples": samples, "readings": readings, "refs": refs, "actions": kinds["actions"], "objects": kinds["objects"], "filetypes": filetypes,
-            "conversation": answers, "replies": replies, "in_context": in_context}
+            "conversation": answers, "replies": replies, "in_context": in_context, "values_md": files.get("values", "")}
 
 
 def section(md, name):
@@ -70,6 +71,10 @@ def read_skill(id, md):
     front = md[3:md.find("\n---", 3)] if md.startswith("---") else ""
     meta = read_pairs(front)
     sentences = [re.sub(r"^`(.*)`$", r"\1", l[2:].strip()) for l in (section(md, "Sentences") or []) if l.startswith("- ")]
+    people = section(md, "People say")  # plain sentences (plain.py), the proposal of 24 Oct 2026
+    plain = people is not None
+    if plain:
+        sentences = [l[2:].strip() for l in people if l.startswith("- ")]
     values = {}
     for e in read_list(md, "Values"):
         parts = e["words"]
@@ -98,7 +103,8 @@ def read_skill(id, md):
     yes = lambda k: bool(re.match(r"^yes$", meta.get(k, ""), re.I))
     return {"id": id, "does": meta.get("does", ""), "label": meta.get("label") or meta.get("does") or id,
             "admin": yes("admin"), "approve": yes("approve"), "moves": meta.get("moves", ""), "reads": meta.get("reads", ""), "when": when,
-            "sentences": sentences, "also": also, "values": values, "command": command, "replies": replies}
+            "sentences": sentences, "also": also, "values": values, "command": command, "replies": replies,
+            "plain": plain, "needs": section(md, "What it needs")}
 
 
 def check(skill, lists):
@@ -119,11 +125,17 @@ def check(skill, lists):
         say('unknown object "%s" (words/objects.md)' % obj)
     if not skill["sentences"]:
         say("no sentences")
+    if skill.get("needs") is not None:  # ## What it needs, in words from words/values.md
+        values, asks, problems = read_needs(skill["needs"], lists.get("values_md", ""))
+        skill["values"].update(values)
+        skill["replies"].update(asks)
+        for p in problems:
+            say(p)
     used = set()
     skill["compiled"] = []
     for s in skill["sentences"]:
         try:
-            nodes = compile_template(s)
+            nodes = compile_template(to_template(s, lists, (action, obj)) if skill.get("plain") else s)
             skill["compiled"].append(nodes)
             u = uses(nodes)
             for r in sorted(u["refs"]):

@@ -7,12 +7,12 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<open> [the|my] {place} [<folder>]`
-- `go (to|into|inside) [the|my] {place} [<folder>]`
-- `(cd|enter) [the|my] {place} [<folder>]`
-- `<open> [a|the|my] <folder>`
+- open (the/my) {place} (folder)
+- go to/into/inside (the/my) {place} (folder)
+- cd/enter (the/my) {place} (folder)
+- open (a/the/my) folder
 
 ## Also said
 
@@ -31,13 +31,12 @@ approve: no
 - i want to be in the projects folder
 - jump into documents
 
-## Values
+## What it needs
 
-- place: @sys.folder, required
+- {place}: a folder on the device. If it's missing, ask: Which folder? | Where to?
 
 ## Replies
 
-- ask place: Which folder? | Where to?
 
 ## When it's fine
 

@@ -9,12 +9,12 @@ approve: no
 
 Gab, 22 Oct: "cd ..", "go back".
 
-## Sentences
+## People say
 
-- `cd ..`
-- `go (up|back) [(one|a) (level|<folder>)]`
-- `go to the (parent|upper) <folder>`
-- `<leave> [this|the] <folder>`
+- cd ..
+- go up/back (one/a level/folder)
+- go to the parent/upper folder
+- leave (this/the) folder
 
 ## Also said
 
@@ -23,9 +23,9 @@ Gab, 22 Oct: "cd ..", "go back".
 - back out of here
 - go up
 
-## Values
+## What it needs
 
-- place: @sys.folder, default: parent
+- {place}: a folder on the device. If it's not said: the folder above.
 
 ## When it's fine
 

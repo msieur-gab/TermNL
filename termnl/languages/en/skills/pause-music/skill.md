@@ -5,9 +5,9 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<pause> [the|my|this] [<music>|<track>]`
+- pause (the/my/this) (music/track)
 
 ## Also said
 

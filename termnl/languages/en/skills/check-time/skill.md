@@ -9,13 +9,15 @@ approve: no
 Gab, 22 Oct: "what time is it?" (four times), "what is the date today". On a board the time is a fact
 about the machine: without a clock battery, it can be wrong after a power cut.
 
-## Sentences
+## People say
 
-- `what time is it [now]`
-- `(what's|what is) the (time|date|day) [today|now]`
-- `what (day|date) is it [today]`
-- `(what's|what is) today's date`
-- `<check> [the] <time>`
+- what time is it (now)
+- what's the time/date/day (today/now)
+- what is the time/date/day (today/now)
+- what day/date is it (today)
+- what's today's date
+- what is today's date
+- check (the) time
 
 ## Also said
 

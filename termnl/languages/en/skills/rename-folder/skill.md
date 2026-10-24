@@ -7,10 +7,10 @@ approve: no
 
 A new name never replaces a folder or a file that is already there.
 
-## Sentences
+## People say
 
-- `<rename> [the|my] [<folder>] {folder} [<folder>] (to|as|into) {new}`
-- `<rename> [a|the|this|that] <folder>`
+- rename (the/my) (folder) {folder} (folder) to/as/into {new}
+- rename (a/the/this/that) folder
 
 ## Also said
 
@@ -23,11 +23,11 @@ A new name never replaces a folder or a file that is already there.
 - call the ideas folder projects instead
 - i want to rename a directory
 
-## Values
+## What it needs
 
-- folder: @sys.folder, required
-- new: text, required, new
-- parent: @sys.folder, default: parent of folder
+- {folder}: a folder on the device. If it's missing, ask: Which folder? | Which folder should I rename?
+- {new}: a new name. If it's missing, ask: What should it be called? | What's the new name?
+- {parent}: a folder on the device. If it's not said: the folder {folder} is in.
 
 ## Command
 
@@ -35,6 +35,4 @@ mv -nT {folder} {parent}/{new}
 
 ## Replies
 
-- ask folder: Which folder? | Which folder should I rename?
-- ask new: What should it be called? | What's the new name?
 - done: Done, {folder} is now {new}. | Renamed the folder {folder} to {new}.

@@ -5,10 +5,10 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<unmute> [the|my] [<sound>|<music>]`
-- `turn [the] <sound> back on`
+- unmute (the/my) (sound/music)
+- turn (the) sound back on
 
 ## Also said
 

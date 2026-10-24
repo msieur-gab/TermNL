@@ -5,11 +5,11 @@ admin: yes
 approve: yes
 ---
 
-## Sentences
+## People say
 
-- `<shut down> [the] <system>`
-- `<turn off> [the] <system>`
-- `(turn|switch) [the] <system> off`
+- shut down (the) system
+- turn off (the) system
+- turn/switch (the) system off
 
 ## Also said
 

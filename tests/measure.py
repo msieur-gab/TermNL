@@ -33,8 +33,8 @@ def kind_of(want, r):
     got = r.get("skill") or ("choose" if r["outcome"] == "ask" and r.get("chips") else "—")
     if r["outcome"] == "abstain" and not r.get("skill"):
         return "abstain"
-    if got != want:
-        return "wrong?" if r["outcome"] == "ask" else "WRONG"
+    if got != want:  # a wrong skill is a wrong action only when it acts or asks for approval; asked or stopped, nothing ran
+        return "WRONG" if r["outcome"] in ("act", "approve") else "wrong?"
     return "asked" if asked_first else "acted"
 
 
@@ -59,7 +59,7 @@ def measure(name, lang, verbose=False, quiet=False):
 def summary(name, t):
     n = t["acted"] + t["asked"] + t["wrong?"] + t["WRONG"] + t["abstain"]
     out = ('%s, %d sentences: %d understood and handled, %d understood but checked first ("Do you want me to…?"), '
-           '%d wrong skill but asked first, %d wrong skill acted on or approved, %d not understood' %
+           '%d wrong skill but asked first or stopped, %d wrong skill acted on or approved, %d not understood' %
            (name, n, t["acted"], t["asked"], t["wrong?"], t["WRONG"], t["abstain"]))
     if t["none"]:
         out += "; out of scope, %d: %d abstained, %d asked, %d acted on" % (t["none"], t["none abstain"], t["none asked"], t["none WRONG"])

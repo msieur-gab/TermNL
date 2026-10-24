@@ -5,11 +5,11 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<previous> [<track>|one|please]`
-- `<play> [the] <previous> [<track>|one]`
-- `go [back] to the <previous> [<track>|one]`
+- previous (track/one/please)
+- play (the) previous (track/one)
+- go (back) to the previous (track/one)
 
 ## Also said
 

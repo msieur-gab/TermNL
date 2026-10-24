@@ -5,10 +5,10 @@ admin: yes
 approve: yes
 ---
 
-## Sentences
+## People say
 
-- `<turn off> [the] <wifi>`
-- `(turn|switch) [the] <wifi> off`
+- turn off (the) wifi
+- turn/switch (the) wifi off
 
 ## Also said
 

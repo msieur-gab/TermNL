@@ -7,10 +7,10 @@ approve: no
 
 "stop" alone is a no (conversation.md): the music is named, or "stop playing".
 
-## Sentences
+## People say
 
-- `<stop> [the|my|this] (<music>|<track>)`
-- `<stop> playing [<music>]`
+- stop (the/my/this) music/track
+- stop playing (music)
 
 ## Also said
 

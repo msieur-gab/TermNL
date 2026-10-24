@@ -6,12 +6,12 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `how much <memory> is (free|left|used|available)`
-- `is the <memory> full`
-- `<check> [the] <memory>`
-- `<memory> [usage]`
+- how much memory is free/left/used/available
+- is the memory full
+- check (the) memory
+- memory (usage)
 
 ## Also said
 

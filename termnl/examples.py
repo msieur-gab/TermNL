@@ -40,13 +40,17 @@ def rng(seed=7):
     return r
 
 
-def examples(skills, lists, per_template=40, seed=7):
-    """→ [{text, skill, action, object}], deduplicated"""
+def examples(skills, lists, per_skill=160, per_template=None, seed=7):
+    """→ [{text, skill, action, object}], deduplicated. Each skill gets the same number of walks
+    (per_skill), shared among its sentences, at least 10 each: a skill written as many short sentences
+    weighs no more than one written as a few long ones (24 Oct 2026: written plainly, show process went
+    from 5 templates to 16 sentences). per_template, when given, is the walks per sentence instead."""
     rnd = rng(seed)
     seen, out = set(), []
     for skill in skills:
+        n = per_template or max(10, -(-per_skill // max(1, len(skill["compiled"]))))
         for nodes in skill["compiled"]:
-            for _ in range(per_template):
+            for _ in range(n):
                 text = walk(nodes, lists, skill, rnd)
                 key = skill["id"] + "|" + text
                 if key in seen:

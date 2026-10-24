@@ -5,9 +5,9 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<mute> [the|my] [<sound>|<music>]`
+- mute (the/my) (sound/music)
 
 ## Also said
 

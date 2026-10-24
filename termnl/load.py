@@ -26,6 +26,8 @@ def language_dir(lang="en", languages=LANGUAGES):
 def load_language(lang="en", languages=LANGUAGES):
     d = language_dir(lang, languages)
     lists = {k: read(os.path.join(d, "words", k + ".md")) for k in ("actions", "objects", "filetypes", "conversation", "samples", "readings")}
+    if os.path.exists(os.path.join(d, "words", "values.md")):  # how ## What it needs is written (plain.py)
+        lists["values"] = read(os.path.join(d, "words", "values.md"))
     skills = {}
     for id in sorted(os.listdir(os.path.join(d, "skills"))):
         f = os.path.join(d, "skills", id, "skill.md")

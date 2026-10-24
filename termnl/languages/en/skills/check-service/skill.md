@@ -5,11 +5,11 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `is [the] {name} [<service>] (running|working|up|on)`
-- `<check> [the] {name} <service>`
-- `<check> [the|a] <service>`
+- is (the) {name} (service) running/working/up/on
+- check (the) {name} service
+- check (the/a) service
 
 ## Also said
 
@@ -21,9 +21,9 @@ approve: no
 - status of ssh
 - is nginx still alive
 
-## Values
+## What it needs
 
-- name: @sys.service, required
+- {name}: a service on the device. If it's missing, ask: Which service? | Which service should I check?
 
 ## Command
 
@@ -31,5 +31,4 @@ systemctl is-active {name}
 
 ## Replies
 
-- ask name: Which service? | Which service should I check?
 - done: {name}: {output}

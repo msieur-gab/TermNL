@@ -6,11 +6,11 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `(which|what) <wifi> networks are (there|around|available)`
-- `(which|what) networks are (there|around|available)`
-- `<show> [me] [the|available] <wifi> networks`
+- which/what wifi networks are there/around/available
+- which/what networks are there/around/available
+- show (me) (the/available) wifi networks
 
 ## Also said
 

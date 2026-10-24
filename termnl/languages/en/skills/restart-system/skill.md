@@ -5,10 +5,13 @@ admin: yes
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<restart> [the] <system>`
-- `(reboot|restart) [now|everything|it all]`
+- restart (the) system
+- reboot/restart
+- reboot/restart now
+- reboot/restart everything
+- reboot/restart it all
 
 ## Also said
 

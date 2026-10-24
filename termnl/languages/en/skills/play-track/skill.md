@@ -7,11 +7,14 @@ approve: no
 
 Gab, 23 Oct: "say play daft punk or play a thousand leaves". The names are the Music folder's: its artists, albums and titles.
 
-## Sentences
+## People say
 
-- `<play> [the] [<track>] {name}`
-- `<play> [some|the|something] [<music>|<track>] (by|from) {name}`
-- `(i want|i'd like) [to] (hear|listen to) {name}`
+- play (the) (track) {name}
+- play (some/the/something) (music/track) by/from {name}
+- i want (to) hear {name}
+- i want (to) listen to {name}
+- i'd like (to) hear {name}
+- i'd like (to) listen to {name}
 
 ## Also said
 
@@ -22,9 +25,9 @@ Gab, 23 Oct: "say play daft punk or play a thousand leaves". The names are the M
 - something by wax tailor please
 - play hope & sorrow by wax tailor
 
-## Values
+## What it needs
 
-- name: @sys.music, required
+- {name}: music on the device. If it's missing, ask: What should I play? | Which artist, album or song?
 
 ## Command
 
@@ -32,5 +35,4 @@ mpc searchplay any {name}
 
 ## Replies
 
-- ask name: What should I play? | Which artist, album or song?
 - done: Playing {name}. | Here's {name}.

@@ -2,3 +2,4 @@ build/
 __pycache__/
 logs/
 tests/real.md
+tools/.same_reading.json

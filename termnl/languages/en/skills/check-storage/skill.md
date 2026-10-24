@@ -6,14 +6,16 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `how much (space|storage|disk space) [is] (left|free|available)`
-- `how much (space|storage) do i have [left]`
-- `is the <storage> full`
-- `am i running out of <storage>`
-- `<check> [the] <storage>`
-- `<storage> [usage|left]`
+- how much space (is) left/free/available
+- how much storage (is) left/free/available
+- how much disk "space" (is) left/free/available
+- how much space/storage do i have (left)
+- is the storage full
+- am i running out of storage
+- check (the) storage
+- storage (usage/left)
 
 ## Also said
 

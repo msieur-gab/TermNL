@@ -7,10 +7,10 @@ approve: yes
 
 Gab's log, 22 Oct: "close expressvpn". Approved first: anything not saved in the app is lost.
 
-## Sentences
+## People say
 
-- `<close> [the|my] {name} [<app>]`
-- `<close> [an|a|the] <app>`
+- close (the/my) {name} (app)
+- close (an/a/the) app
 
 ## Also said
 
@@ -20,9 +20,9 @@ Gab's log, 22 Oct: "close expressvpn". Approved first: anything not saved in the
 - i am done with the terminal, close it
 - get out of firefox
 
-## Values
+## What it needs
 
-- name: @sys.running, required
+- {name}: a running app. If it's missing, ask: Which app? | Which one should I close?
 
 ## Command
 
@@ -30,6 +30,5 @@ pkill -x {name}
 
 ## Replies
 
-- ask name: Which app? | Which one should I close?
 - approve: Close {name}? Anything not saved in it will be lost.
 - done: {name} is closed. | Closed {name}.

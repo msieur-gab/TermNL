@@ -6,11 +6,14 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `is [the] <wifi> (on|off|working)`
-- `(which|what) (<wifi> [network]|network) am i (on|connected to)`
-- `<check> [the] <wifi>`
+- is (the) wifi on/off/working
+- which/what wifi ("network") am i on
+- which/what wifi ("network") am i connected to
+- which/what "network" am i on
+- which/what "network" am i connected to
+- check (the) wifi
 
 ## Also said
 

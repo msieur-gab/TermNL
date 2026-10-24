@@ -5,10 +5,10 @@ admin: yes
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<turn on> [the] <bluetooth>`
-- `(turn|switch) [the] <bluetooth> [back] on`
+- turn on (the) bluetooth
+- turn/switch (the) bluetooth (back) on
 
 ## Also said
 

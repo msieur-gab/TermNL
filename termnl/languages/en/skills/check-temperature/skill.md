@@ -6,12 +6,15 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `is the <system> (too hot|overheating|hot)`
-- `how hot is the <system>`
-- `(what's|what is) the <temperature> [of the <system>]`
-- `<check> [the] <temperature>`
+- is the system too hot
+- is the system overheating
+- is the system hot
+- how hot is the system
+- what's the temperature (of the system)
+- what is the temperature (of the system)
+- check (the) temperature
 
 ## Also said
 

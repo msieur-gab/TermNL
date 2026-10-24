@@ -5,12 +5,12 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<create> [me] [a|the] [new] <folder> [(named|called|call|name|titled)] {name} [(in|inside|into) [the|my] {place} [<folder>]]`
-- `<create> [me] [a|the] [new] <folder> (in|inside) [the|my] {place} [<folder>] [(named|called|call|name|titled) {name}]`
-- `<create> [me] [a|the] [new] <folder>`
-- `<create> [me] [a|the] [new] {name} <folder> [(in|inside|into) [the|my] {place} [<folder>]]`
+- create (me) (a/the) ("new") folder (named/called/call/name/titled) {name} (in/inside/into (the/my) {place} (folder))
+- create (me) (a/the) ("new") folder in/inside (the/my) {place} (folder) (named/called/call/name/titled {name})
+- create (me) (a/the) ("new") folder
+- create (me) (a/the) ("new") {name} folder (in/inside/into (the/my) {place} (folder))
 
 ## Also said
 
@@ -23,10 +23,10 @@ approve: no
 - i need a new folder in downloads
 - mkdir ideas
 
-## Values
+## What it needs
 
-- name: text, required, new
-- place: @sys.folder, default: here
+- {name}: a new name. If it's missing, ask: What should I call it? | What name should the folder have?
+- {place}: a folder on the device. If it's not said: where you are.
 
 ## Command
 
@@ -34,5 +34,4 @@ mkdir -p {place}/{name}
 
 ## Replies
 
-- ask name: What should I call it? | What name should the folder have?
 - done: Done, {name} is in {place}. | Created the folder {name} in {place}.

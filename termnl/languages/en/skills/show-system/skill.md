@@ -8,13 +8,24 @@ approve: no
 
 Gab, 22 Oct: "what is this device configuration": what the machine is, not how it is doing.
 
-## Sentences
+## People say
 
-- `(what is|what's) [this|the|my] <system> [configuration|config|made of]`
-- `(what is|what's) inside [this|the|my] <system>`
-- `[show me|give me|tell me] [about] [the|this|my] <system> (configuration|config|specs|specifications|details|info|information)`
-- `tell me about [this|the|my] <system>`
-- `(what|which) <system> is this`
+- what is (this/the/my) system
+- what is (this/the/my) system configuration
+- what is (this/the/my) system config
+- what is (this/the/my) system made of
+- what's (this/the/my) system
+- what's (this/the/my) system configuration
+- what's (this/the/my) system config
+- what's (this/the/my) system made of
+- what is inside (this/the/my) system
+- what's inside (this/the/my) system
+- (about) (the/this/my) system configuration/config/specs/specifications/details/info/information
+- show me (about) (the/this/my) system configuration/config/specs/specifications/details/info/information
+- give me (about) (the/this/my) system configuration/config/specs/specifications/details/info/information
+- tell me (about) (the/this/my) system configuration/config/specs/specifications/details/info/information
+- tell me about (this/the/my) system
+- what/which system is this
 
 ## Also said
 

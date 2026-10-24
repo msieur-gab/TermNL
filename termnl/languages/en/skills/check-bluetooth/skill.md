@@ -6,10 +6,10 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `is [the] <bluetooth> (on|off|working)`
-- `<check> [the] <bluetooth>`
+- is (the) bluetooth on/off/working
+- check (the) bluetooth
 
 ## Also said
 

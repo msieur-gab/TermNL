@@ -6,16 +6,27 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<show> [me] [the|my] {place} [<folder>]`
-- `(what's|what is) in [the|my] {place} [<folder>]`
-- `(what's|what is) (here|in here|in this <folder>)`
-- `what do i have (in|inside) [the|my] {place} [<folder>]`
-- `what do i have here`
-- `ls [[the|my] {place} [<folder>]]`
-- `<show> [me] [all] [the|my] (<file>|<folder>|things) [(in|inside|of) [the|my] {place} [<folder>]]`
-- `(what|which) <file> (are|do i have) [(here|in [the|my] {place} [<folder>])]`
+- show (me) (the/my) {place} (folder)
+- what's in (the/my) {place} (folder)
+- what is in (the/my) {place} (folder)
+- what's here
+- what's in here
+- what's in this folder
+- what is here
+- what is in here
+- what is in this folder
+- what do i have in/inside (the/my) {place} (folder)
+- what do i have here
+- ls ((the/my) {place} (folder))
+- show (me) (all) (the/my) files/folders/things (in/inside/of (the/my) {place} (folder))
+- what/which files are
+- what/which files are here
+- what/which files are in (the/my) {place} (folder)
+- what/which files do i have
+- what/which files do i have here
+- what/which files do i have in (the/my) {place} (folder)
 
 ## Also said
 
@@ -34,9 +45,9 @@ approve: no
 - show the contents of home
 - let me see this folder
 
-## Values
+## What it needs
 
-- place: @sys.folder, default: here
+- {place}: a folder on the device. If it's not said: where you are.
 
 ## When it's fine
 

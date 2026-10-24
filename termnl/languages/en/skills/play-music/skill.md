@@ -8,12 +8,15 @@ approve: no
 Gab, 23 Oct: "play some music", "could you play some music?"; "play music start a random playlist". The desk's
 player shuffles everything when nothing is loaded, and carries on when something is paused.
 
-## Sentences
+## People say
 
-- `<play> [some|my|the|a] [random] <music>`
-- `<play> something`
-- `shuffle [my|the|all] [<music>]`
-- `(i want|i'd like) [to] (hear|listen to) [some] <music>`
+- play (some/my/the/a) (random) music
+- play something
+- shuffle (my/the/all) (music)
+- i want (to) hear (some) music
+- i want (to) listen to (some) music
+- i'd like (to) hear (some) music
+- i'd like (to) listen to (some) music
 
 ## Also said
 

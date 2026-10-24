@@ -5,10 +5,10 @@ admin: no
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<open> [the|a|my] {name} [<app>]`
-- `<open> [an|a] <app>`
+- open (the/a/my) {name} (app)
+- open (an/a) app
 
 ## Also said
 
@@ -20,9 +20,9 @@ approve: no
 - start firefox please
 - run the browser
 
-## Values
+## What it needs
 
-- name: @sys.app, required
+- {name}: an app on the device. If it's missing, ask: Which app? | Which one should I open?
 
 ## Command
 
@@ -30,5 +30,4 @@ setsid {name}
 
 ## Replies
 
-- ask name: Which app? | Which one should I open?
 - done: Opening {name}. | {name} is opening.

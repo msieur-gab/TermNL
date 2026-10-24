@@ -5,10 +5,10 @@ admin: yes
 approve: no
 ---
 
-## Sentences
+## People say
 
-- `<restart> [the] {name} [<service>]`
-- `<restart> [the|a] <service>`
+- restart (the) {name} (service)
+- restart (the/a) service
 
 ## Also said
 
@@ -20,9 +20,9 @@ approve: no
 - turn ssh off and on again
 - can you restart the music server
 
-## Values
+## What it needs
 
-- name: @sys.service, required
+- {name}: a service on the device. If it's missing, ask: Which service? | Which service should I restart?
 
 ## Command
 
@@ -30,6 +30,5 @@ systemctl restart {name}
 
 ## Replies
 
-- ask name: Which service? | Which service should I restart?
 - approve: Restart {name}?
 - done: {name} restarted. | Done, {name} is restarting.

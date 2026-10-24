@@ -8,13 +8,24 @@ approve: no
 
 Gab, 22 Oct: "what is taking my memory", "what is consuming my ram", "is there any active threads".
 
-## Sentences
+## People say
 
-- `(what's|what is) (running|taking [up] [my|the] <memory>|using [up] [my|the|all] [the] <memory>|consuming [my|the] <memory>|eating [my|the] <memory>)`
-- `(what|which) (programs|apps|<process>) are (running|open|using [the] <memory>)`
-- `(is|are) there any [active|running] <process> [running]`
-- `<show> [me] [the|all] [running|active] (programs|<process>)`
-- `(who|what) is using [the|my] <memory>`
+- what's running
+- what's taking (up) (my/the) memory
+- what's using (up) (my/the/all) (the) memory
+- what's consuming (my/the) memory
+- what's eating (my/the) memory
+- what is running
+- what is taking (up) (my/the) memory
+- what is using (up) (my/the/all) (the) memory
+- what is consuming (my/the) memory
+- what is eating (my/the) memory
+- what/which programs/apps/processes are running
+- what/which programs/apps/processes are "open"
+- what/which programs/apps/processes are using (the) memory
+- is/are there any (active/running) processes (running)
+- show (me) (the/all) (running/active) programs/processes
+- who/what is using (the/my) memory
 
 ## Also said
 

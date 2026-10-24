@@ -8,11 +8,11 @@ approve: no
 Gab, 22 Oct: "perhaps we will need a rename file/folder skill". A new name never replaces a file
 that is already there; a new name without an extension keeps the old one's (notes.md → ideas.md).
 
-## Sentences
+## People say
 
-- `<rename> [the|my] [<file>] {name} [<file>] (to|as|into) {new}`
-- `<rename> [the|my] [<file>] {name} [<file>] (in|inside) [the|my] {place} [<folder>] (to|as|into) {new}`
-- `<rename> [a|the|this|that] <file>`
+- rename (the/my) (file) {name} (file) to/as/into {new}
+- rename (the/my) (file) {name} (file) in/inside (the/my) {place} (folder) to/as/into {new}
+- rename (a/the/this/that) file
 
 ## Also said
 
@@ -25,11 +25,11 @@ that is already there; a new name without an extension keeps the old one's (note
 - todo.txt needs a new name
 - rename this file
 
-## Values
+## What it needs
 
-- name: @sys.file, required
-- place: @sys.folder, default: here
-- new: text, required, new
+- {name}: a file on the device. If it's missing, ask: Which file? | Which file should I rename?
+- {place}: a folder on the device. If it's not said: where you are.
+- {new}: a new name. If it's missing, ask: What should it be called? | What's the new name?
 
 ## Command
 
@@ -37,6 +37,4 @@ mv -nT {place}/{name} {place}/{new}
 
 ## Replies
 
-- ask name: Which file? | Which file should I rename?
-- ask new: What should it be called? | What's the new name?
 - done: Done, {name} is now {new}. | Renamed {name} to {new}.
