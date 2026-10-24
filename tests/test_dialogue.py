@@ -641,7 +641,7 @@ class Dialogue(unittest.TestCase):
             self.assertRegex(app.say("are you learning", "t")["say"], r"^I'm not learning right now\.")
             self.assertIn("haven't told me your name", app.say("what is my name", "t")["say"])
             app.say("call me gab", "t")
-            self.assertRegex(app.say("what is my name", "t")["say"], r"\bGab\.$")
+            self.assertRegex(app.say("what is my name", "t")["say"], r"^(You're|Your name is) Gab\.$")
             app.say("learn what i taught you", "t")
             self.assertTrue(app.say("yes", "t")["learning"])  # the page starts asking
             app.training["process"].wait()

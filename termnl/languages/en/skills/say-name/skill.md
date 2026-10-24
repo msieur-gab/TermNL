@@ -26,7 +26,8 @@ Gab, 24 Oct: "what is my name" was read as setting it. This reads it back; call 
 
 ## When it's known
 
-- You're {@sys.name}. | Your name is {@sys.name}.
+- You're {@sys.name}.
+- Your name is {@sys.name}.
 
 ## When it's unknown
 

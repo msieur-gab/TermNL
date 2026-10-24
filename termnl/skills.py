@@ -191,6 +191,8 @@ def check(skill, lists):
                 if level not in levels:
                     say("""## When it's %s: the %s reader says %s""" % (level, skill["reads"], ", ".join(levels)))
                 for l in lines:
+                    if " | " in l:  # each line is one reply, said whole (24 Oct: "You're Gab. | Your name is Gab.")
+                        say("## When it's %s: one reply per line, without \" | \"" % level)
                     for m in re.finditer(r"\{([\w@.]+)\}", l):
                         if m.group(1) not in known:
                             say("""## When it's %s uses {%s}; the %s reader gives %s""" % (level, m.group(1), skill["reads"], ", ".join("{%s}" % k for k in sorted(known))))
