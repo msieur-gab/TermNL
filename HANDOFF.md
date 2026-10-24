@@ -34,7 +34,7 @@ are his; don't rework them. The section of 22 October below is history.
   the sentences (twice the sentences, 3.6× the time). The skill file still says "a couple of minutes".
 - **Same model:** trained on the board, every weight equals the laptop's; all five test sets score the same.
 - **Replies:** server ready in 0.9 s, 26–33 MB; a reply takes 29 ms typically, 150 ms at most.
-- **On the board now:** `~/TermNL` is the old `main` (c2d8d66), used by the desk. `~/TermNL-personal` is
+- **On the board now:** `~/TermNL` is `main` (57ac4c3), used by the desk (was c2d8d66 until 24 Oct, 22:28). `~/TermNL-personal` is
   `feat/personal` before the four fixes, with Gab's test log in its `logs/`. Nothing is installed.
 
 ## Open issues, for the next instance
@@ -48,8 +48,15 @@ are his; don't rework them. The section of 22 October below is history.
    unpacked into `~/.local/lib/python3.13/site-packages`). Files: the desk's `server.py`,
    `app/js/components/app-assistant.js`; the companion's `app.js`, `index.html`, `sw.js` (bump KEPT).
    Gab's calls first: does TermNL's admin mode replace the desk's `--allow` groups? does "show commands"
-   apply where the desk always shows the command? where does the settings panel live (chat, the
-   companion's Settings, both)?
+   apply where the desk always shows the command? Since asked: the panel goes on both the kiosk and the
+   companion (Gab, 24 Oct). Who holds admin is open, an architectural choice for Gab: he first leaned to
+   the desk as master, then "perhaps the desk should not be the master, TermNL is the one talking to the
+   board, desk is the GUI". Claude's recommendation, kept for that discussion (unratified): permission
+   sits where the command runs, so TermNL owns admin mode; a host may only narrow it (as `simulate`:
+   "never fewer") and shows TermNL's settings in its GUI. Linked to "perhaps TermNL should not even be
+   visible inside the home folder" and to issue 3. Brain: `projects/termlu/.inbox.md`, 24 Oct.
+   **Done on the board since:** TermNL `main` runs in the desk (logs and `tests/real.md` kept), and numpy
+   is linked into `~/.local/lib/python3.13/site-packages`, so retraining from the kiosk works (3 min).
 3. **The device writes tracked files.** "call me Gab" and the settings panel rewrite `settings.md`;
    retraining rewrites `termnl/languages/en/model.json`. A new copy or a `git pull` would overwrite or
    conflict with them. The person's settings and a model trained on the device need their own place,
