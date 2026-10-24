@@ -267,9 +267,9 @@ def learning(w, started=None, trained=None):
     return {"level": "fine" if trained else "unknown", "values": {"": since(now - trained, w) if trained else ""}}
 
 
-def name(w, person=""):
+def name(w, user=""):
     """the person's name, when they gave one ("call me Gab")"""
-    return {"level": "known" if person else "unknown", "values": {"": person}}
+    return {"level": "known" if user else "unknown", "values": {"": user}}
 
 
 # Wi-Fi, the network and Bluetooth have no file to read: their skill's command runs (and is what "show

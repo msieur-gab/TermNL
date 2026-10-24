@@ -137,7 +137,7 @@ class TermNL:
         if reads == "learning":
             return {"started": (self.training or {}).get("started"), "trained": self.lang["model"].get("trained")}
         if reads == "name":
-            return {"person": self.settings.get("name") or ""}
+            return {"user": self.settings.get("name") or ""}
         return {}
 
     def say(self, text, session):
