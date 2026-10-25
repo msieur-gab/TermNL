@@ -65,6 +65,8 @@ with `{user}` is only used once a name is set.
                                 real.py: the conversations people really had (real.md, from logs/,
                                 kept out of git), replayed against today's TermNL
     tools/neighbours.py         a test of word embeddings for unknown words (22 Oct: not worth it yet)
+    tools/distance.py           a test of out of scope by distance to taught sentences (25 Oct: not
+                                kept; RESEARCH.md, method A)
     tools/to_plain.py           rewrites a skill from the older template form to plain sentences;
     tools/same_reading.py       and proves it reads every sentence the same
     settings.md                 this device's settings
