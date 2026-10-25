@@ -368,6 +368,22 @@ Still named, on purpose: a thing made by a skill is a file or a folder by the sk
 `folder`, the two objects tied to the device's own kinds. And `finish_filetype`, older than frames, still
 reads a value called `name` (on main too).
 
+## G. The agent no longer imports the skill reader
+
+25 October, Gab: "Let us try fix 1 and check again". The agent imported `skills.py` for one small function,
+and so pulled in the skill reader, the plain-sentence reader and the device readers. Now the two facts frames
+need are decided when skills are read and checked, from `## What it needs`, and stored in each skill:
+`main` (the value it acts on) and `where` (the folder that says where things are). The agent reads them as
+data. Its imports are back to those of main: the model, the templates, the words (`model`, `template`, `text`).
+
+Benefits: one direction between the parts (files are read and checked once; the conversation only uses the
+result), and an agent that can take skills prepared any other way (compiled ahead, or lent by a host).
+Drawbacks: each skill carries two derived fields, which anything building skills without `load` must fill
+in; nothing is faster on the board, since the server reads skill files anyway.
+
+Re-tested: the checker finds no problem in 77 skills; all 665 test answers identical; 127 unit tests, the
+same three failing; follow-ups unchanged. `agent.py` 714 code lines (−3), `skills.py` 270 (+3).
+
 ## Open, for Gab
 
 - How long a frame lasts. Now: until another request is done, "cancel", or a sentence not understood.
