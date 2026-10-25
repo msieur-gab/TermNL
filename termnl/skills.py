@@ -24,7 +24,7 @@
                      reader's values are written {@sys.memory.used}, the person's name {user}
 
 Kinds: text, secret, a shared list (filetype), or a device list (@sys.folder, @sys.service,
-@sys.network, @sys.app, @sys.music)."""
+@sys.network, @sys.app, @sys.music, @sys.host)."""
 import re
 
 from .readers import FROM_COMMAND, READERS, placeholder
@@ -32,7 +32,7 @@ from .plain import read_needs, to_template
 from .template import compile_template, uses
 from .text import read_list, read_pairs, words
 
-DEVICE_KINDS = ["folder", "file", "service", "network", "app", "running", "music"]
+DEVICE_KINDS = ["folder", "file", "service", "network", "app", "running", "music", "host"]
 
 
 def read_lists(files):
@@ -43,9 +43,10 @@ def read_lists(files):
             kinds[name].append(e["key"])
     filetypes = []
     for e in read_list(files["filetypes"]):
-        m = re.match(r"^(.+?)\s*\((\w+)\)$", e["key"])
+        m = re.match(r"^(.+?)\s*\(([\w, ]+)\)$", e["key"])  # "image (jpg, jpeg, png)": several extensions, the first for a new file
         value = m.group(1).strip() if m else e["key"]
-        filetypes.append({"value": value, "ext": m.group(2) if m else value, "label": value, "phrases": [words(w) for w in e["words"]]})
+        exts = [x.strip() for x in m.group(2).split(",") if x.strip()] if m else [value]
+        filetypes.append({"value": value, "ext": exts[0], "exts": exts, "label": value, "phrases": [words(w) for w in e["words"]]})
     # "- music, track: turn on, switch on → play": words that mean another action with these objects
     in_context = []
     for e in read_list(files["actions"], "Meaning with an object"):

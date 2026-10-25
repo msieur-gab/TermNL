@@ -787,6 +787,10 @@ class Agent:
             self._here = {"value": v["value"], "label": v["label"]}
         if skill["reads"]:  # the device reads itself; the reply is chosen once it has (server.py)
             args = {k: v["value"] if v.get("value") is not None else v.get("text") for k, v in vals.items()}
+            for k, spec in skill["values"].items():  # a kind of file is read by its extensions (readers.py, files)
+                t = next((t for t in self.lists["filetypes"] if t["value"] == args.get(k)), None) if spec["kind"] == "filetype" else None
+                if t:
+                    args[k] = ",".join(t.get("exts", [t["ext"]]))
             out = {"outcome": "act", "skill": skill["id"], "say": "", "reads": skill["reads"], "args": args, "values": self.display(skill, vals)}
             if skill["command"]:  # a reader of the command's output (check wifi: iw)
                 out["command"] = self.command_for(skill, vals)
