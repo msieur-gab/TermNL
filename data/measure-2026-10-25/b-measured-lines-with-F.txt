@@ -1,0 +1,677 @@
+acted    check-storage      check-storage      how much room do I have left on the disk
+asked    check-storage      check-storage      my disk feels full   [new: feels]
+acted    check-storage      check-storage      do I still have free space
+acted    check-storage      check-storage      storage left?
+wrong?   check-storage      check-type         is there enough space for a movie   [new: enough, space]
+asked    check-memory       check-memory       how much ram am I using   [new: using]
+asked    check-memory       check-memory       is it low on memory   [new: low]
+asked    check-memory       check-memory       memory status   [new: status]
+asked    check-temperature  check-temperature  the board feels really warm
+acted    check-temperature  check-temperature  what temperature is the cpu at
+acted    check-temperature  check-temperature  is the pi overheating
+asked    check-system       check-system       is my pi ok
+asked    check-system       check-system       everything alright?
+asked    check-system       check-system       how's it going with the board   [new: going]
+wrong?   check-network      —                  do I have internet
+asked    check-network      check-network      is the connection down   [new: down]
+asked    check-network      check-network      what's my address on the network
+asked    check-wifi         check-wifi         am I connected to wifi
+asked    check-wifi         check-wifi         what network am I on right now
+acted    check-wifi         check-wifi         is the wireless working
+asked    show-wifi          show-wifi          scan for wifi
+asked    show-wifi          show-wifi          list the networks nearby
+acted    turn-off-wifi      turn-off-wifi      kill the wifi
+acted    turn-off-wifi      turn-off-wifi      disconnect from wifi
+asked    turn-off-wifi      turn-off-wifi      I don't need wifi right now, switch it off
+asked    turn-on-wifi       turn-on-wifi       get the wifi back
+acted    turn-on-wifi       turn-on-wifi       wifi on please
+asked    turn-on-bluetooth  turn-on-bluetooth  bluetooth on
+acted    turn-off-bluetooth turn-off-bluetooth stop bluetooth
+acted    check-service      check-service      is ssh up
+acted    check-service      check-service      is the web server alive
+asked    restart-service    restart-service    the music server is stuck, restart it   [new: stuck]
+wrong?   restart-service    check-service      give nginx a kick   [new: give, kick]
+acted    restart-system     restart-system     reboot
+acted    restart-system     restart-system     restart everything
+acted    restart-system     restart-system     can you reboot the pi
+asked    shut-down-system   shut-down-system   power off
+asked    shut-down-system   shut-down-system   shut it all down
+asked    shut-down-system   shut-down-system   I'm done for today, turn the board off   [new: today]
+asked    create-folder      create-folder      I need a new folder for my bike photos   [new: bike]
+acted    create-folder      create-folder      new folder called bikes
+acted    create-folder      create-folder      make me a directory named recipes in documents
+asked    create-folder      create-folder      put a folder called seeds inside ideas   [new: put]
+acted    create-file        create-file        start a new note called groceries
+wrong?   create-file        check-type         I want to write a python script named test   [new: write, named]
+asked    create-file        create-file        make todo.txt in documents
+acted    create-file        create-file        new markdown file in ideas called draft
+acted    show-folder        show-folder        what do I have in downloads
+acted    show-folder        show-folder        list my documents
+acted    open-folder        open-folder        open the ideas folder
+asked    open-app           open-app           I need a terminal
+acted    open-app           open-app           start firefox
+wrong?   open-app           close-app          can I get the browser
+acted    check-storage      check-storage      how much spac is left on my drive
+asked    turn-on-bluetooth  turn-on-bluetooth  activate the bluetoth
+acted    show-system        show-system        what is this device configuration
+wrong?   show-process       check-type         is there any acitve threads
+acted    show-process       show-process       what is taking my memory
+acted    show-process       show-process       what is consuming my ram
+
+phrasings, 59 sentences: 27 understood and handled, 26 understood but checked first ("Do you want me to…?"), 6 wrong skill but asked first or stopped, 0 wrong skill acted on or approved, 0 not understood
+wrong?   check-storage      check-usb          is my sd card almost full   [new: almost, full]
+abstain  check-storage      —                  how many gigs are free
+asked    check-storage      check-storage      am I out of space
+wrong?   check-storage      show-process       what's eating my disk   [new: disk]
+wrong?   check-memory       check-system       why is everything so slow, is it the ram   [new: why, slow, ram]
+acted    check-memory       check-memory       how much memory is left
+acted    check-memory       check-memory       ram?
+acted    check-temperature  check-temperature  how hot is the cpu
+acted    check-temperature  check-temperature  is it too warm in there
+asked    check-temperature  check-temperature  cpu temp please
+acted    check-system       check-system       give me a health check
+acted    check-system       check-system       how is the computer doing
+acted    check-system       check-system       status report
+acted    check-network      check-network      am I online
+acted    check-network      check-network      is the internet working
+acted    check-network      check-network      what's my ip
+acted    check-wifi         check-wifi         which wifi am I on
+acted    check-wifi         check-wifi         is the wifi connected
+asked    check-wifi         check-wifi         wifi status
+asked    show-wifi          show-wifi          what networks can you see
+asked    show-wifi          show-wifi          show me available wifi
+acted    turn-off-wifi      turn-off-wifi      switch the wireless off
+acted    turn-off-wifi      turn-off-wifi      stop the wifi
+acted    turn-off-wifi      turn-off-wifi      disconnect from wifi
+acted    turn-on-wifi       turn-on-wifi       wifi on please
+acted    turn-on-wifi       turn-on-wifi       bring the wifi back up
+acted    turn-off-bluetooth turn-off-bluetooth bluetooth off
+acted    turn-off-bluetooth turn-off-bluetooth stop bluetooth
+acted    turn-off-bluetooth turn-off-bluetooth kill bluetooth
+acted    turn-on-bluetooth  turn-on-bluetooth  start bluetooth
+asked    turn-on-bluetooth  turn-on-bluetooth  i need bluetooth for my headphones   [new: headphones]
+wrong?   check-bluetooth    —                  is bluetooth running
+acted    check-service      check-service      is ssh running
+acted    check-service      check-service      is the ssh service up
+acted    restart-service    restart-service    restart ssh
+acted    restart-service    restart-service    bounce the ssh service
+acted    restart-system     restart-system     reboot
+acted    restart-system     restart-system     restart the computer please
+acted    restart-system     restart-system     can you reboot the board
+asked    shut-down-system   shut-down-system   power off
+acted    shut-down-system   shut-down-system   turn off the computer
+acted    shut-down-system   shut-down-system   switch the pi off
+acted    create-folder      create-folder      new folder called recipes
+acted    create-folder      create-folder      make a directory named photos in documents
+wrong?   create-folder      open-folder        I want a folder for my taxes   [new: taxes]
+acted    create-folder      create-folder      add a folder recipes
+acted    create-file        create-file        create a file called todo.txt
+acted    create-file        create-file        new note called groceries
+asked    create-file        create-file        write a new markdown file named ideas   [new: write]
+acted    create-file        create-file        make an empty text file in documents
+acted    open-file          open-file          open notes.md
+wrong?   open-file          —                  show me the file called notes.md
+acted    open-file          open-file          can you open my todo list file
+acted    open-folder        open-folder        go to documents
+asked    open-folder        open-folder        take me to the documents folder
+acted    open-folder        open-folder        cd documents
+acted    leave-folder       leave-folder       go back
+acted    leave-folder       leave-folder       go up a folder
+asked    leave-folder       leave-folder       get me out of here
+acted    show-folder        show-folder        what's in this folder
+asked    show-folder        show-folder        list the files here
+acted    show-folder        show-folder        ls
+acted    rename-file        rename-file        rename notes.md to ideas.md
+wrong?   rename-folder      rename-file        rename the folder photos to pictures
+acted    open-app           open-app           open the browser
+acted    open-app           open-app           launch firefox
+acted    open-app           open-app           start the terminal
+wrong?   open-app           close-app          fire up the browser   [new: fire]
+acted    close-app          close-app          close the browser
+acted    close-app          close-app          quit firefox
+acted    show-process       show-process       what's running
+acted    show-process       show-process       which programs are open
+acted    check-time         check-time         what's the date
+acted    check-time         check-time         what day is it today
+acted    play-music         play-music         play some music
+acted    play-music         play-music         put some tunes on
+acted    pause-music        pause-music        pause
+acted    pause-music        pause-music        pause the music
+acted    stop-music         stop-music         stop the music
+acted    stop-music         stop-music         turn the music off
+acted    next-track         next-track         next song
+acted    next-track         next-track         skip this one
+wrong?   previous-track     leave-folder       go back a song   [new: song]
+acted    previous-track     previous-track     play the previous track
+acted    mute-sound         mute-sound         mute
+acted    mute-sound         mute-sound         turn the sound off
+acted    unmute-sound       unmute-sound       sound back on
+acted    unmute-sound       unmute-sound       unmute please
+abstain  none               —                  turn off the lights
+abstain  none               —                  what's the weather in paris
+asked    none               delete-folder      delete all my files   [new: files]
+abstain  none               —                  stop
+acted    install-app        install-app        install python
+
+probes, 89 sentences: 68 understood and handled, 11 understood but checked first ("Do you want me to…?"), 9 wrong skill but asked first or stopped, 0 wrong skill acted on or approved, 1 not understood; out of scope, 4: 3 abstained, 1 asked, 0 acted on
+acted    check-storage      check-storage      how full is my disk
+wrong?   check-storage      —                  do i have room for more files
+acted    check-storage      check-storage      disk space left?
+asked    check-storage      check-storage      is the storage running out
+acted    check-memory       check-memory       how much ram do i have free
+asked    check-memory       check-memory       is the memory ok   [new: ok]
+acted    check-memory       check-memory       check the ram
+acted    check-memory       check-memory       memroy usage
+acted    check-temperature  check-temperature  is the board too hot
+acted    check-temperature  check-temperature  what's the temperature
+asked    check-temperature  check-temperature  how warm is the cpu right now
+acted    check-temperature  check-temperature  temprature?
+acted    check-system       check-system       is everything ok with the computer
+acted    check-system       check-system       how is my board doing
+asked    check-system       check-system       run a quick check of the system
+acted    check-network      check-network      am i connected to the internet
+asked    check-network      check-network      is the network ok   [new: ok]
+acted    check-network      check-network      what is my ip address
+wrong?   check-wifi         show-wifi          which wifi network is this   [new: network]
+asked    check-wifi         check-wifi         am i on the wifi
+acted    check-wifi         check-wifi         is wifi working
+acted    show-wifi          show-wifi          which wifi networks are around
+acted    show-wifi          show-wifi          show the wifi networks
+wrong?   show-wifi          —                  find wifi networks
+acted    turn-on-wifi       turn-on-wifi       switch on the wifi
+acted    turn-on-wifi       turn-on-wifi       enable wireless
+acted    turn-on-wifi       turn-on-wifi       put the wifi back on
+acted    turn-on-wifi       turn-on-wifi       turn wifi on
+acted    turn-off-wifi      turn-off-wifi      turn the wifi off
+acted    turn-off-wifi      turn-off-wifi      disable the wireless
+acted    turn-off-wifi      turn-off-wifi      wifi off
+acted    turn-off-wifi      turn-off-wifi      cut the wifi
+acted    check-bluetooth    check-bluetooth    is bluetooth on
+asked    check-bluetooth    check-bluetooth    is the bluetooth enabled
+acted    check-bluetooth    check-bluetooth    bluetooth status
+acted    turn-on-bluetooth  turn-on-bluetooth  turn bluetooth on
+acted    turn-on-bluetooth  turn-on-bluetooth  enable bluetooth please
+acted    turn-on-bluetooth  turn-on-bluetooth  switch the bluetooth on
+acted    turn-off-bluetooth turn-off-bluetooth turn the bluetooth off
+acted    turn-off-bluetooth turn-off-bluetooth disable bluetooth
+asked    turn-off-bluetooth turn-off-bluetooth switch off bluetoth
+acted    check-service      check-service      is nginx running
+acted    check-service      check-service      check the ssh service
+acted    check-service      check-service      is the web server working
+acted    restart-service    restart-service    restart nginx
+acted    restart-service    restart-service    restart the web server please
+acted    restart-service    restart-service    reload the ssh service
+acted    restart-system     restart-system     restart the board
+acted    restart-system     restart-system     reboot the pi
+acted    restart-system     restart-system     please restart my computer
+acted    shut-down-system   shut-down-system   shut down the computer
+acted    shut-down-system   shut-down-system   power down the board
+acted    shut-down-system   shut-down-system   turn the pi off
+acted    show-system        show-system        what is this computer made of
+acted    show-system        show-system        tell me about this board
+wrong?   show-system        —                  show me the specs
+acted    check-time         check-time         what time is it
+acted    check-time         check-time         what's the time
+asked    check-time         check-time         which day is it
+acted    check-time         check-time         what is the date today
+acted    create-folder      create-folder      make a folder called music in documents
+acted    create-folder      create-folder      create a new folder named travel
+acted    create-folder      create-folder      add a folder called photos inside ideas
+acted    create-folder      create-folder      i need a new folder
+acted    create-folder      create-folder      make a new directory called work
+acted    create-file        create-file        create a file called shopping.md
+acted    create-file        create-file        make a new note called plans
+acted    create-file        create-file        new text file named list in documents
+acted    create-file        create-file        add a markdown file called draft
+acted    open-file          open-file          open todo.txt
+acted    open-file          open-file          open the report.pdf file in documents
+acted    open-file          open-file          open my note.md
+acted    open-folder        open-folder        open documents
+acted    open-folder        open-folder        go into the projects folder
+acted    open-folder        open-folder        open the ideas folder
+acted    leave-folder       leave-folder       leave this folder
+asked    leave-folder       leave-folder       go back to the folder above   [new: above]
+acted    leave-folder       leave-folder       exit the folder
+acted    show-folder        show-folder        what's in documents
+acted    show-folder        show-folder        show me my downloads
+acted    show-folder        show-folder        what do i have in projects
+acted    show-folder        show-folder        what's in here
+acted    rename-file        rename-file        rename todo.txt to tasks.txt
+acted    rename-file        rename-file        change the name of note.md to journal.md
+acted    rename-folder      rename-folder      rename the ideas folder to thoughts
+acted    rename-folder      rename-folder      rename folder projects to work
+acted    open-app           open-app           open the terminal
+acted    open-app           open-app           open firefox
+acted    open-app           open-app           launch the browser
+acted    open-app           open-app           start the console
+acted    close-app          close-app          close firefox
+acted    close-app          close-app          close the terminal
+acted    close-app          close-app          quit the browser
+asked    show-process       show-process       what is running right now
+acted    show-process       show-process       show me the running programs
+acted    show-process       show-process       list the processes
+acted    play-music         play-music         play music
+acted    play-music         play-music         play something
+acted    play-music         play-music         put on some music
+acted    play-track         play-track         play wax tailor
+acted    play-track         play-track         play the tune
+acted    play-track         play-track         i want to listen to hope and sorrow
+acted    pause-music        pause-music        pause the music please
+acted    pause-music        pause-music        pause the song
+acted    stop-music         stop-music         stop playing
+acted    stop-music         stop-music         stop the song
+acted    next-track         next-track         next track
+acted    next-track         next-track         skip to the next song
+acted    next-track         next-track         play the next one
+acted    previous-track     previous-track     previous song
+asked    previous-track     previous-track     go back to the last track   [new: last]
+acted    mute-sound         mute-sound         mute the sound
+acted    mute-sound         mute-sound         silence the speakers
+acted    mute-sound         mute-sound         mute audio
+acted    unmute-sound       unmute-sound       unmute
+acted    unmute-sound       unmute-sound       turn the sound back on
+acted    unmute-sound       unmute-sound       unmute the speakers
+acted    delete-folder      delete-folder      delete the documents folder
+acted    delete-file        delete-file        remove todo.txt
+acted    stop-process       stop-process       kill firefox
+abstain  none               —                  format the disk
+acted    install-app        install-app        install vlc
+acted    update-system      update-system      update the system
+abstain  none               —                  what's the weather like
+asked    none               play-music         tell me something funny   [new: tell, funny]
+abstain  none               —                  send a message to anna
+abstain  none               —                  turn on the kitchen lights
+abstain  none               —                  set a timer for ten minutes
+abstain  none               —                  how do i make pasta
+asked    none               connect-wifi       connect to my phone   [new: phone]
+abstain  none               —                  change my password
+abstain  none               —                  make the screen brighter
+
+heldout, 122 sentences: 106 understood and handled, 12 understood but checked first ("Do you want me to…?"), 4 wrong skill but asked first or stopped, 0 wrong skill acted on or approved, 0 not understood; out of scope, 10: 8 abstained, 2 asked, 0 acted on
+asked    check-storage      check-storage      how much space is left on this thing   [new: thing]
+asked    check-storage      check-storage      is my disk getting full? i keep downloading stuff and im a bit worried   [new: getting, keep, downloading, im, worried]
+acted    check-storage      check-storage      storage
+asked    check-memory       check-memory       how much ram am I using right now   [new: using]
+asked    check-memory       check-memory       everything feels slow, is the memory full or what   [new: everything, feels, slow]
+asked    check-memory       check-memory       free memroy?
+acted    check-temperature  check-temperature  is the board running hot
+acted    check-temperature  check-temperature  how warm is the cpu
+asked    check-temperature  check-temperature  it feels really toasty when I touch it, can you tell me the temprature   [new: toasty, when, touch]
+asked    check-system       check-system       give the whole computer a quick checkup   [new: whole]
+asked    check-system       check-system       is everything ok with my pi overall   [new: overall]
+acted    check-system       check-system       health check please
+asked    show-system        show-system        what kind of computer is this exactly   [new: exactly]
+asked    show-system        show-system        tell me the specs of this board
+asked    show-system        show-system        which model am i runing on
+acted    check-network      check-network      am I online
+asked    check-network      check-network      is this thing even connected to the internet? pages won't load   [new: thing, even, pages, load]
+acted    check-network      check-network      what's my ip adress
+asked    check-wifi         check-wifi         which wifi am I on right now
+acted    check-wifi         check-wifi         is the wifi connected
+asked    check-wifi         check-wifi         are we on the home wi-fi or not   [new: home]
+acted    show-wifi          show-wifi          what wifi networks can you see around here
+asked    show-wifi          show-wifi          scan for wifi
+asked    show-wifi          show-wifi          list the nearby wifi netwroks pls, I'm trying to find the cafe one   [new: pls, trying, cafe, one]
+acted    turn-on-wifi       turn-on-wifi       turn the wifi on
+acted    turn-on-wifi       turn-on-wifi       can you switch wi-fi back on, I need it
+acted    turn-on-wifi       turn-on-wifi       wifi on please
+acted    turn-off-wifi      turn-off-wifi      kill the wifi
+asked    turn-off-wifi      turn-off-wifi      no more wifi for now please
+wrong?   turn-off-wifi      delete-file        can you get rid of the wifi for a while, I want to save battery
+acted    check-bluetooth    check-bluetooth    is bluetooth on
+asked    check-bluetooth    check-bluetooth    does this have bluetooth running at the moment   [new: moment]
+acted    check-bluetooth    check-bluetooth    bluetooth status?
+wrong?   turn-on-bluetooth  unmute-sound       turn on bluetooth, I want to connect my speaker   [new: bluetooth, connect]
+acted    turn-on-bluetooth  turn-on-bluetooth  switch the bluetooth on
+asked    turn-on-bluetooth  turn-on-bluetooth  blutooth on
+acted    turn-off-bluetooth turn-off-bluetooth disable bluetooth
+asked    turn-off-bluetooth turn-off-bluetooth shut off the bluetooth please, I never use it   [new: use]
+acted    turn-off-bluetooth turn-off-bluetooth bluetooth off
+acted    check-service      check-service      is ssh running
+asked    check-service      check-service      is nginx up at the moment   [new: moment]
+acted    check-service      check-service      is the music server workng
+acted    restart-service    restart-service    restart the web server
+asked    restart-service    restart-service    can you give mpd a kick and restart it   [new: kick]
+wrong?   restart-service    get-file           restart ssh, I can't log in from my laptop   [new: restart, ssh, can't, log]
+acted    restart-system     restart-system     restart the computer
+acted    restart-system     restart-system     reboot
+asked    restart-system     restart-system     can you turn it off and on again, the whole thing is acting weird   [new: whole, thing, acting, weird]
+asked    shut-down-system   shut-down-system   shut down
+asked    shut-down-system   shut-down-system   power off the pi please, I'm done for the day   [new: day]
+asked    shut-down-system   shut-down-system   turn the computer of
+acted    check-time         check-time         what time is it
+acted    check-time         check-time         what's the date today
+acted    check-time         check-time         what day is it?
+acted    create-folder      create-folder      make a new folder called recipes
+acted    create-folder      create-folder      create a folder named photos inside Documents
+asked    create-folder      create-folder      can you make me a direcotry for my school stuff in projects   [new: school, stuff]
+acted    create-file        create-file        create a new note called shopping.md
+acted    create-file        create-file        make a text file in ideas called poems.txt
+asked    create-file        create-file        I want to write something down, start a new markdown note in Documents   [new: write, something, down]
+acted    open-file          open-file          open note.md
+asked    open-file          open-file          can you pull up groceries.md for me   [new: pull]
+wrong?   open-file          find-file          I want to look at report.pdf
+acted    open-folder        open-folder        go to Downloads
+acted    open-folder        open-folder        open the projects folder
+asked    open-folder        open-folder        take me into ideas
+acted    leave-folder       leave-folder       go back
+asked    leave-folder       leave-folder       get me out of this folder
+asked    leave-folder       leave-folder       go up one levle
+acted    show-folder        show-folder        what's in Documents
+asked    show-folder        show-folder        list the files here
+wrong?   show-folder        —                  show me what's inside the downloads folder
+acted    rename-file        rename-file        rename todo.txt to tasks.txt
+acted    rename-file        rename-file        change the name of note.md to diary.md
+asked    rename-file        rename-file        can you call seed.md something else, like garden.md   [new: like]
+acted    rename-folder      rename-folder      rename the ideas folder to brainstorm
+asked    rename-folder      rename-folder      change the Downloads folder name to inbox   [new: inbox]
+abstain  rename-folder      —                  i want the projects folder to be called work instead
+acted    open-app           open-app           open firefox
+wrong?   open-app           open-file          start the browser, i want to look something up
+asked    open-app           open-app           lauch the terminal
+acted    close-app          close-app          close firefox
+acted    close-app          close-app          quit the terminal
+wrong?   close-app          delete-file        get rid of the browser window, I'm done with it
+acted    show-process       show-process       what programs are running
+acted    show-process       show-process       show me running processes
+asked    show-process       show-process       what's going on in the backgroud, which programs are open   [new: going, backgroud]
+acted    play-music         play-music         play some music
+asked    play-music         play-music         put on something, anything
+asked    play-music         play-music         I'm bored, play a random song   [new: bored]
+acted    play-track         play-track         play Wax Tailor
+acted    play-track         play-track         put on the album Hope & Sorrow
+asked    play-track         play-track         can I hear The Tune please
+acted    pause-music        pause-music        pause
+asked    pause-music        pause-music        hold the music a sec, someone's at the door   [new: sec, someone's, door]
+asked    pause-music        pause-music        pasue the song
+acted    stop-music         stop-music         stop the music
+wrong?   stop-music         stop-process       my music won't stop, make it stop   [new: music]
+asked    stop-music         stop-music         enough music for today, stop playing   [new: today]
+acted    next-track         next-track         next song
+acted    next-track         next-track         skip this one
+asked    next-track         next-track         I don't like this track, play the next one
+asked    previous-track     previous-track     go back to the last song   [new: last]
+acted    previous-track     previous-track     previous track
+asked    previous-track     previous-track     play the one before again, I missed the begining   [new: missed, begining]
+acted    mute-sound         mute-sound         mute
+acted    mute-sound         mute-sound         silence the speakers
+asked    mute-sound         mute-sound         mute the speakers, the baby is sleeping   [new: baby, sleeping]
+acted    unmute-sound       unmute-sound       unmute
+acted    unmute-sound       unmute-sound       turn the sound back on
+acted    unmute-sound       unmute-sound       I can't hear anything, unmute the speakers
+abstain  none               —                  what's the weather like tomorrow
+abstain  none               —                  tell me a joke
+asked    none               send-file          send a message to my mom
+abstain  none               —                  turn on the living room lights
+asked    delete-file        delete-file        delete groceries.md
+acted    delete-folder      delete-folder      remove the ideas folder
+asked    none               stop-process       kill the process with id 4312   [new: id, 4312]
+asked    none               check-usb          format the sd card   [new: format]
+acted    install-app        install-app        install vlc
+asked    update-system      update-system      update all the sofware
+abstain  none               —                  change my password
+abstain  none               —                  wipe the whole disk
+abstain  none               —                  set an alarm for 7am
+abstain  none               —                  add a new user account
+abstain  none               —                  who won the football game last night
+abstain  none               delete-file        erase everything in Downloads
+abstain  none               —                  order a pizza
+asked    update-system      update-system      upgrade the system to the latest version   [new: version]
+abstain  none               —                  give me root access
+abstain  none               —                  translate hello into spanish
+
+blind, 116 sentences: 57 understood and handled, 50 understood but checked first ("Do you want me to…?"), 8 wrong skill but asked first or stopped, 0 wrong skill acted on or approved, 1 not understood; out of scope, 15: 12 abstained, 3 asked, 0 acted on
+asked    move-file          move-file          put report.pdf in Documents
+asked    move-file          move-file          can you shift note.md over to the ideas folder please
+asked    move-file          move-file          i want groceries.md out of Downloads and into home
+asked    move-file          move-file          take todo.txt and stick it in projects, thx   [new: stick, thx]
+asked    copy-file          copy-file          make a copy of seed.md in ideas
+asked    copy-file          copy-file          could you duplicate website.html into projects? i want to keep the original where it is   [new: where]
+asked    copy-file          copy-file          copy report.pdf to Documents but leave the one in Downlaods   [new: leave, one, downlaods]
+wrong?   copy-file          create-file        I need a second todo.txt inside home   [new: second]
+asked    delete-file        delete-file        delete groceries.md
+acted    delete-file        delete-file        get rid of movie.mkv, I've watched it already
+asked    delete-file        delete-file        can you throw todo.txt in the bin   [new: bin]
+asked    delete-file        delete-file        remvoe note.md please
+acted    delete-folder      delete-folder      delete the ideas folder
+asked    delete-folder      delete-folder      I don't need projects anymore, can you trash the whole folder?
+wrong?   delete-folder      open-folder        bin the Downloads folder   [new: bin]
+asked    delete-folder      delete-folder      wipe out that ideas folder, all of it
+acted    find-file          find-file          where is report.pdf
+asked    find-file          find-file          I lost seed.md somewhere, can you look for it?   [new: lost, somewhere]
+asked    find-file          find-file          search the whole computer for website.html   [new: whole, computer]
+asked    find-file          find-file          can u find my groceries list file, groceries.md   [new: u, groceries, list]
+acted    connect-wifi       connect-wifi       connect to home-5g
+asked    connect-wifi       connect-wifi       hey can you get me on the home-5g wifi
+asked    connect-wifi       connect-wifi       join the network called home-5g
+abstain  connect-wifi       —                  log me into home-5g please, the internet isnt working without it
+abstain  turn-up-sound      —                  louder
+asked    turn-up-sound      turn-up-sound      I can barely hear Wax Tailor, turn it up a bit   [new: wax, tailor]
+acted    turn-up-sound      turn-up-sound      can you raise the volume?
+asked    turn-up-sound      turn-up-sound      crank up the sound pls   [new: pls]
+asked    turn-down-sound    turn-down-sound    too loud!
+asked    turn-down-sound    turn-down-sound    could you lower the volume a little, my neighbours are complaining   [new: neighbours, complaining]
+asked    turn-down-sound    turn-down-sound    bring the sound down
+abstain  turn-down-sound    —                  make it quiter please
+acted    install-app        install-app        install vlc
+wrong?   install-app        show-system        I'd like to have gimp on this computer, can you put it on?   [new: gimp, put]
+abstain  install-app        —                  can you get me the vlc player
+asked    install-app        install-app        please instal gimp for me
+acted    update-system      update-system      update everything
+wrong?   update-system      check-type         are there any updates? if so install them all
+asked    update-system      update-system      bring all my software up to date please
+asked    update-system      update-system      can you upgrade the whole system, it's been ages   [new: whole, been, ages]
+acted    stop-process       stop-process       firefox is frozen, kill it
+asked    stop-process       stop-process       the terminal is stuck and won't respond, force it to stop   [new: respond]
+wrong?   stop-process       stop-music         something has hung, can you force quit firefox   [new: something, hung, firefox]
+asked    stop-process       stop-process       firefox isnt responding at all, just make it stop   [new: isnt]
+acted    check-uptime       check-uptime       how long has this been on?
+asked    check-uptime       check-uptime       when did I last turn the computer on   [new: turn]
+acted    check-uptime       check-uptime       how long has the machine been running for
+asked    check-uptime       check-uptime       whats the uptime
+acted    compress-folder    compress-folder    zip the projects folder
+wrong?   compress-folder    compress-file      can you squash ideas into one zip file so I can send it?   [new: squash, one, send]
+asked    compress-folder    compress-folder    make an archive of Documents
+asked    compress-folder    compress-folder    compres my Downloads folder please
+acted    download-file      download-file      download https://example.com/manual.pdf
+asked    download-file      download-file      can you grab this file for me: https://example.org/photo.jpg   [new: photo.jpg]
+asked    download-file      download-file      save the file at http://example.com/song.mp3 to my computer   [new: http, song.mp3, computer]
+asked    download-file      download-file      i need this one off the internet https://example.net/guide.zip   [new: one, off, internet, guide.zip]
+acted    close-app          close-app          close firefox
+asked    close-app          close-app          I'm done with the terminal, you can shut it
+acted    rename-file        rename-file        rename note.md to journal.md
+abstain  rename-file        —                  call todo.txt chores.txt instead
+acted    open-folder        open-folder        go to Documents
+asked    open-folder        open-folder        take me into the projects folder
+acted    show-folder        show-folder        what's in Downloads?
+wrong?   show-folder        show-type          show me everything in ideas
+acted    turn-on-wifi       turn-on-wifi       turn the wifi on
+acted    turn-on-wifi       turn-on-wifi       switch on wi-fi please
+acted    turn-off-wifi      turn-off-wifi      turn off the wifi
+asked    turn-off-wifi      turn-off-wifi      disable wifi for now, i want to be offline   [new: offline]
+acted    mute-sound         mute-sound         mute
+acted    mute-sound         mute-sound         silence the speakers please
+acted    unmute-sound       unmute-sound       unmute
+asked    unmute-sound       unmute-sound       bring the sound back on, I muted it earlier   [new: muted, earlier]
+asked    check-system       check-system       is my computer ok?
+asked    check-system       check-system       give me a quick health check of the whole system   [new: whole]
+asked    check-wifi         check-wifi         am I connected to the wifi?
+asked    check-wifi         check-wifi         which network am i on right now
+acted    stop-music         stop-music         stop the music
+asked    stop-music         stop-music         enough of The Tune, turn the music off   [new: tune]
+acted    restart-system     restart-system     restart the computer
+asked    restart-system     restart-system     can you reboot it please, it's acting weird   [new: acting, weird]
+abstain  none               —                  make the screen brighter
+asked    none               check-usb          format my usb stick   [new: format]
+abstain  none               —                  change my password
+abstain  none               —                  create a new user account for my daughter
+abstain  none               —                  set an alarm for 7am tomorrow
+abstain  none               —                  what's the weather like today?
+asked    none               send-file          send an email to my boss saying I'm late
+abstain  none               —                  empty the trash completly
+abstain  none               —                  uninstall everything
+abstain  none               —                  turn on the living room lights
+abstain  none               —                  set a timer for 10 minutes
+asked    none               turn-up-sound      can you dim the screen a bit, it hurts my eyes   [new: dim, screen, hurts, eyes]
+acted    restart-system     restart-system     reboot
+acted    restart-system     restart-system     restart the pi
+asked    restart-system     restart-system     can you give the board a restart, its acting weird   [new: its, acting, weird]
+asked    restart-system     restart-system     plz reboot the computer   [new: plz]
+asked    restart-system     restart-system     restrat it
+wrong?   restart-system     —                  hey could you turn it off and back on again for me
+asked    shut-down-system   shut-down-system   shut down
+acted    shut-down-system   shut-down-system   turn off the board
+asked    shut-down-system   shut-down-system   power off the pi please, im done for today   [new: im, today]
+acted    shut-down-system   shut-down-system   switch the computer off
+asked    shut-down-system   shut-down-system   ok shut it all down for the night   [new: night]
+asked    shut-down-system   shut-down-system   can u turn evrything off now   [new: u]
+abstain  none               —                  turn the board on
+asked    none               check-system       wake up the pi   [new: wake]
+abstain  none               —                  turn of the screen
+asked    none               show-system        can you switch the display off but keep it running   [new: switch, off, but, keep]
+
+scale-blind, 92 sentences: 28 understood and handled, 51 understood but checked first ("Do you want me to…?"), 8 wrong skill but asked first or stopped, 0 wrong skill acted on or approved, 5 not understood; out of scope, 16: 11 abstained, 5 asked, 0 acted on
+acted    show-type          show-type          list the images in Downloads
+asked    show-type          show-type          which pdfs do I have in Documents
+wrong?   show-type          create-file        notes in ideas
+acted    show-type          show-type          can you show me all the videos here
+acted    check-type         check-type         is there a video anywhere in projects
+acted    check-type         check-type         do I have any pdf in Documents or its subfolders
+asked    check-type         check-type         any images in home?
+asked    check-type         check-type         tell me if there's at least one note in ideas
+acted    read-file          read-file          what does todo.txt say
+asked    read-file          read-file          read me groceries.md
+asked    read-file          read-file          show the first lines of seed.md
+asked    read-file          read-file          I'd like to see what's written in note.md
+acted    show-recent        show-recent        what files changed today
+asked    show-recent        show-recent        recently modified files   [new: recently]
+asked    show-recent        show-recent        which files did I touch in the last 24 hours
+asked    show-recent        show-recent        show me what's been edited since yesterday
+acted    check-size         check-size         how big is Downloads
+asked    check-size         check-size         size of projects
+asked    check-size         check-size         how much space does the ideas folder take up
+asked    check-size         check-size         is Documents a heavy folder, how many megabytes is it   [new: megabytes]
+acted    show-log           show-log           why did nginx fail
+acted    show-log           show-log           show the log of mpd
+asked    show-log           show-log           last lines of the ssh log   [new: last, lines]
+asked    show-log           show-log           the music server crashed, what does its log say
+asked    check-usb          check-usb          which usb sticks are plugged in
+asked    check-usb          check-usb          is my sd card connected   [new: connected]
+asked    check-usb          check-usb          list the drives I plugged in
+asked    check-usb          check-usb          did the board see the external disk I just put in   [new: disk]
+abstain  turn-up-sound      —                  louder
+acted    turn-up-sound      turn-up-sound      turn the volume up
+asked    turn-up-sound      turn-up-sound      I can barely hear Wax Tailor, raise the sound   [new: wax, tailor]
+acted    turn-up-sound      turn-up-sound      crank it up a bit
+asked    turn-down-sound    turn-down-sound    quieter please
+acted    turn-down-sound    turn-down-sound    lower the volume
+asked    turn-down-sound    turn-down-sound    Hope & Sorrow is way too loud, bring it down   [new: hope, sorrow]
+acted    turn-down-sound    turn-down-sound    turn the sound down a little
+asked    connect-wifi       connect-wifi       connect to home-5g, the password is sunflower42   [new: sunflower42]
+asked    connect-wifi       connect-wifi       join cafe-guest with password latte2026   [new: latte2026]
+asked    connect-wifi       connect-wifi       log me onto the wifi home-5g, password is blue-door-7   [new: onto, blue-door-7]
+asked    connect-wifi       connect-wifi       use wifi network cafe-guest password coffee   [new: coffee]
+asked    unpack-file        unpack-file        unpack photos.tar.gz
+acted    unpack-file        unpack-file        extract backup.tar.gz here
+asked    unpack-file        unpack-file        get the files out of photos.tar.gz   [new: out]
+acted    unpack-file        unpack-file        untar backup.tar.gz please
+asked    compress-file      compress-file      compress report.pdf
+asked    compress-file      compress-file      make an archive of movie.mkv
+asked    compress-file      compress-file      pack setup.sh into an archive
+asked    compress-file      compress-file      can you shrink website.html into a tar.gz next to it
+asked    send-file          send-file          send report.pdf to laptop
+wrong?   send-file          copy-file          copy movie.mkv over to the studio pi
+asked    send-file          send-file          put todo.txt on my laptop
+acted    send-file          send-file          transfer backup.tar.gz to studio pi
+acted    get-file           get-file           get note.md from laptop
+acted    get-file           get-file           bring seed.md over from the studio pi
+asked    get-file           get-file           copy report.pdf from my laptop onto the board
+wrong?   get-file           download-file      fetch photos.tar.gz from studio pi   [new: studio, pi]
+acted    show-remote        show-remote        what's on laptop
+acted    show-remote        show-remote        list the files on the studio pi
+acted    show-remote        show-remote        show me what my laptop has on it
+wrong?   show-remote        open-app           browse the studio pi   [new: studio, pi]
+acted    show-folder        show-folder        what's in Documents
+acted    show-folder        show-folder        show me the projects folder
+acted    find-file          find-file          where is groceries.md
+acted    find-file          find-file          find the file called scraper
+asked    open-file          open-file          open report.pdf
+asked    open-file          open-file          launch website.html
+acted    move-file          move-file          move note.md to ideas
+asked    move-file          move-file          put todo.txt in the Documents folder
+acted    compress-folder    compress-folder    compress the projects folder
+asked    compress-folder    compress-folder    make an archive of Downloads
+acted    check-storage      check-storage      how much disk space is left
+asked    check-storage      check-storage      is the disk almost full   [new: almost]
+acted    download-file      download-file      download https://example.com/map.pdf
+asked    download-file      download-file      grab the file at example.org/guide.txt   [new: guide.txt]
+acted    mute-sound         mute-sound         mute
+acted    mute-sound         mute-sound         silence the speakers
+acted    unmute-sound       unmute-sound       unmute
+acted    unmute-sound       unmute-sound       bring the sound back
+acted    turn-on-wifi       turn-on-wifi       turn wifi on
+acted    turn-on-wifi       turn-on-wifi       switch on the wireless
+acted    turn-off-wifi      turn-off-wifi      turn off wifi
+acted    turn-off-wifi      turn-off-wifi      disable the wifi
+acted    check-network      check-network      am I online
+asked    check-network      check-network      what's the board's ip address   [new: board's]
+acted    check-service      check-service      is nginx running
+acted    check-service      check-service      is the ssh service up
+acted    restart-service    restart-service    restart mpd
+asked    restart-service    restart-service    restart nginx, it's stuck   [new: stuck]
+asked    delete-file        delete-file        delete groceries.md
+asked    delete-file        delete-file        remove setup.sh
+asked    shut-down-system   shut-down-system   shut down
+acted    shut-down-system   shut-down-system   power off the board
+asked    send-file          send-file          sand report.pdf to laptop   [new: sand]
+asked    check-size         check-size         how bag is Downloads   [new: bag]
+wrong?   read-file          open-file          reed todo.txt   [new: reed]
+asked    unpack-file        unpack-file        unpick backup.tar.gz
+wrong?   turn-down-sound    unmute-sound       turn the sound dawn   [new: dawn]
+asked    show-log           show-log           show the lag of nginx   [new: lag]
+asked    check-usb          check-usb          witch usb sticks are plugged in   [new: witch]
+asked    show-recent        show-recent        files changed in the lost day   [new: lost]
+asked    connect-wifi       connect-wifi       connect to home-5g, the passport is sunflower42   [new: passport, sunflower42]
+asked    get-file           get-file           get seed.md form laptop   [new: form]
+asked    show-type          show-type          listing the images in home   [new: listing]
+acted    check-type         check-type         are there videos in projects
+asked    read-file          read-file          reading todo.txt   [new: reading]
+asked    send-file          send-file          sending movie.mkv to studio pi   [new: sending]
+asked    get-file           get-file           getting note.md from laptop   [new: getting]
+wrong?   check-usb          check-wifi         which drives are connected   [new: drives]
+asked    turn-up-sound      turn-up-sound      turning up the sound   [new: turning]
+asked    compress-file      compress-file      compressing setup.sh   [new: compressing]
+asked    show-recent        show-recent        recent changes to my files
+abstain  connect-wifi       —                  connecting to home-5g, password sunflower42
+abstain  none               —                  will it snow tomorrow
+asked    turn-down-sound    turn-down-sound    all fine, just turn the sound down a bit   [new: fine]
+asked    show-type          show-type          I have a pile of notes in ideas, list them   [new: pile, them]
+asked    send-file          send-file          send seed.md to the studio pi
+asked    restart-service    restart-service    thanks mate, now restart mpd   [new: thanks, mate]
+abstain  none               —                  my dog chewed the charger cable
+abstain  none               —                  what gift should I buy my wife
+asked    none               check-service      is the oven still on
+asked    none               show-folder        where did I leave my left shoe   [new: where, did, leave, left, shoe]
+abstain  none               —                  I burned my cheek on the stove
+asked    none               check-usb          format the usb stick   [new: format]
+abstain  none               —                  mount the external drive
+abstain  none               delete-file        delete note.md on my laptop
+abstain  none               —                  change the wifi password of home-5g
+abstain  none               —                  set the volume to 40 percent
+asked    none               connect-wifi       forget the cafe-guest network   [new: forget]
+WRONG    none               download-file      download and unzip example.com/pack.zip
+abstain  none               —                  upload report.pdf to a website
+abstain  none               —                  email report.pdf to my brother
+abstain  none               —                  attach groceries.md to an email
+asked    none               check-usb          eject the sd card   [new: eject]
+asked    none               check-usb          partition the usb drive   [new: partition]
+acted    turn-on-bluetooth  turn-on-bluetooth  turn on bluetooth
+abstain  none               —                  make the screen brighter
+abstain  none               —                  what's the weather today
+abstain  none               —                  who won the football last night
+abstain  none               —                  set a timer for ten minutes
+abstain  none               —                  how do I make pancakes
+abstain  none               —                  tell me a joke
+asked    none               check-time         what time is it in Tokyo   [new: tokyo]
+
+edge-blind, 117 sentences: 44 understood and handled, 64 understood but checked first ("Do you want me to…?"), 7 wrong skill but asked first or stopped, 0 wrong skill acted on or approved, 2 not understood; out of scope, 25: 17 abstained, 7 asked, 1 acted on

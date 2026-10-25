@@ -31,10 +31,12 @@ def _round(x):
     return math.floor(x * 1000 + 0.5) / 1000
 
 
-def train_classifier(examples, C=8.0, max_iter=150, min_df=2):
+def train_classifier(examples, C=8.0, max_iter=150, min_df=2, independent=False):
     """examples: [{text, label}] → a small JSON-able model {labels, bias, scale, weights}: each weight a whole
     number from -127 to 127 (one byte, as ptiLU stores them), times the model's scale. Half the size of
-    decimals, the same decisions (measured 23 Oct: 241 sentences, the tests, Gab's real turns)."""
+    decimals, the same decisions (measured 23 Oct: 241 sentences, the tests, Gab's real turns).
+    independent (RESEARCH.md, method G): each label scored on its own ("does this sentence say open?"),
+    instead of all labels sharing 100% between them; a new label then takes nothing from the others."""
     import numpy as np
 
     labels = sorted({e["label"] for e in examples})
@@ -71,11 +73,16 @@ def train_classifier(examples, C=8.0, max_iter=150, min_df=2):
     def fg(w):
         W, b = w[:K * nf].reshape(K, nf), w[K * nf:]
         S = np.stack([np.bincount(rows, weights=W[k, cols] * vals, minlength=n) for k in range(K)]) + b[:, None]
-        S -= S.max(axis=0)
-        E = np.exp(S)
-        Z = E.sum(axis=0)
-        f = float((sw * (np.log(Z) - S[y, np.arange(n)])).sum())
-        D = sw * (E / Z - Y)  # K × n
+        if independent:  # one yes/no per label: log(1 + e^-s) when it is the label, log(1 + e^s) when not
+            P = 1 / (1 + np.exp(-S))
+            f = float((sw * (np.logaddexp(0, -S) * Y + np.logaddexp(0, S) * (1 - Y))).sum())
+            D = sw * (P - Y)
+        else:
+            S -= S.max(axis=0)
+            E = np.exp(S)
+            Z = E.sum(axis=0)
+            f = float((sw * (np.log(Z) - S[y, np.arange(n)])).sum())
+            D = sw * (E / Z - Y)  # K × n
         G = np.stack([np.bincount(cols, weights=D[k, rows] * vals, minlength=nf) for k in range(K)])
         f += float((W * W).sum() / (2 * C))
         G += W / C  # intercepts not penalised
@@ -89,7 +96,10 @@ def train_classifier(examples, C=8.0, max_iter=150, min_df=2):
         ws = [int(round(float(W[k, j]) / scale)) for k in range(K)]
         if any(abs(v) >= 0.01 for v in W[:, j]) and any(ws):
             weights[f] = [_round(float(idf[j]))] + ws
-    return {"labels": labels, "bias": [_round(float(v)) for v in b], "scale": scale, "weights": weights}
+    out = {"labels": labels, "bias": [_round(float(v)) for v in b], "scale": scale, "weights": weights}
+    if independent:
+        out["independent"] = True
+    return out
 
 
 def _lbfgs(fg, x, m=10, max_iter=150, tol=1e-4):
@@ -156,6 +166,8 @@ def classify(model, text, toks=None):
     for row, v in known:
         for k in range(len(s)):
             s[k] += row[k + 1] * scale * v / norm
+    if model.get("independent"):  # each label on its own (method G): the scores don't add up to one
+        return sorted(({"label": l, "p": 1 / (1 + math.exp(-max(-60, min(60, v))))} for l, v in zip(model["labels"], s)), key=lambda x: -x["p"])
     mx = max(s)
     e = [math.exp(v - mx) for v in s]
     z = sum(e)

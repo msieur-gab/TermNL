@@ -28,6 +28,11 @@ Methods tested are added under **Tested**, with their numbers beside the baselin
 - **F with 15 skills at the edge, tested 25 Oct: still gains, no wrong action added.** 5 sentences
   better, 2 worse but asked ("turn the sound dawn"). The new skills (`feat/new-skills`) work on their
   blind sentences but cost older ones some confidence; Gab's call on both branches.
+- **G, each label scored on its own, tested 25 Oct: not kept.** No better than today's model once both
+  have their own lines, and one wrong action more.
+- **B, measured lines, tested 25 Oct: the safest result so far, for Gab's decision.** The act line
+  measured for today's model is 0.84, not 0.5; the ask line 0.007, not 0.15. Wrong actions 1 → 0, not
+  understood 23 → 9, but 47 sentences handled before now ask first.
 - **Word proximity, if ever:** at teaching time on the laptop first; on the device only for unknown words,
   only to ask, never to act, and after a measured test (Model2Vec).
 
@@ -117,6 +122,7 @@ it removes the dependency without changing anything already tested.
 | E | Model2Vec for unknown words | Extra clues for words never taught; may only lead to a question | 8–16 MB and a lookup; measured with `tools/neighbours.py` first |
 
 | F | Real words aren't typos | A list of common English words, plain text: a word on it is never "corrected" into a taught one (game ≠ name, stick ≠ stuck). Found by testing A | 10,713 words, 90 KB on disk, about 1 MB in memory; no slower |
+| G | Each label scored on its own | As OpenVoiceOS's Padatious (one small model per intent): every action and object gets its own yes/no score, so a new skill takes nothing from the others. The split into action × object stays (IMPROVEMENTS.md: the joint model acted wrongly) | The same size; training a little longer |
 
 C is independent and can go in at any time. E only if the misses left are mostly unknown words.
 **A was tested on 25 Oct and not kept; F was tested the same day and gains** (see Tested).
@@ -380,6 +386,71 @@ asked, 2 not understood); real words next to the skills' words, 4 refused → 5.
 sentence: median 2.4 → 2.7 ms.
 
 **Not measured:** Gab's real turns (his laptop only), the board, and the new commands themselves.
+
+### G and B — each label on its own, and lines measured instead of chosen (25 October 2026)
+
+After reading how OpenVoiceOS works (one small model per intent in Padatious), and seeing more skills
+lower TermNL's confidence: does scoring each label on its own help (G), and where should TermNL's two
+lines really sit (B)? Both on the branch `research/g-independent-scores`, made from
+`research/f-common-words` (71 skills, F on), so every number below is with F.
+
+**In short**
+- **G is not kept.** With the lines chosen for today's model, it understands far less (not understood
+  23 → 68): its scores are on another scale. With lines measured for it, it does no better than today's
+  model, and acts wrongly once more.
+- **B changes the most, in the direction TermNL was designed for: ask rather than guess.** Measured on
+  sentences the model never learned from, the act line is 0.84 and the ask line 0.007. With them: no
+  wrong action left (the old "I want to look at report.pdf" is now asked), not understood 23 → 9; but 47
+  sentences handled straight away before now ask "Do you want me to…?" first, and 5 fewer out-of-scope
+  sentences are refused (they are asked about instead, harmless by the measure's rule).
+- **It's a dial, not a verdict.** 0.84 comes from "wrong at most 1 time in 100 when acting"; a looser
+  promise acts more. Which promise TermNL makes is Gab's call.
+
+**What G changed** (`model.py`, `train.py`): each action and each object label gets its own yes/no
+score (a sigmoid per label instead of one softmax shared by all). The split into action × object stays:
+a joint model over whole skills was measured on 24 Oct and acted wrongly (`IMPROVEMENTS.md`). Off by
+default; `TERMNL_INDEPENDENT=1 python3 -m termnl.train` turns it on.
+
+**What B changed** (`tools/calibrate.py`, `agent.py`): the 517 "Also said" lines are cut into 5 parts;
+the model is trained 5 times, each time without one part, and reads it: 517 sentences, each read by a model
+that never saw it. From them:
+- **ask line**: the right skill scores at least this in 95 of 100 sentences (conformal prediction, as in
+  the CICC paper above): 0.007 for today's model.
+- **act line**: the lowest score where the skill read is wrong in at most 1 sentence in 100: 0.844.
+
+The hand-set lines were 0.5 and 0.15. On those 517 sentences the right skill came first 420 times (81%);
+above 0.5 the model was wrong more than 1 time in 100. No test set was used: they stay judges.
+`python3 -m tools.calibrate --write` stores the lines in `model.json` as `"lines"`; `agent.py` uses them
+when they are there, its own otherwise. On this branch `model.json` has no lines yet: TermNL behaves as
+on `research/f-common-words` until Gab decides.
+
+**Results, all six sets** (595 requests and 70 out of scope; each cell: handled / asked first / wrong
+skill, asked / **wrong skill acted on** / not understood · out of scope: refused / asked / **acted on**):
+
+| Model and lines | Requests | Out of scope |
+|---|---|---|
+| Today's model, hand-set lines (B + F above) | 377/159/35/**1**/23 | 56/13/**1** |
+| G, hand-set lines | 356/143/25/**1**/70 | 58/11/**1** |
+| G, its measured lines (0.801, 0.001) | 328/210/39/**1**/17 | 54/15/**1** |
+| **Today's model, measured lines (0.844, 0.007)** | **330/214/42/0/9** | **51/18/1** |
+
+The one out-of-scope acted on is "download and unzip example.com/pack.zip" in all four (it downloads).
+G's extra wrong action is on the held-out set. Every run is in `data/measure-2026-10-25/`.
+
+**What the measured lines moved, sentence by sentence** (`python3 -m tools.compare_runs`):
+- 47 handled → asked first: mostly sentences the model was between 0.5 and 0.84 on ("free memroy?",
+  "scan for wifi", "shut down"…).
+- 19 not understood → asked about; 7 of those ask about the wrong skill ("go back a song" → leave folder,
+  "notes in ideas" → create file): nothing runs, the person says no.
+- "I want to look at report.pdf": wrong skill acted → asked first. The only wrong action of the older
+  sets is gone.
+
+**Unit tests**: with the measured lines, two more tests fail ("free memroy?" should act; "kill pipewire"
+should say it isn't running): both acted at 0.5 and now ask first. They describe behaviour chosen with
+the old lines; whether they change is part of Gab's decision.
+
+**Cost.** Calibrating is 5 trainings: about 3 minutes on the laptop, roughly half an hour on the board, so
+it belongs on the laptop when skills change; a model retrained on the board would keep the lines it had.
 
 ## Sources
 

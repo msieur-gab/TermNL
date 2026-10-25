@@ -1,0 +1,11 @@
+{
+ "model": "independent",
+ "sentences": 517,
+ "right skill first": 418,
+ "lines": {
+  "sure": 0.801,
+  "maybe": 0.001
+ },
+ "acted above the act line": 115,
+ "right skill at least asked": 493
+}

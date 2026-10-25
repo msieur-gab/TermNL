@@ -1,0 +1,11 @@
+{
+ "model": "shared",
+ "sentences": 517,
+ "right skill first": 420,
+ "lines": {
+  "sure": 0.844,
+  "maybe": 0.007
+ },
+ "acted above the act line": 131,
+ "right skill at least asked": 493
+}

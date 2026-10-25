@@ -10,6 +10,10 @@ from .load import LANGUAGES, language_dir, load_language, read
 from .model import train_classifier
 
 
+# RESEARCH.md, method G: TERMNL_INDEPENDENT=1 trains each action and object label on its own
+INDEPENDENT = os.environ.get("TERMNL_INDEPENDENT") == "1"
+
+
 def train_language(lang="en", languages=LANGUAGES):
     loaded = load_language(lang, languages)
     if loaded["errors"]:
@@ -18,8 +22,8 @@ def train_language(lang="en", languages=LANGUAGES):
     none = [l[2:].strip() for l in read(os.path.join(language_dir(lang, languages), "out-of-scope.md")).split("\n") if l.startswith("- ")]
     none_ex = [t for t in none for _ in range(2)]  # counted twice: there are few of them
     t0 = time.time()
-    action = train_classifier([{"text": e["text"], "label": e["action"]} for e in exs] + [{"text": t, "label": "none"} for t in none_ex])
-    obj = train_classifier([{"text": e["text"], "label": e["object"]} for e in exs] + [{"text": t, "label": "none"} for t in none_ex])
+    action = train_classifier([{"text": e["text"], "label": e["action"]} for e in exs] + [{"text": t, "label": "none"} for t in none_ex], independent=INDEPENDENT)
+    obj = train_classifier([{"text": e["text"], "label": e["object"]} for e in exs] + [{"text": t, "label": "none"} for t in none_ex], independent=INDEPENDENT)
     taught = {k: sorted(s) for k, s in taught_words(exs).items()}
     # when it was trained, read back by "are you learning?" (readers.py, learning)
     return {"lang": lang, "trained": int(time.time()), "action": action, "object": obj, "taught": taught}, len(exs), time.time() - t0

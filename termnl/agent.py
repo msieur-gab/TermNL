@@ -71,6 +71,10 @@ def best_in(toks, found, fuzzy=False):
 class Agent:
     def __init__(self, lists, skills, model=None, settings=None, device=None, random=_random.random, common=(), **_):
         self.lists, self.skills, self.model = lists, skills, model
+        # the lines to act and to ask: measured for this model when it carries them (tools/calibrate.py, RESEARCH.md
+        # method B), otherwise the ones chosen by hand
+        lines = (model or {}).get("lines") or {}
+        self.sure, self.maybe = lines.get("sure", SURE), lines.get("maybe", MAYBE)
         self.common = common or frozenset()  # words never read as a typo (correct, words/common.md); shared, not copied
         self.settings = settings if settings is not None else {}
         self.device, self.random = device, random
@@ -353,7 +357,7 @@ class Agent:
         if u:
             u.setdefault("fixes", [])
             u.setdefault("toks", toks)
-            u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"])
+            u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= self.sure and not u["unknown"])
         bare = self.bare_action(text, self.in_context(toks)) if not u or u["how"] == "model" else None
         if bare:
             return bare
@@ -462,7 +466,7 @@ class Agent:
         pa, po = classify(self.model["action"], text, ws), classify(self.model["object"], text, ws)
         P = lambda found, label: next((x["p"] for x in found if x["label"] == label), 0)
         skill, p = max(((s, P(pa, s["action"]) * P(po, s["object"])) for s in self.skills), key=lambda x: x[1], default=(None, 0))
-        if not skill or p < MAYBE or max(P(pa, "none"), P(po, "none")) > p:
+        if not skill or p < self.maybe or max(P(pa, "none"), P(po, "none")) > p:
             return None
         # an action said in so many words is never answered with its opposite (words/actions.md, Opposites)
         # (24 Oct: "turn the board on" asked "Shut the board down?")
@@ -481,7 +485,7 @@ class Agent:
         if len(missing) == 1 and skill["values"][missing[0]]["kind"].startswith("@sys.") and self.list_of(skill["values"][missing[0]]["kind"]) is not None \
                 and new and new == list(range(new[0], new[-1] + 1)):
             vals[missing[0]] = {"text": self.original(text, toks, new[0], new[-1] + 1), "unknown": True}
-            if p >= SURE:
+            if p >= self.sure:
                 new = []
         return {"how": "model", "skill": skill, "vals": vals, "p": p, "unknown": [toks[i]["word"] for i in new]}
 
