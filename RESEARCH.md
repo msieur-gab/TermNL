@@ -147,6 +147,44 @@ scope refused. Speed with `python3 -m tools.speed`; training time on the board w
 
 Gab's real turns (24 Oct): 104 of 117 as Claude guessed (`should (Claude):` lines, not yet judged by Gab).
 
+## Side by side: each method alone, on the same ground
+
+Gab, 25 Oct: the methods must be compared on common criteria. Here each one is measured **alone**, against
+the same starting point: the 71 skills of `feat/new-skills`, nothing else changed (the way `main` decides
+today). The same 665 sentences each time: 595 requests, 70 that TermNL must not act on.
+
+| | Starting point | + F, real words aren't typos | + G, each label on its own | + B, measured lines |
+|---|---|---|---|---|
+| **Runs the wrong thing** | 1 | 1, the same | 1, the same | **0** |
+| Done straight away | 376 | 377 | 328 | 330 |
+| Asks "Do you want me to…?" first | 158 | 159 | 208 | 212 |
+| Thinks it's another skill, but asks | 37 | 35 | 41 | 44 |
+| Doesn't understand | 23 | 23 | 17 | **9** |
+| Out of scope: refuses / asks / **runs** | 54 / 15 / **1** | 56 / 13 / **1** | 51 / 18 / **1** | 48 / 21 / **1** |
+
+(G with the hand-set lines is left out: its scores are on another scale, and it didn't understand 68.
+With its own measured lines, as here, it is B's result with a different model, slightly worse.)
+
+**In plain words**
+- **F** changes almost nothing, and nothing for the worse: a few real words stop being misread.
+- **G** costs more than it gives: more questions, no fewer mistakes.
+- **B** is the only one that removes the last wrong action and most "I don't understand", and pays for
+  it with about 50 more questions. The one out-of-scope sentence run in every column is "download and
+  unzip …", which downloads.
+
+**What each one costs**
+
+| | F | G | B |
+|---|---|---|---|
+| Code on the device | about 10 lines (`agent.py`, `load.py`) | about 25 lines (`model.py`, `train.py`) | about 7 lines (`agent.py`) |
+| Plus | a word list, 10,713 words (90 KB); a 63-line tool to rebuild it | nothing | a 78-line tool run on the laptop |
+| Memory on the board | about 1 MB more | the same | the same |
+| Time to understand a sentence | no change measured | no change measured | no change measured |
+| Time to train | the same | about 25% longer (36 → 45 s on the laptop) | the same; measuring the lines is 5 trainings, about 3 min on the laptop (half an hour on the board: a laptop job) |
+
+Time to understand a sentence: about 3 ms on the laptop for all four, within the noise between two runs
+of the same model (2.6 to 3.3 ms).
+
 ## Tested
 
 Each method gets its own section: the date, what changed in the code, the table above re-run, what moved
