@@ -11,12 +11,12 @@ Every request ends in one of four outcomes:
 One turn (respond):
   1. clean       fillers off ("please", "can you"…)
   2. answer      a question is waiting: yes, no, one of its chips, or a value for "Which one?"
-  3. understand  a skill's template reads the sentence exactly; else the model recognises its action
-                 and object; a typo is read as a known word, and a word in its context ("turn on the
-                 music" plays it), when that reads better; when the model doubts a template, or an
-                 action comes without its object ("turn off"), the person chooses; a sentence that says
-                 part of a request ("now delete it", "and in downloads?") is completed by the last
-                 request done, its frame (follow_up)
+  3. understand  the sentence is read as typed, in its context ("turn on the music" plays it) and with
+                 a typo read as a known word; each view by a skill's template exactly, or else by the
+                 model's action and object; one ranking picks among the readings (rank); when the
+                 model doubts a template, or an action comes without its object ("turn off"), the
+                 person chooses; a sentence that says part of a request ("now delete it", "and in
+                 downloads?") is completed by the last request done, its frame (follow_up)
   4. safety      not sure, a typo in a change, "don't…": ask before anything
   5. next_step   the next value to ask, a file to find, the settings, the approval; or act
 
@@ -342,42 +342,54 @@ class Agent:
 
     def understand(self, text, toks):
         """What the sentence asks for → {how, skill, vals, p, unknown, sure, fixes, toks}, or None.
-        A typo is read as a known word only when the sentence as typed isn't read by a template, and only
-        if the corrected sentence reads better (by a template, or with fewer words unknown). Words are read
-        in their context the same way (in_context). An action said alone asks which one (bare_action); a
-        template the model doubts asks which of two skills (doubts)."""
-        u = self.recognise(text, toks)
-        if not u or u["how"] == "model":
-            # as typed, no template reads it: the words read in their context may ("turn on the music")
-            said = self.in_context(toks)
-            v = self.recognise(text, said) if said is not toks else None
-            if v and (not u or v["how"] != "model" or (v["p"] > u["p"] and len(v["unknown"]) <= len(u["unknown"]))):
-                v["toks"] = said
-                u = v
-        if not u or u["how"] != "choose":
-            base = u["toks"] if u and "toks" in u else toks
-            fixed, fixes = self.correct(base)
-            fixed = self.in_context(fixed) if fixes else fixed  # "stop the bluetoth"
-            v = self.recognise(text, fixed) if fixes else None
-            if v and v["how"] != "choose" and ((not u or u["how"] == "model") and (not u or v["how"] == "template" or len(v["unknown"]) < len(u["unknown"]))
-                                               or u and u["how"] == "template" and self.hid_a_place(u, v)):
-                v["fixes"], v["toks"] = fixes, fixed
-                u = v
-        if u:
-            u.setdefault("fixes", [])
-            u.setdefault("toks", toks)
-            u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"])
-        bare = self.bare_action(text, self.in_context(toks)) if not u or u["how"] == "model" else None
+        The sentence is read in up to three views, each once (recognise): as typed; its words read in their
+        context ("turn the music off" → "turn off the music", "turn on the music" → play); and a typo read
+        as a known word. An action said alone is one more reading (bare_action). One ranking picks (rank):
+        a template first, then an action said alone, then the model; then fewer words unknown; then, among
+        templates, more values the device has (a typo had hidden a place: "gab.md insde Documents"); then
+        fewer typos read; then the model's confidence. A template the model doubts asks which of two skills
+        (doubts). Nothing else decides."""
+        context, views = self.in_context(toks), self.views(toks)
+        readings = []
+        for said, fixes in views:
+            r = self.recognise(text, said)
+            if r:
+                r["fixes"], r["toks"] = fixes, said
+                readings.append(r)
+        bare = self.bare_action(text, context)
         if bare:
-            return bare
-        if u:
-            other = self.doubts(text, u) if u["how"] == "template" else None
-            if other:  # two readings: the person chooses ("Do you mean rename a file or rename a folder?")
-                said = u["toks"]
-                u = {"how": "choose", "options": [{"skill": u["skill"], "vals": u["vals"]},
-                                                  {"skill": other, "vals": self.values_in(other, text, said)[0]}],
-                     "toks": said, "fixes": u["fixes"], "sure": False}
+            readings.append(bare)
+        if not readings:
+            return None
+        u = min(readings, key=self.rank)
+        u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"])
+        other = self.doubts(text, u) if u["how"] == "template" else None
+        if other:  # two readings: the person chooses ("Do you mean rename a file or rename a folder?")
+            said = u["toks"]
+            u = {"how": "choose", "options": [{"skill": u["skill"], "vals": u["vals"]},
+                                              {"skill": other, "vals": self.values_in(other, text, said)[0]}],
+                 "toks": said, "fixes": u["fixes"], "sure": False}
         return u
+
+    def views(self, toks):
+        """the ways a sentence is read, each with the typos it reads as words: as typed, in its context
+        (in_context), and corrected (correct; "stop the bluetoth" is then read in its context again).
+        A view that changes nothing is left out."""
+        out = [(toks, [])]
+        said = self.in_context(toks)
+        if said is not toks:  # (in_context gives the same list back when nothing changed)
+            out.append((said, []))
+        fixed, fixes = self.correct(said)
+        if fixes:
+            out.append((self.in_context(fixed), fixes))
+        return out
+
+    @staticmethod
+    def rank(r):
+        """the order readings are picked in; the smallest wins (understand)"""
+        how = 1 if r.get("bare") else {"template": 0, "choose": 0, "model": 2}[r["how"]]
+        values = sum(1 for v in r.get("vals", {}).values() if v.get("value") is not None and not v.get("unknown")) if r["how"] == "template" else 0
+        return (how, len(r.get("unknown", [])), -values, len(r["fixes"]), -r.get("p", 0))
 
     def in_context(self, toks):
         """Words read in their context, tried when the sentence as typed isn't read by a template. A split
@@ -429,7 +441,7 @@ class Agent:
         fit = [s for s in self.skills if (s["action"], s["object"]) in pairs]
         if not 2 <= len(fit) <= 8:
             return None
-        return {"how": "choose", "options": [{"skill": s, "vals": {}} for s in fit], "toks": toks, "fixes": [], "sure": False}
+        return {"how": "choose", "bare": True, "options": [{"skill": s, "vals": {}} for s in fit], "toks": toks, "fixes": [], "sure": False}
 
     def doubts(self, text, u):
         """A template's reading is a strong vote, not a verdict: when the model is sure (DOUBT) of another
@@ -608,13 +620,6 @@ class Agent:
         if skill["object"] != "folder" or not any("." in t["word"] and t["word"].rsplit(".", 1)[1] in exts for t in toks):
             return skill
         return next((s for s in self.skills if s["action"] == skill["action"] and s["object"] == "file"), skill)
-
-    def hid_a_place(self, u, v):
-        """a typo inside a name hid a place (Gab, 23 Oct: "add a new file call gab.md insde Documents" made a file
-        named "gab.md insde Documents.md"): corrected, the same skill reads a value the device has, a folder, that
-        the name had swallowed. The name itself is still never corrected: it is what comes before the place."""
-        return v["how"] == "template" and v["skill"]["id"] == u["skill"]["id"] and any(
-            k not in u["vals"] and x.get("value") is not None and not x.get("unknown") for k, x in v["vals"].items())
 
     def values_in(self, skill, text, toks):
         """Values found by their own readers, anywhere in the sentence (when no template read it): a

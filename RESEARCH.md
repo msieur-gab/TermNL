@@ -189,6 +189,42 @@ harmless by the measure's own rule; losing a request is not. So the trade isn't 
 
 This becomes method **F** below. The distance idea comes back only with better vectors (E), if ever.
 
+### H — One reading: the views of a sentence ranked by one rule (25 October 2026, `research/one-reading`)
+
+**Result: the same answer on every sentence tried, with the six acceptance conditions of `understand`
+replaced by one ranking. Not a gain in understanding; a change of shape, to judge for its own sake.**
+
+**Why.** On `feat/frames`, `understand` read the sentence up to three times (as typed, in its context, with
+a typo corrected), each reading accepted or refused by its own hand-written condition, then `bare_action`
+and `doubts` with their own guards. Which path ran depended on the order they were tried: a new skill's
+word could change the path, not only a score ("take me to the documents folder" turned on whether the
+corrected view was tried before the model's reading of the typed one). Gab, 25 Oct: the code "feels like
+each skill has its own fix and logic".
+
+**What changed** (`termnl/agent.py`, 53 lines in, 48 out). `views` gives the sentence in up to three
+views, each with the typos it reads as words. Each view is read once by `recognise`; an action said alone
+(`bare_action`) is one more reading. `rank` picks: a template, then an action said alone, then the model;
+then fewer words unknown; then, among templates, more values the device has (what `hid_a_place` did, now
+a criterion: that function is gone); then fewer typos read; then the model's confidence. `doubts` still
+asks which of two skills when the model disagrees with a template. Nothing else decides.
+
+**Measured.** Against `feat/frames` with the committed model (`python3 -m tools.receipt --against`):
+0 of 665 test answers moved. Harder: every `## Also said` sentence of the 77 skills and each one again with
+a letter dropped or swapped, 771 sentences, 0 moved; 14 two- and three-turn conversations (the eight
+follow-ups, "Which one?" answered, a typo confirmed, "turn off" then "the wifi"), 0 moved. The unit tests:
+the same three fail as on `feat/frames`. Speed: median 2.8 → 3.8 ms a sentence on the laptop, as every
+view is now read even when the first is a template.
+
+**What it did not do.** `agent.py` is 945 → 950 lines: conditions became criteria, not fewer lines. The
+lines come only from the next step, where the answer to a pending question (`fill_value`) and the frame
+(`follow_up`) become two more views ranked by the same rule; that step changes how TermNL answers its own
+questions and is where the risk of this road lies. This one carries none that the sentences can see.
+
+**New tool.** `python3 -m tools.receipt` writes every test sentence's answer to `data/receipt.json`;
+`--against before.json` lists what moved since, each with its cause (a typo read differently, another
+path, other unknown words, the model's pair or only its confidence); `--skills a b` trains without those
+skill folders and with them, and lists what dropping them in moved. The receipt for a commit.
+
 ## Sources
 
 - [The Intent Classification Layer Most Agent Routers Skip](https://tianpan.co/blog/2026/04/16/intent-classification-agent-routers) (Tian Pan, April 2026)

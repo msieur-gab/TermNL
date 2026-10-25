@@ -6,3 +6,5 @@ tests/skills.xlsx
 tools/.same_reading.json
 termnl/languages/*/model.previous.json
 termnl/languages/*/model.json.new
+
+data/receipt.json
