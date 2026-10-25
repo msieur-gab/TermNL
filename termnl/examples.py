@@ -13,6 +13,11 @@ def samples_for(kind, lists):
     return lists["samples"].get(kind) or lists["samples"]["text"]
 
 
+# of a skill's sentences, those said with the words it says mean its action (## Words, →). 0: none, the agent's
+# rule reads them instead (agent.in_context). Tried 25 Oct 2026, not kept: VERB-WITH-OBJECT.md
+MEANS_SHARE = 0
+
+
 def walk(nodes, lists, skill, rnd):
     """one random walk through a template"""
     out = []
@@ -21,6 +26,11 @@ def walk(nodes, lists, skill, rnd):
             out.append(n["w"])
         elif n["t"] == "ref":
             ph = lists["refs"][n["name"]]
+            if n["name"] == skill["action"]:  # what the skill says its words mean with its object (## Words): learned,
+                # in a share of its sentences only, so its own words stay its strongest ("shut down" before "turn off")
+                means = [p for objects, phrases, _ in skill.get("means", []) if not objects or skill["object"] in objects for p in phrases]
+                if means and MEANS_SHARE and rnd() < MEANS_SHARE:
+                    ph = means
             out.append(" ".join(ph[int(rnd() * len(ph))]))
         elif n["t"] == "slot":
             s = samples_for(skill["values"][n["name"]]["kind"], lists)

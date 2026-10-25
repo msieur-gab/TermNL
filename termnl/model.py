@@ -13,7 +13,15 @@ import math
 from .text import tokenize
 
 
-def features(text, toks=None):
+# word pairs a few words apart ("turn … music", "turn … off"): how far, when the model is trained with them.
+# 0: none. Tried 25 Oct 2026 with 2 and 4, not kept: VERB-WITH-OBJECT.md
+PAIRS = 0
+
+
+def features(text, toks=None, pairs=0):
+    """words, word pairs side by side, 3–4 letter fragments, and with pairs > 0 the pairs of words up to that far
+    apart: a verb seen with its object ("turn on the music": turn…music, on…music), so the model learns what a
+    word means with an object instead of a rule saying it (25 Oct 2026, research/verb-with-object)"""
     toks = toks if toks is not None else [t["word"] for t in tokenize(text)]
     out = []
     prev = "<s>"
@@ -24,6 +32,9 @@ def features(text, toks=None):
             out += ["c:" + p[i:i + n] for i in range(len(p) - n + 1)]
         prev = t
     out.append("b:" + prev + "_</s>")
+    for i in range(len(toks)):
+        for j in range(i + 2, min(i + pairs + 1, len(toks))):
+            out.append("p:" + toks[i] + "_" + toks[j])
     return out
 
 
@@ -31,18 +42,19 @@ def _round(x):
     return math.floor(x * 1000 + 0.5) / 1000
 
 
-def train_classifier(examples, C=8.0, max_iter=150, min_df=2):
+def train_classifier(examples, C=8.0, max_iter=150, min_df=2, pairs=None):
     """examples: [{text, label}] → a small JSON-able model {labels, bias, scale, weights}: each weight a whole
     number from -127 to 127 (one byte, as ptiLU stores them), times the model's scale. Half the size of
     decimals, the same decisions (measured 23 Oct: 241 sentences, the tests, Gab's real turns)."""
     import numpy as np
 
+    pairs = PAIRS if pairs is None else pairs
     labels = sorted({e["label"] for e in examples})
     K = len(labels)
     docs = []
     for e in examples:
         c = {}
-        for f in features(e["text"]):
+        for f in features(e["text"], pairs=pairs):
             c[f] = c.get(f, 0) + 1
         docs.append(c)
     df = {}
@@ -89,7 +101,7 @@ def train_classifier(examples, C=8.0, max_iter=150, min_df=2):
         ws = [int(round(float(W[k, j]) / scale)) for k in range(K)]
         if any(abs(v) >= 0.01 for v in W[:, j]) and any(ws):
             weights[f] = [_round(float(idf[j]))] + ws
-    return {"labels": labels, "bias": [_round(float(v)) for v in b], "scale": scale, "weights": weights}
+    return {"labels": labels, "bias": [_round(float(v)) for v in b], "scale": scale, "weights": weights, "pairs": pairs}
 
 
 def _lbfgs(fg, x, m=10, max_iter=150, tol=1e-4):
@@ -140,7 +152,7 @@ def _lbfgs(fg, x, m=10, max_iter=150, tol=1e-4):
 def classify(model, text, toks=None):
     """→ [{label, p}] sorted, most likely first"""
     counts = {}
-    for f in features(text, toks):
+    for f in features(text, toks, model.get("pairs", 0)):  # read as it was trained
         counts[f] = counts.get(f, 0) + 1
     known, norm = [], 0.0
     for f, c in counts.items():
