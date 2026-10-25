@@ -11,6 +11,10 @@ approve: no
 - which/what wifi networks are there/around/available
 - which/what networks are there/around/available
 - show (me) (the/available) wifi networks
+- scan (for) (the) wifi (networks)
+- scan (the) "network" (around)
+- scan (the) "networks" (around)
+- find (the) wifi (networks) (around/nearby)
 
 ## Also said
 
