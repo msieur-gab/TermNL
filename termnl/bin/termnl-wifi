@@ -1,0 +1,69 @@
+#!/bin/sh
+# termnl-wifi scan        the Wi-Fi networks around, from whichever Wi-Fi manager this device runs
+# termnl-wifi join NAME   joins it; the password is read from standard input, so it is never in a command
+#
+# Linux has no single Wi-Fi command: NetworkManager (nmcli) on most desktops and Raspberry Pi OS,
+# wpa_supplicant alone (wpa_cli) on small systems, iwd (iwctl) on a few. They are tried in that order.
+# Scanning always needs a permission the device's setup decides; when none works, what the device heard
+# last (iw's cache) is shown: often only the network it is on. readers.py reads each one's output.
+
+wifis=$(ls -d /sys/class/net/*/wireless 2>/dev/null | cut -d/ -f5)
+
+link() {
+	for i in $wifis; do iw dev "$i" link 2>/dev/null; done
+}
+
+scan() {
+	if out=$(nmcli -t -f IN-USE,SIGNAL,SSID device wifi list --rescan yes 2>/dev/null) && [ -n "$out" ]; then
+		echo "manager: nmcli"; echo "$out"; return
+	fi
+	for i in $wifis; do
+		if [ "$(wpa_cli -i "$i" scan 2>/dev/null)" = OK ]; then
+			sleep 3
+			link; echo "manager: wpa_cli"; wpa_cli -i "$i" scan_results; return
+		fi
+		if iwctl station "$i" scan >/dev/null 2>&1; then
+			sleep 3
+			link; echo "manager: iwctl"; iwctl station "$i" get-networks; return
+		fi
+	done
+	link
+	for i in $wifis; do iw dev "$i" scan dump 2>/dev/null; done
+}
+
+join() {
+	name=$1
+	IFS= read -r password || true
+	if command -v nmcli >/dev/null && nmcli general status >/dev/null 2>&1; then
+		if [ -n "$password" ]; then
+			nmcli device wifi connect "$name" password "$password"
+		else
+			nmcli device wifi connect "$name"
+		fi
+		return
+	fi
+	for i in $wifis; do
+		if id=$(wpa_cli -i "$i" add_network 2>/dev/null | tail -n 1) && [ "$id" -ge 0 ] 2>/dev/null; then
+			wpa_cli -i "$i" set_network "$id" ssid "\"$name\"" >/dev/null
+			if [ -n "$password" ]; then
+				wpa_cli -i "$i" set_network "$id" psk "\"$password\"" >/dev/null
+			else
+				wpa_cli -i "$i" set_network "$id" key_mgmt NONE >/dev/null
+			fi
+			wpa_cli -i "$i" select_network "$id" >/dev/null && wpa_cli -i "$i" save_config >/dev/null
+			return
+		fi
+		if command -v iwctl >/dev/null; then
+			iwctl --passphrase "$password" station "$i" connect "$name"
+			return
+		fi
+	done
+	echo "no Wi-Fi manager I may use here (NetworkManager, wpa_supplicant or iwd)" >&2
+	return 1
+}
+
+case "$1" in
+	scan) scan ;;
+	join) shift; join "$*" ;;
+	*) echo "usage: termnl-wifi scan | termnl-wifi join NAME (password on standard input)" >&2; exit 2 ;;
+esac

@@ -88,6 +88,24 @@ class Readers(unittest.TestCase):
         self.assertEqual((r["level"], r["values"]["@sys.bluetooth.name"]), ("off", "my-laptop"))
         self.assertEqual(readers.read("bluetooth", words=w, output="No default controller available\n")["level"], "none")
 
+    def test_the_networks_around_are_read_from_each_wifi_manager(self):
+        """termnl-wifi asks whichever Wi-Fi manager the device runs (Gab's board, 25 Oct: iw's cache knew only
+        the network it was on); a host can lend its own scan, one line of JSON (the desk's desk-wifi)"""
+        nmcli = "manager: nmcli\n :95:Wonderland\n :94:Garden Network\n*:77:Garden Network\n :69:Caf\\:e\n"
+        self.assertEqual(readers._wifi_list(nmcli), [("Wonderland", 95, False), ("Garden Network", 77, True), ("Caf:e", 69, False)])
+        wpa = ("Connected to 02:00:5e:10:00:03 (on wlan0)\n\tSSID: Garden Network\n\tsignal: -62 dBm\nmanager: wpa_cli\n"
+               "bssid / frequency / signal level / flags / ssid\n02:00:5e:10:00:03\t2412\t-60\t[WPA2-PSK-CCMP][ESS]\tGarden Network\n"
+               "aa:bb:cc:dd:ee:ff\t5180\t-45\t[WPA2-PSK-CCMP][ESS]\tWonderland\n")
+        self.assertEqual(readers._wifi_list(wpa), [("Wonderland", 100, False), ("Garden Network", 76, True)])
+        iwctl = ("manager: iwctl\n                               Available networks\n------\n      Network name      Security  Signal\n------\n"
+                 "  \x1b[0m> \x1b[0m  Garden Network      psk       ****\n      Wonderland        psk       ***\n")
+        self.assertEqual(readers._wifi_list(iwctl), [("Garden Network", 100, True), ("Wonderland", 75, False)])
+        desk = ('Connected to 02:00:5e:10:00:03 (on wlan0)\n\tSSID: Garden Network\n\tsignal: -22 dBm\n'
+                '{"networks": [{"ssid": "Garden Network", "signal": -22.0, "secure": true}, {"ssid": "Wonderland", "signal": -23.0, "secure": true}, '
+                '{"ssid": "Vodafone Homespot", "signal": -63.0, "secure": false}]}\n')
+        self.assertEqual(readers._wifi_list(desk), [("Garden Network", 100, True), ("Wonderland", 100, False), ("Vodafone Homespot", 74, False)])
+
+
 
 if __name__ == "__main__":
     unittest.main()

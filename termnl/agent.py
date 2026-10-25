@@ -314,6 +314,9 @@ class Agent:
             v, ask = vals.get(slot) or {}, skill["replies"].get("ask " + slot)
             say = self.reply(ask) if ask else self.reply("unknown value", {"value": self.quoted(v.get("text") or v.get("label") or "")})
             return {"outcome": "ask", "skill": skill["id"], "say": say, "chips": self.chips(found)}
+        if found is None and skill["values"][slot]["kind"] == "secret":  # a password, exactly as typed ("!" included)
+            vals[slot] = {"text": text.strip()}
+            return self.next_step(skill, vals, approved)
         if found is None:
             start = max((len(ph) for ph in self.words("before a name") if len(ph) < len(toks) and at(toks, ph, 0)), default=0)
             vals[slot] = {"text": self.original(text, toks, start, len(toks))}
@@ -794,8 +797,17 @@ class Agent:
                 out["command"] = self.command_for(skill, vals)
                 self.with_show(out, skill, vals)
             return out
-        return self.with_show({"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"], self.display(skill, vals)),
-                               "command": self.command_for(skill, vals)}, skill, vals)
+        out = self.with_show({"outcome": "act", "skill": skill["id"], "say": self.reply(skill["replies"]["done"], self.display(skill, vals)),
+                              "command": self.command_for(skill, vals)}, skill, vals)
+        secret = next((vals[k]["text"] for k, v in skill["values"].items() if v["kind"] == "secret" and vals.get(k)), None)
+        if secret is not None:  # read by the command on its standard input, never written in it (skills.py)
+            out["given"] = secret
+        return out
+
+    def waits_for_secret(self):
+        """the question waiting asks for a password: the next sentence is one, never logged nor searched"""
+        p = self.pending
+        return bool(p and p["waiting"] == "value" and p["skill"]["values"][p["slot"]]["kind"] == "secret")
 
 
 def _template_words(nodes):
