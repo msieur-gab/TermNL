@@ -11,6 +11,7 @@ waits: 60
 - connect to (the) {network} (wifi)
 - connect to (the) wifi (called/named) {network}
 - connect to (a/the) wifi
+- connect to (a/the) "network"
 
 ## Also said
 
