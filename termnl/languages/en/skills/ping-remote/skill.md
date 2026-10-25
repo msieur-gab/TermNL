@@ -5,7 +5,7 @@ admin: no
 approve: no
 ---
 
-A test of dropping a skill in (FRAMES.md): "ping" is in no list of words/; this folder brings it.
+Born as a test of dropping a skill in (FRAMES.md): "ping" is in no list of words/; this folder brings it.
 
 ## Words
 

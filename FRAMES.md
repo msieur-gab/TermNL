@@ -318,6 +318,17 @@ agreed before starting, that is where it stops: frames made TermNL aware of cont
 `--agent back`, and `TERMNL_AGENT` in the tests. All stay in git's history. A host that passes `agent="agent"`
 works as before. 668 + 45 lines of code and their file of conversations fewer; the tests are the same 120.
 
+## D. The two drop-in skills shipped
+
+25 October, Gab: "add them". check-kernel and ping-remote moved from `tests/drop-in/` into the skills: 73 now.
+`tests/test_drop_in.py` still proves drop-in by taking them out of the language and dropping their folders back
+in. Retrained: 5 test sentences moved, none into a wrong action (handled 383 → 381; "what is running right now"
+and "turn the computer of" now ask first). One host test now fails: "how does AI impact democracy?" was refused,
+so the host searched the documents; the model now guesses "how big a folder is" at 21% and asks first
+(`test_host`, `test_the_documents_stay_quiet_when_they_do_not_really_match`). Nothing wrong runs, but a guess that
+weak with three unknown words should go to the documents: RESEARCH.md's method A (out of scope by distance)
+is the fix in view, not a threshold moved to pass the test.
+
 ## Open, for Gab
 
 - How long a frame lasts. Now: until another request is done, "cancel", or a sentence not understood.
