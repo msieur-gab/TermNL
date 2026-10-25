@@ -5,6 +5,10 @@ admin: no
 approve: no
 ---
 
+## Words
+
+- turn off, switch off, cut, kill → mute
+
 ## People say
 
 - mute (the/my) (sound/music)

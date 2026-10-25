@@ -5,6 +5,10 @@ admin: yes
 approve: no
 ---
 
+## Words
+
+- start, bring up, put on → turn on
+
 ## People say
 
 - turn on (the) wifi

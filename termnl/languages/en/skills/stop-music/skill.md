@@ -7,6 +7,11 @@ approve: no
 
 "stop" alone is a no (conversation.md): the music is named, or "stop playing".
 
+## Words
+
+- turn off, switch off, shut off, end → stop
+- track: turn off, switch off, shut off, end → stop
+
 ## People say
 
 - stop (the/my/this) music/track

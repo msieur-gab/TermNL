@@ -8,6 +8,10 @@ approve: no
 Gab, 23 Oct: "play some music", "could you play some music?"; "play music start a random playlist". The desk's
 player shuffles everything when nothing is loaded, and carries on when something is paused.
 
+## Words
+
+- turn on, switch on, start → play
+
 ## People say
 
 - play (some/my/the/a) (random) music

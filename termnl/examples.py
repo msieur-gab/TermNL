@@ -1,6 +1,8 @@
 """Training sentences made from the skills' own templates: each template becomes many sentences,
 with its optional words in and out, each alternative, each word for its action and object, and
 sample values. Authors write a few readable lines; the model learns from all their variations."""
+import zlib
+
 from .text import words
 
 
@@ -45,9 +47,12 @@ def examples(skills, lists, per_skill=160, per_template=None, seed=7):
     (per_skill), shared among its sentences, at least 10 each: a skill written as many short sentences
     weighs no more than one written as a few long ones (24 Oct 2026: written plainly, show process went
     from 5 templates to 16 sentences). per_template, when given, is the walks per sentence instead."""
-    rnd = rng(seed)
     seen, out = set(), []
     for skill in skills:
+        # each skill its own random stream, from its name: a skill dropped in leaves the sentences of every
+        # other skill as they were (25 Oct 2026: one stream for all, adding check-kernel redrew every skill
+        # after it in the alphabet, and their readings moved)
+        rnd = rng(seed ^ zlib.crc32(skill["id"].encode("utf-8")))
         n = per_template or max(10, -(-per_skill // max(1, len(skill["compiled"]))))
         for nodes in skill["compiled"]:
             for _ in range(n):

@@ -192,9 +192,70 @@ A first because it is the drop-in Gab asked for, changes no behaviour, and is ea
 because it changes what TermNL does and needs A's numbers to compare against. If B absorbs fewer rules than
 listed here once written, it stops there.
 
+## A. Skill-owned words — done
+
+25 October, after Gab: "the skill should contain everything it needs to act, hence being really plug and
+play or drag and drop".
+
+**What a skill can say now.** A section `## Words`, and one line of front matter:
+
+    topic: This device                       where help lists it, if its object is in no topic yet
+
+    ## Words
+
+    - kernel: kernel, linux version          words for its action or object; one words/ lacks is made here
+    - turn on, switch on, start → play       with its object, these words mean its action
+    - track: turn off, end → stop            the same, with another object
+
+When the skills are read, these lines join the shared lists, so the agent, the templates and training read
+them exactly as if `words/` had them. A skill speaks only for itself: words for another skill's object, or
+"→" an action not its own, stop the checker.
+
+**What moved.** The eight lines of "Meaning with an object" left `words/actions.md` for the ten skills they
+serve (play-music, stop-music, turn-on/off-wifi, turn-on/off-bluetooth, mute/unmute-sound,
+restart-service, shut-down-system). `words/actions.md` keeps the actions and their opposites: the language,
+not any one skill.
+
+**Same behaviour, proved.** Moved, then retrained: the model has the same weights as before, and all 665
+sentences of the six sets get the same answer as before.
+
+**The drop-in, proved.** `tests/drop-in/` holds two skills TermNL doesn't ship, each bringing what `words/`
+doesn't have: check-kernel an object (`uname -r`), ping-remote an action (`ping -c 3 {host}`). Dropped into
+a copy of the language, nothing else edited:
+
+- no problems from the checker; "check the kernel" and "can you reach the studio pi" act at once, by their
+  own sentences (`tests/test_drop_in.py`);
+- after learning, said in other words too: "what kernel is running", "which linux version do i have",
+  "kernel version please" act; "is my kernel up to date" asks first ("date" is new);
+- help lists the kernel under "This device", from its own `topic:`.
+
+**Found on the way: a new skill moved the others for no reason of language.** Training drew every skill's
+sentences from one shared random stream, in alphabetical order. A skill dropped in shifted the stream for
+every skill after it, so their training sentences changed, and so did some readings: adding the two test
+skills moved 16 of the 665 test sentences. Each skill now has its own stream, from its name
+(`examples.py`). With it, the same two skills move 5, none into a wrong action. What still moves is real
+competition between skills, the thing `doubts` and asking first are for.
+
+That change redraws every skill's sentences once, so the committed model is retrained (same skill files).
+Over the six sets, compared with main retrained:
+
+| | handled | checked first | wrong skill, asked | **wrong acted** | not understood | out of scope: abstained / asked / **acted** |
+|---|---|---|---|---|---|---|
+| main, retrained | 380 | 156 | 34 | **2** | 23 | 53 / 16 / **1** |
+| one stream per skill (this branch) | 383 | 153 | 31 | **2** | 26 | 54 / 15 / **1** |
+| + check-kernel, ping-remote | 381 | 154 | 31 | **2** | 27 | 54 / 15 / **1** |
+
+No new wrong action anywhere. The two unit tests that fail on main still fail, the same two: main's skill
+files, retrained here, give them; they are not from this branch (105 tests, 103 pass).
+
+**Still not drop-in:** a reading skill (`reads:`) needs its reader in `readers.py`, and a new action can't
+yet say its opposites. Gab asked whether an `action.md` per skill should hold the command: today the
+command is one line, so a second file adds nothing; for reading skills, an `action.md` declaring how a
+command's output is read (ptiLU's `## Answer`) would remove the last Python a skill needs. Next, if wanted.
+
 ## Open, for Gab
 
-- A, B, or both, and in which order.
+- B (frames) next, or readers in the skill (`action.md`) first.
 - "it" after an approval that was declined: the frame before, or nothing? (A refused delete shouldn't be
   what "it" points at next.)
 - How long a frame lasts: until the next request, or a few turns, or until the person changes subject?

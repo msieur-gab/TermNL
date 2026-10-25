@@ -5,6 +5,10 @@ admin: yes
 approve: no
 ---
 
+## Words
+
+- bounce, kick → restart
+
 ## People say
 
 - restart (the) {name} (service)
