@@ -46,6 +46,7 @@ with `{user}` is only used once a name is set.
           conversation.md       yes, no, fillers, the rules' word lists, and TermNL's own replies
           samples.md            sample values the model trains with
           readings.md           the words shown with what the device reads (tables, "3 days")
+          common.md             common English words, never read as a typo ("game" isn't "name")
           values.md             how a skill says what it needs ("a folder on the device")
         skills/<action>-<object>/skill.md
                                 one skill per action + object, written in plain sentences: what people
@@ -67,6 +68,7 @@ with `{user}` is only used once a name is set.
     tools/neighbours.py         a test of word embeddings for unknown words (22 Oct: not worth it yet)
     tools/distance.py           a test of out of scope by distance to taught sentences (25 Oct: not
                                 kept; RESEARCH.md, method A)
+    tools/common_words.py       builds words/common.md from SCOWL's lists (RESEARCH.md, method F)
     tools/to_plain.py           rewrites a skill from the older template form to plain sentences;
     tools/same_reading.py       and proves it reads every sentence the same
     settings.md                 this device's settings

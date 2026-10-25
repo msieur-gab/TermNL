@@ -69,8 +69,9 @@ def best_in(toks, found, fuzzy=False):
 
 
 class Agent:
-    def __init__(self, lists, skills, model=None, settings=None, device=None, random=_random.random, **_):
+    def __init__(self, lists, skills, model=None, settings=None, device=None, random=_random.random, common=(), **_):
         self.lists, self.skills, self.model = lists, skills, model
+        self.common = common or frozenset()  # words never read as a typo (correct, words/common.md); shared, not copied
         self.settings = settings if settings is not None else {}
         self.device, self.random = device, random
         self._sys = {}  # kind → (the device's list, its values with their words)
@@ -538,13 +539,14 @@ class Agent:
 
     def correct(self, toks):
         """A word TermNL doesn't know, one letter away from exactly one word it knows ("chek" → "check"),
-        is read as that word. The offsets stay, so a name keeps what was typed. Short words, file names
-        and the device's own names are left as they are."""
+        is read as that word. The offsets stay, so a name keeps what was typed. Short words, file names,
+        the device's own names and the language's common words (words/common.md: "game" is never "name")
+        are left as they are."""
         known = self.vocab | {w for kind in ("folder", "service", "app", "running") for d in self.sys(kind) for ph in d["phrases"] for w in ph}
         out, fixes = [], []
         for t in toks:
             w = t["word"]
-            near = set() if w in known or len(w) < 4 or "." in w or not w.isalpha() else {v for v in self.vocab if len(v) >= 4 and close(w, v)}
+            near = set() if w in known or w in self.common or len(w) < 4 or "." in w or not w.isalpha() else {v for v in self.vocab if len(v) >= 4 and close(w, v)}
             if len(near) == 1:
                 fixes.append([w, next(iter(near))])
                 t = {**t, "word": fixes[-1][1]}

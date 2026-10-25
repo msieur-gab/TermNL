@@ -384,6 +384,20 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(r["command"], "mkdir -p $HOME'/recipies'")
         self.assertNotIn("corrections", r)
 
+    # A real word is not a typo (25 Oct, RESEARCH.md method F, words/common.md): "game" was read as "name",
+    # "stick" as "stuck", "take" as "make".
+    def test_a_common_word_is_never_read_as_a_typo(self):
+        r = agent().hear("who won the football game last night")
+        self.assertEqual(r["outcome"], "abstain")
+        self.assertNotIn("corrections", r)
+        self.assertEqual(agent().hear("format my usb stick")["outcome"], "abstain")
+        self.assertEqual(agent().hear("take me to the documents folder").get("skill"), "open-folder")
+
+    def test_a_typo_that_is_not_a_word_is_still_read(self):
+        r = agent().hear("free memroy?")
+        self.assertEqual((r["outcome"], r["skill"]), ("act", "check-memory"))
+        self.assertEqual(r["corrections"], [["memroy", "memory"]])
+
     # Rename (Gab, 22 Oct: "perhaps we will need a rename file/folder skill"): never overwrites.
     def test_renaming_a_file(self):
         self.assertEqual(agent().hear("rename note.md to memo.md")["command"], "mv -nT $HOME'/note.md' $HOME'/memo.md'")

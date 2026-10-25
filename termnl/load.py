@@ -34,6 +34,12 @@ def load_language(lang="en", languages=LANGUAGES):
         if os.path.exists(f):
             skills[id] = read(f)
     out = load(lists, skills)
+    # words of the language never read as a typo (words/common.md, RESEARCH.md method F): every word after
+    # "## Words", by spaces and lines; the file's text before it is what it is for
+    c = os.path.join(d, "words", "common.md")
+    if os.path.exists(c):
+        body = read(c).split("\n## Words", 1)[-1]
+        out["common"] = {w for l in body.split("\n") if not l.startswith("#") for w in l.lower().split()}
     m = os.path.join(d, "model.json")
     if os.path.exists(m):
         out["model"] = json.loads(read(m))

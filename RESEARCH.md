@@ -22,6 +22,9 @@ Methods tested are added under **Tested**, with their numbers beside the baselin
 - **A, out of scope by distance, tested 25 Oct: not kept.** With TermNL's clues, the far sentences are
   as often real requests as out of scope. It found a better lead: the typo corrector turns real words
   into taught ones ("game" → "name"), method F.
+- **F, real words aren't typos, tested 25 Oct: gains, no wrong action added**, on the branch
+  `research/f-common-words` for Gab's decision. 4 more out-of-scope sentences refused, one wrong reading
+  fixed; one request now asked first instead of handled ("how's it going with the board").
 - **Word proximity, if ever:** at teaching time on the laptop first; on the device only for unknown words,
   only to ask, never to act, and after a measured test (Model2Vec).
 
@@ -110,10 +113,10 @@ it removes the dependency without changing anything already tested.
 | D | Proximity at teaching time | A word table proposes "Also said" words for thin skills; Gab approves | Nothing: laptop only |
 | E | Model2Vec for unknown words | Extra clues for words never taught; may only lead to a question | 8–16 MB and a lookup; measured with `tools/neighbours.py` first |
 
-| F | Real words aren't typos | A list of common English words, plain text: a word on it is never "corrected" into a taught one (game ≠ name, stick ≠ stuck). Found by testing A | A word list of some tens of KB, read at start |
+| F | Real words aren't typos | A list of common English words, plain text: a word on it is never "corrected" into a taught one (game ≠ name, stick ≠ stuck). Found by testing A | 10,713 words, 90 KB on disk, about 1 MB in memory; no slower |
 
 C is independent and can go in at any time. E only if the misses left are mostly unknown words.
-**A was tested on 25 Oct and not kept** (see Tested).
+**A was tested on 25 Oct and not kept; F was tested the same day and gains** (see Tested).
 
 ## How every method is measured
 
@@ -188,6 +191,64 @@ harmless by the measure's own rule; losing a request is not. So the trade isn't 
 | night → right ("ok shut it all down for the night") | harmless here, asked first anyway |
 
 This becomes method **F** below. The distance idea comes back only with better vectors (E), if ever.
+
+### F — Real words aren't typos: gains, for Gab's decision (25 October 2026)
+
+**Result: 4 more out-of-scope sentences refused, one wrong reading fixed, no wrong action added; one
+request now asked first instead of handled.** On the branch `research/f-common-words`, not on `main`
+until Gab decides.
+
+**What changed.**
+- `termnl/languages/en/words/common.md`: 10,713 common English words, from SCOWL (Kevin Atkinson's word
+  lists, sizes 10 and 20, the most common words; free to use with its notice, which the file carries).
+  Names, possessives and anything not plain letters left out. Built by `python3 -m tools.common_words`.
+- `agent.py`, `correct`: a word on that list is never read as a typo of a taught word. A word TermNL knows
+  is read as itself as before; a word on neither list is still corrected ("memroy" → "memory").
+- `load.py` reads the list when it is there; without it, TermNL behaves as before. Two tests added in
+  `tests/test_dialogue.py` (98 pass).
+
+**How it was measured.** The five test sets with `python3 -m tests.measure`, sentence by sentence against
+the baseline (`-v`, the two outputs compared line by line), at three sizes of the list: 3,939 words
+(SCOWL 10), 10,713 (20) and 38,015 (35). **All three gave exactly the same readings** on every sentence; 20
+was kept as the middle: it protects more real words than 10, and corrects more true typos than 35, neither
+measured yet. Then `python3 -m unittest`, `python3 -m termnl.check`, `python3 -m tests.compare_agents` and
+`python3 -m tools.speed`. Not measured here: Gab's real turns (`python3 -m tests.real`, his laptop only).
+
+| Set | Handled | Asked first | Wrong skill, asked | Wrong skill, acted | Not understood | Out of scope: refused / asked / acted |
+|---|---|---|---|---|---|---|
+| phrasings | 40 (41) | 16 (15) | 2 | 0 | 1 | — |
+| probes | 76 (75) | 4 | 6 (7) | 0 | 3 | 3 / 1 / 0 |
+| heldout | 113 | 5 | 3 | 0 | 1 | 10 (9) / 0 (1) / 0 |
+| blind | 69 | 35 | 7 | 1 | 4 | 14 (13) / 1 (2) / 0 |
+| scale-blind | 32 | 38 | 3 | 0 | 7 | 23 (21) / 5 (7) / 0 |
+| **all** | **330** | **98 (97)** | **21 (22)** | **1** | **16** | **50 (46) / 7 (11) / 0 of 57** |
+
+Baseline in brackets where it differs.
+
+**Every sentence that moved (8 of 523):**
+
+| Sentence | Before | With F |
+|---|---|---|
+| who won the football game last night | out of scope, asked "say name" | refused |
+| format my usb stick | out of scope, asked "stop process" | refused |
+| connect to my phone | out of scope, asked "check network" | refused |
+| connect to home-5g | out of scope, asked "check network" | refused |
+| take me to the documents folder | wrong skill (create folder), asked | **open folder, handled** |
+| how's it going with the board | check system, handled ("going" read as "doing") | **check system, asked first**: "I don't know “going” yet" |
+| enough of The Tune, turn the music off | stop music, asked first | the same; "tune" now named as new |
+| ok shut it all down for the night | shut down, asked first | the same; "night" now named as new |
+
+**The one loss, and why it is honest.** "how's it going" was handled because "going" was read as "doing",
+a lucky correction of a real word. TermNL now asks first and names "going" as a word it doesn't know.
+Teaching it ("how's it going" in check system's Also said) would bring it back the right way.
+
+**Cost.** The list is 90 KB on disk, about 1 MB in memory, read once at start (the whole language loads in
+0.8 s on the laptop, as before). Understanding a sentence: median 2.3 ms with and without F
+(`tools.speed`, 415 sentences). Not yet measured on the board.
+
+**Also.** `back_agent.py`, the version before kept for comparison, doesn't read the list: one more reply
+differs in `tests.compare_agents` (9 of 145, was 8), and one more test fails for it (11, was 10 before F).
+Whether to port or retire `back_agent.py` is already open (`IMPROVEMENTS.md`).
 
 ## Sources
 
