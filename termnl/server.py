@@ -232,6 +232,8 @@ class TermNL:
             args = {k: self.device.path(v) if kinds.get(k) == "@sys.folder" else v for k, v in r.pop("args", {}).items()}
             args.update(self.state(skill["reads"]))
             if command:
+                if skill["reads"] == "networks":
+                    self.device.quiet()
                 out = self.execute(a, r, command)
                 if out is None:
                     r.pop("reads", None)

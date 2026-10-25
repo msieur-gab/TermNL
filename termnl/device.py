@@ -129,6 +129,11 @@ class Device:
             self._hearing.start()
         return found
 
+    def quiet(self):
+        """waits for a scan running in the background: the Wi-Fi chip refuses a second one at the same time"""
+        if self._hearing and self._hearing.is_alive():
+            self._hearing.join(timeout=20)
+
     def hear(self, output=None):
         """the networks around, from a scan's output, or from a scan run now, as show wifi hears them"""
         if output is None:
