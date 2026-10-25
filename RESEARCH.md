@@ -25,6 +25,9 @@ Methods tested are added under **Tested**, with their numbers beside the baselin
 - **F, real words aren't typos, tested 25 Oct: gains, no wrong action added**, on the branch
   `research/f-common-words` for Gab's decision. 4 more out-of-scope sentences refused, one wrong reading
   fixed; one request now asked first instead of handled ("how's it going with the board").
+- **F with 15 skills at the edge, tested 25 Oct: still gains, no wrong action added.** 5 sentences
+  better, 2 worse but asked ("turn the sound dawn"). The new skills (`feat/new-skills`) work on their
+  blind sentences but cost older ones some confidence; Gab's call on both branches.
 - **Word proximity, if ever:** at teaching time on the laptop first; on the device only for unknown words,
   only to ask, never to act, and after a measured test (Model2Vec).
 
@@ -249,6 +252,134 @@ Teaching it ("how's it going" in check system's Also said) would bring it back t
 **Also.** `back_agent.py`, the version before kept for comparison, doesn't read the list: one more reply
 differs in `tests.compare_agents` (9 of 145, was 8), and one more test fails for it (11, was 10 before F).
 Whether to port or retire `back_agent.py` is already open (`IMPROVEMENTS.md`).
+
+### F with skills at the edge: still gains, for Gab's decision (25 October 2026)
+
+Gab, before merging F: "we should test it with skills getting closer to the edge cases. I believe I anyway
+miss some skills." Fifteen skills were added on their own branch, `feat/new-skills` (from `main`), measured
+there, then merged into `research/f-common-words` to measure F on top of them.
+
+**In short**
+- **F still gains and still adds no wrong action.** On top of the new skills it moves 8 of 665 sentences:
+  5 better, 1 still wrong but differently, 2 worse; the 2 worse still ask, they never act.
+- **The new skills work on the sentences written for them**: of 60 blind requests, 30 handled straight
+  away and 25 asked first, 2 read as another skill but asked, 3 not understood.
+- **They cost the older skills some confidence:** a few sentences handled before are now asked first
+  ("shut down", "scan for wifi"), and some phrases moved to the new skills ("is there any…", "movie",
+  "sd card"). No sentence of the older sets became a wrong action. Two unit tests that hold earlier
+  decisions now fail (below): they are Gab's to weigh before `feat/new-skills` goes anywhere.
+
+**The skills** (`feat/new-skills`; commands default on Debian-family boards except where said):
+
+| Skill | Does | How | Asks first |
+|---|---|---|---|
+| show-type | lists the files of a kind (images, videos, notes, PDFs) in a folder or here | reads the folder (`reads: files`) | no |
+| check-type | is there any file of a kind, folders included | reads (`reads: has`) | no |
+| read-file | shows a file's first 40 lines | `head` | no |
+| show-recent | the files changed in the last day | reads (`reads: recent`) | no |
+| check-size | how big a folder is | reads (`reads: size`) | no |
+| show-log | the last 20 lines of a service's log | `journalctl` | no |
+| check-usb | the drives and cards plugged in | `lsblk` | no |
+| turn-up-sound, turn-down-sound | the sound 10% louder or quieter | `amixer` (not on every board) | no |
+| connect-wifi | joins a network, with its password | `nmcli` (not on every board) | approval |
+| unpack-file, compress-file | a .tar.gz unpacked, or a file compressed, where it is | `tar` | no |
+| send-file | a file to another computer's home folder | `scp` | approval |
+| get-file | a file from another computer, here | `scp` | no |
+| show-remote | what another computer's home folder holds | `ssh … ls` | no |
+
+On 24 Oct, joining Wi-Fi and the volume were set aside with Gab because `nmcli` and `amixer` aren't on
+every board; Gab asked for them again on 25 Oct. The commands themselves were not run here, only how
+TermNL understands the sentences.
+
+**What else changed to make them:**
+- **A kind of file is the object** (Gab: "the file format/extension was supposed to be part of the object
+  but never made it"). Listing and looking for a kind were first written as show file and check file; then
+  "list the files inside my home" asked "show a folder or list files of a kind?", because "list" + "files"
+  is exactly show + file. With their own object, `type` ("show type", "check type"), the kind's words
+  carry the object and show folder keeps "list the files". The two blind labels were renamed to match.
+- `words/filetypes.md` takes several extensions per type: `image (jpg, jpeg, png, gif, webp, svg): image,
+  images, photo, photos, picture, pictures, pic, pics`; video, pdf, and note as `.md` or `.txt` (Gab).
+- New actions (read, turn up, turn down, connect, unpack, send, get), objects (type, recent, size, log,
+  usb, remote, and "volume" for sound), and a device list: the computers in `~/.ssh/config`
+  (`a computer on the network`), so "laptop" and "studio pi" are names, offered as chips.
+
+**How it was measured**
+- `tests/edge-blind.md`, 142 sentences by a fresh agent that saw only the skills' names and purposes
+  (`briefs/2026-10-25-edge-skills-blind.md`): 60 for the new skills, 32 for close older skills, then three
+  groups of 10 for F (typos that are real words: "sand report.pdf to laptop"; other forms: "sending
+  movie.mkv"; real words next to the skills' words: "what gift should I buy my wife"), and 20 out of
+  scope. One label corrected: "turn on bluetooth" was written as out of scope because the brief didn't
+  list the Bluetooth skills.
+- "Also said" from another fresh agent (`briefs/2026-10-25-also-said-edge.md`): 132 proposed, 114 kept by
+  `tools/merge_also_said.py`; 12 dropped as test sentences, 6 because an older skill's template reads
+  them (below).
+- 12 sentences of `tests/scale-blind.md` set out of scope on 24 Oct (Wi-Fi joining, volume) are back to
+  their skills.
+- Four runs of `python3 -m tests.measure <set> -v`, kept in `data/measure-2026-10-25/` and compared with
+  `python3 -m tools.compare_runs`: `main`; **A**, the skills as written; **B**, with Also said; **B + F**.
+
+Each cell: handled / asked first / wrong skill, asked / **wrong skill acted on** / not understood · out of
+scope: refused / asked / **acted on**.
+
+| Set | main | A | B | B + F |
+|---|---|---|---|---|
+| phrasings (59) | 41/15/2/**0**/1 | 34/19/4/**0**/2 | 34/19/6/**0**/0 | 33/20/6/**0**/0 |
+| probes (89 + 4) | 75/4/7/**0**/3 · 3/1/**0** | 75/3/8/**0**/3 · 3/1/**0** | 75/3/8/**0**/3 · 3/1/**0** | 76/3/7/**0**/3 · 3/1/**0** |
+| heldout (122 + 10) | 113/5/3/**0**/1 · 9/1/**0** | 113/4/4/**0**/1 · 9/1/**0** | 113/4/4/**0**/1 · 9/1/**0** | 113/4/4/**0**/1 · 9/1/**0** |
+| blind (116 + 15) | 69/35/7/**1**/4 · 13/2/**0** | 65/37/8/**1**/5 · 12/3/**0** | 65/37/9/**1**/4 · 11/4/**0** | 65/38/8/**1**/4 · 12/3/**0** |
+| scale-blind (80 + 28 → 92 + 16) | 32/38/3/**0**/7 · 21/7/**0** | 32/41/9/**0**/10 · 14/2/**0** | 36/40/6/**0**/10 · 14/2/**0** | 36/40/6/**0**/10 · 14/2/**0** |
+| edge-blind (117 + 25) | — | 45/37/9/**0**/25 · 15/9/**2** | 53/55/4/**0**/5 · 17/7/**1** | 54/54/4/**0**/5 · 18/6/**1** |
+
+(In A, edge-blind still had "turn on bluetooth" as out of scope: one of its two "acted on" is that.)
+The one wrong action left in blind is the old one ("I want to look at report.pdf" finds it). The one on
+edge-blind: "download and unzip example.com/pack.zip" downloads the file without unzipping it; the brief
+called it out of scope, half of it is a skill.
+
+**F on top of the new skills: what moved (8 sentences)**
+
+| Sentence | Without F | With F |
+|---|---|---|
+| take me to the documents folder | create folder, asked | **open folder, handled** |
+| who won the football game last night | out of scope, asked "say name" | **refused** |
+| what gift should I buy my wife | out of scope, asked "show Wi-Fi" ("wife" → "wifi") | **refused** |
+| copy report.pdf from my laptop onto the board | copy file, asked | **get file, handled** |
+| everything feels slow, is the memory full or what | show process, asked | **check memory, asked** |
+| why is everything so slow, is it the ram | show process, asked | check system, asked (still wrong, asked) |
+| how's it going with the board | check system, handled | check system, asked first (as before) |
+| turn the sound dawn | turn down sound, asked | **unmute sound, asked**: "dawn" was a typo of "down" and is a real word |
+
+By group, on edge-blind: real-word typos 9 right (asked) → 8; other forms unchanged (2 handled, 6
+asked, 2 not understood); real words next to the skills' words, 4 refused → 5.
+
+**What the new skills did to the older ones** (A and B against `main`; none acts):
+- **More skills, less confidence.** Sentences handled before now ask first: "shut down", "shut it all
+  down", "scan for wifi", "the board feels really warm", "what network am I on right now". With 71 skills
+  instead of 56 the model's certainty spreads over more classes and falls under 50% more often.
+- **A new skill takes a phrase or a word:** "is there any acitve threads" and "are there any updates? if
+  so install them all" go to check type ("is there any…"); "is there enough space for a movie" too,
+  "movie" being a kind of file now; "is my sd card almost full" goes to check USB; "restart ssh, I can't
+  log in from my laptop" to get file ("laptop" is a computer now). All asked, none acted.
+- **Gained:** the volume and Wi-Fi sentences set aside on 24 Oct ("can you raise the volume?", "too
+  loud!", "bring the sound down", "connect to home-5g" handled); "can you pull up groceries.md" asked
+  instead of not understood.
+- **Two unit tests now fail**, both decisions from 23–24 Oct: "is there enough space for a movie" should
+  ask about check storage (now check type), and "rename the folder photos to pictures" should ask rename
+  a file or a folder (now it looks for a file called "folder photos", doesn't find it, and says so;
+  "photos" and "pictures" are kinds of file now, so the model is less sure it's a folder).
+
+**Found on the way**
+- **A password said in the sentence isn't read**: "connect to home-5g, the password is sunflower42" asks
+  again, and the sentence, password included, is written to `logs/`. A secret should be read out of the
+  sentence, and kept out of the log.
+- **Templates read "delete report.pdf on the laptop" as deleting a local file**: the name swallows "on the
+  laptop", isn't found, and nothing runs. Safe by luck, not by design.
+- "fetch photos.tar.gz from studio pi" goes to download file ("fetch" is a download word).
+
+**Cost.** 71 skills. Model 1,032 KB → 1,518 KB. Training on the laptop 17 s for 5,514 sentences → 36 s for
+7,579: about twice as long, so roughly 7 minutes on the board (not measured there). Understanding a
+sentence: median 2.4 → 2.7 ms.
+
+**Not measured:** Gab's real turns (his laptop only), the board, and the new commands themselves.
 
 ## Sources
 

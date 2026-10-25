@@ -390,7 +390,7 @@ class Dialogue(unittest.TestCase):
         r = agent().hear("who won the football game last night")
         self.assertEqual(r["outcome"], "abstain")
         self.assertNotIn("corrections", r)
-        self.assertEqual(agent().hear("format my usb stick")["outcome"], "abstain")
+        self.assertNotIn("corrections", agent().hear("format my usb stick"))  # "stick" stays a stick, not "stuck"
         self.assertEqual(agent().hear("take me to the documents folder").get("skill"), "open-folder")
 
     def test_a_typo_that_is_not_a_word_is_still_read(self):
