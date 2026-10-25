@@ -91,7 +91,7 @@ class Readers(unittest.TestCase):
     def test_the_networks_around_are_read_from_each_wifi_manager(self):
         """termnl-wifi asks whichever Wi-Fi manager the device runs (Gab's board, 25 Oct: iw's cache knew only
         the network it was on); a host can lend its own scan, one line of JSON (the desk's desk-wifi)"""
-        nmcli = "manager: nmcli\n :95:Wonderland\n :94:Mesh Network\n*:77:Mesh Network\n :69:Caf\\:e\n"
+        nmcli = "manager: nmcli\n :95:WPA2:Wonderland\n :94:WPA2:Mesh Network\n*:77:WPA2:Mesh Network\n :69::Caf\\:e\n"
         self.assertEqual(readers._wifi_list(nmcli), [("Wonderland", 95, False), ("Mesh Network", 77, True), ("Caf:e", 69, False)])
         wpa = ("Connected to 70:3a:cb:77:db:91 (on wlan0)\n\tSSID: Mesh Network\n\tsignal: -62 dBm\nmanager: wpa_cli\n"
                "bssid / frequency / signal level / flags / ssid\n70:3a:cb:77:db:91\t2412\t-60\t[WPA2-PSK-CCMP][ESS]\tMesh Network\n"
@@ -104,6 +104,12 @@ class Readers(unittest.TestCase):
                 '{"networks": [{"ssid": "Mesh Network", "signal": -22.0, "secure": true}, {"ssid": "Wonderland", "signal": -23.0, "secure": true}, '
                 '{"ssid": "Vodafone Homespot", "signal": -63.0, "secure": false}]}\n')
         self.assertEqual(readers._wifi_list(desk), [("Mesh Network", 100, True), ("Wonderland", 100, False), ("Vodafone Homespot", 74, False)])
+        # a network that asks for a password is marked "lock", an open one not (Gab, 25 Oct: "a small lock …
+        # before the private" one, "Simple shape and one color": each page draws it in its own look)
+        w = load_language("en")["lists"]["readings"]
+        for output, marks in ((nmcli, ["lock", "lock", None]), (wpa, ["lock", "lock"]), (iwctl, ["lock", "lock"]),
+                              (desk, ["lock", "lock", None]), (WIFI, [None, None, None])):  # WIFI was kept without iw's RSN lines: not known
+            self.assertEqual(readers.read("networks", words=w, output=output)["table"]["marks"], marks)
 
 
 

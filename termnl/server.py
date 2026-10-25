@@ -51,7 +51,8 @@ class TermNL:
         `does:`) it simulates on top of settings.md's, never fewer; which commands its own screen does (open a
         file in its window), not run here but handed over as "screen"; its documents, doc(question) → {best,
         results}; and the commands it lends, by `does:`, in place of a skill's own (the desk's Wi-Fi, which on
-        its board alone may scan and join: {"show wifi": "…", "connect wifi": "…"})."""
+        its board alone may scan and join: {"show wifi": "…", "connect wifi": "…"}), or with replies of its own,
+        {"command": "…", "replies": {"done": "{output}"}}: a host's command can say what it did itself."""
         self.root = root
         self.also_simulated = set(simulate)
         self.screen = screen or (lambda command: False)
@@ -78,8 +79,11 @@ class TermNL:
     def lend(self):
         """the host's commands in place of the skills' own; the networks offered are heard as show wifi hears them"""
         for s in self.lang["skills"]:
-            if s["does"] in self.commands:
-                s["command"] = self.commands[s["does"]]
+            lent = self.commands.get(s["does"])
+            if isinstance(lent, dict):
+                s["command"], s["replies"] = lent["command"], {**s["replies"], **lent.get("replies", {})}
+            elif lent:
+                s["command"] = lent
         self.device.wifi = next((s["command"] for s in self.lang["skills"] if s["does"] == "show wifi"), self.device.wifi)
         self.device.networks()  # heard in the background from the start, so "connect to …" knows them
 

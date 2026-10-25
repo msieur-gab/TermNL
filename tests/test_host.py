@@ -103,5 +103,14 @@ class Host(unittest.TestCase):
         self.assertNotIn("s3cret", repr(said) + "".join(lines))
         self.assertIn("'•••'", lines[2])
 
+    def test_a_host_lends_replies_with_its_command(self):
+        """the desk's join says what desk-wifi did: kept, not joined, is not a failure (Gab, 25 Oct: "Save, say it honestly")"""
+        lent = {"command": "cat > /dev/null; echo Saved {network}.", "replies": {"done": "{output}", "approve": "Save {network}?"}}
+        app, _ = self.app(commands={"show wifi": "sh " + lent_scan(), "connect wifi": lent})
+        app.device._hearing.join()
+        self.assertEqual(app.say("connect to Wonderland", "w3")["say"].split("?")[0][-8:], "password")
+        self.assertEqual(app.say("a password", "w3")["say"], "Save Wonderland?")
+        self.assertEqual(app.say("yes", "w3")["say"], "Saved Wonderland.")
+
 if __name__ == "__main__":
     unittest.main()

@@ -365,11 +365,17 @@ def _ssid(name):
 
 
 def _wifi_list(output):
-    """The networks heard → [(name, signal of 100, in use)], one per name: the one in use with the signal it
+    """→ [(name, signal of 100, in use)]: _heard, without whether each is protected"""
+    return [(n["name"], n["signal"], n["used"]) for n in _heard(output)]
+
+
+def _heard(output):
+    """The networks heard → [{name, signal of 100, used, secure}], one per name: the one in use with the signal it
     has now (link), the others with their strongest access point (a network often has several). The output is
     `iw dev <wifi> link` then `iw dev <wifi> scan dump` (without root, what the device heard last, not a new
     scan); or termnl-wifi's, a Wi-Fi manager's list after a line "manager: nmcli|wpa_cli|iwctl"; or a host's
-    one line of JSON, {"networks": [{"ssid", "signal" in dBm}]} (the desk's desk-wifi scan)."""
+    one line of JSON, {"networks": [{"ssid", "signal" in dBm, "secure"}]} (the desk's desk-wifi scan). secure: True when
+    the network asks for a password, False when it's open, None when the output doesn't say."""
     blocks, manager = [], None
     for line in output.splitlines():
         m = re.match(r"^manager: (\w+)$", line)
@@ -380,22 +386,26 @@ def _wifi_list(output):
                 heard = json.loads(line).get("networks") or []
             except ValueError:
                 heard = []
-            blocks += [{"link": False, "used": False, "name": n["ssid"], "signal": _quality(n["signal"])} for n in heard if n.get("ssid")]
+            blocks += [{"link": False, "used": False, "name": n["ssid"], "signal": _quality(n["signal"]), "secure": n.get("secure")} for n in heard if n.get("ssid")]
         elif line.startswith(("Connected to ", "BSS ")):
-            blocks.append({"link": line.startswith("Connected"), "used": line.startswith("Connected") or "associated" in line})
-        elif manager == "nmcli":  # "*:72:Mesh Network": in use, signal of 100, name (its colons written \:)
-            parts = re.split(r"(?<!\\):", line, maxsplit=2)
-            if len(parts) == 3 and parts[1].isdigit():
+            blocks.append({"link": line.startswith("Connected"), "used": line.startswith("Connected") or "associated" in line,
+                           "secure": None if line.startswith("Connected") else False})
+        elif manager == "nmcli":  # "*:72:WPA2:Mesh Network": in use, signal of 100, security, name (its colons written \:)
+            parts = re.split(r"(?<!\\):", line, maxsplit=3)
+            if len(parts) == 4 and parts[1].isdigit():
                 used = parts[0] == "*"
-                blocks.append({"link": used, "used": used, "name": parts[2].replace("\\:", ":").replace("\\\\", "\\"), "signal": int(parts[1])})
+                blocks.append({"link": used, "used": used, "name": parts[3].replace("\\:", ":").replace("\\\\", "\\"), "signal": int(parts[1]),
+                               "secure": parts[2] not in ("", "--")})
         elif manager == "wpa_cli":  # bssid, frequency, signal in dBm, flags, name
             parts = line.split("\t")
             if len(parts) == 5 and re.match(r"^-?\d+$", parts[2]):
-                blocks.append({"link": False, "used": False, "name": _ssid(parts[4]), "signal": _quality(float(parts[2]))})
+                blocks.append({"link": False, "used": False, "name": _ssid(parts[4]), "signal": _quality(float(parts[2])),
+                               "secure": bool(re.search(r"WPA|RSN|WEP|SAE", parts[3]))})
         elif manager == "iwctl":  # "  >  Mesh Network   psk   ****": in use, name, security, up to four stars
             m = re.match(r"^\s*(>)?\s*(.+?)\s{2,}(open|psk|8021x|wep|owe)\s+(\*+)\s*$", re.sub(r"\x1b\[[0-9;]*m", "", line))
             if m:
-                blocks.append({"link": bool(m.group(1)), "used": bool(m.group(1)), "name": m.group(2), "signal": 25 * len(m.group(4))})
+                blocks.append({"link": bool(m.group(1)), "used": bool(m.group(1)), "name": m.group(2), "signal": 25 * len(m.group(4)),
+                               "secure": m.group(3) != "open"})
         elif blocks:
             name = re.match(r"\tSSID: (.*)$", line)
             signal = re.match(r"\tsignal: .*?(-\d+(?:\.\d+)?) dBm", line)  # one board's driver writes "0.-75 dBm"
@@ -403,15 +413,19 @@ def _wifi_list(output):
                 blocks[-1]["name"] = _ssid(name.group(1))
             if signal:
                 blocks[-1]["signal"] = _quality(float(signal.group(1)))
-    best = {}
+            if re.match(r"^\t(RSN|WPA):|^\tcapability:.*\bPrivacy\b", line) and blocks[-1]["secure"] is not None:
+                blocks[-1]["secure"] = True  # a scan's access point asks for a password (the link doesn't say)
+    best, secure = {}, {}
     for b in blocks:
         if not b.get("name") or "signal" not in b:
             continue  # a hidden network has no name
+        if b.get("secure") is not None:  # any access point of the name says whether it's protected
+            secure[b["name"]] = secure.get(b["name"]) or b["secure"]
         old = best.get(b["name"])
         if not old or b["link"] or (not old["link"] and (b["used"], b["signal"]) > (old["used"], old["signal"])):
             best[b["name"]] = b
-    found = [(b["name"], b["signal"], b["used"]) for b in best.values()]
-    return sorted(found, key=lambda n: (-n[1], not n[2]))  # strongest first; the one in use first among equals
+    found = [{"name": n, "signal": b["signal"], "used": b["used"], "secure": secure.get(n)} for n, b in best.items()]
+    return sorted(found, key=lambda n: (-n["signal"], not n["used"]))  # strongest first; the one in use first among equals
 
 
 def wifi(w, output=""):
@@ -425,7 +439,8 @@ def wifi(w, output=""):
 
 
 def networks(w, output="", top=15):
-    """the Wi-Fi networks around, strongest first"""
+    """the Wi-Fi networks around, strongest first; a protected one is marked "lock", a page draws it in its own look"""
+    marks = ["lock" if n["secure"] else None for n in _heard(output)[:top]]
     found = _wifi_list(output)
     if not found:
         return {"level": "none", "values": {"count": "0", "best": w("nothing")}, "table": None}
@@ -436,7 +451,7 @@ def networks(w, output="", top=15):
         rows.append([w("more", count=more), "", ""])
         levels.append(None)
     return {"level": "fine", "values": {"count": str(len(found)), "best": found[0][0]},
-            "table": {"columns": [w("network"), w("signal"), ""], "rows": rows, "levels": levels}}
+            "table": {"columns": [w("network"), w("signal"), ""], "rows": rows, "levels": levels, "marks": marks + [None] * (len(rows) - len(marks))}}
 
 
 # connections that aren't a way out of the device: itself, and the bridges of containers and virtual machines
