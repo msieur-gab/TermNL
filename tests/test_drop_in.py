@@ -1,35 +1,40 @@
 """python3 -m unittest tests.test_drop_in — a skill folder dropped in works alone (FRAMES.md, 25 Oct 2026).
 
-tests/drop-in/ holds two skills TermNL doesn't ship: check-kernel brings an object ("kernel") and ping-remote
-an action ("ping") that no list of words/ has. Each folder is added to the language as it is, with nothing
-else edited. Templates read them at once; the model knows them after "learn what I taught you"."""
+check-kernel brings an object ("kernel") and ping-remote an action ("ping") that no list of words/ has. Born
+as test-only skills, shipped since 25 Oct 2026: here they are taken out of the language, then dropped back in
+as their folders are, with nothing else edited. Templates read them at once; the model knows them after
+"learn what I taught you"."""
 import os
 import unittest
 
 from termnl.agent import Agent
-from termnl.load import LANGUAGES, ROOT, language_dir, read
+from termnl.load import LANGUAGES, language_dir, read
 from termnl.skills import load
 from tests.device import device
 
 LISTS = ("actions", "objects", "filetypes", "conversation", "samples", "readings", "values")
-DROP = os.path.join(ROOT, "tests", "drop-in")
+SKILLS = os.path.join(language_dir("en", LANGUAGES), "skills")
+DROPPED = ("check-kernel", "ping-remote")
 
 
 def language(extra):
-    """the English skills and words, with these skill files added: {id: skill.md}"""
+    """the English skills and words without the two dropped-in skills, with these skill files added: {id: skill.md}"""
     d = language_dir("en", LANGUAGES)
     lists = {k: read(os.path.join(d, "words", k + ".md")) for k in LISTS}
-    skills = {id: read(os.path.join(d, "skills", id, "skill.md")) for id in sorted(os.listdir(os.path.join(d, "skills")))}
+    skills = {id: read(os.path.join(SKILLS, id, "skill.md")) for id in sorted(os.listdir(SKILLS)) if id not in DROPPED}
     skills.update(extra)
     return load(lists, skills)
 
 
 def dropped():
-    return {id: read(os.path.join(DROP, id, "skill.md")) for id in sorted(os.listdir(DROP))}
+    return {id: read(os.path.join(SKILLS, id, "skill.md")) for id in DROPPED}
 
 
 class DropIn(unittest.TestCase):
     def test_a_skill_folder_brings_its_own_action_and_object(self):
+        before = language({})
+        self.assertNotIn("kernel", before["lists"]["objects"])
+        self.assertNotIn("ping", before["lists"]["actions"])
         lang = language(dropped())
         self.assertEqual(lang["errors"], [])
         self.assertIn("kernel", lang["lists"]["objects"])
@@ -55,7 +60,7 @@ class DropIn(unittest.TestCase):
         self.assertEqual((r["outcome"], r["skill"]), ("act", "play-music"))
 
     def test_a_skill_gives_words_only_for_itself(self):
-        md = read(os.path.join(DROP, "check-kernel", "skill.md"))
+        md = read(os.path.join(SKILLS, "check-kernel", "skill.md"))
         lang = language({"check-kernel": md.replace("- kernel: kernel", "- memory: brain cells\n- kernel: kernel")})
         self.assertTrue(any('"memory" is not its action or object' in e for e in lang["errors"]), lang["errors"])
         lang = language({"check-kernel": md.replace("## Words\n", "## Words\n\n- start → play\n")})
