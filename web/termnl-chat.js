@@ -4,6 +4,9 @@
 // opens a panel (opens: "settings") is passed on in the "reply" event: the page holding the chat opens it.
 // While TermNL learns again, it asks when it is done (GET /api/learning) and shows it as a turn.
 
+// a padlock, as the desk draws its icons (symbios: 24 px, one line in the text's colour)
+const LOCK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
+
 const css = `
   :host { display: flex; flex-direction: column; min-height: 0; font: inherit; color: var(--text); }
   .log { flex: 1; overflow-y: auto; padding: 16px 0; display: flex; flex-direction: column; gap: 14px; }
@@ -20,6 +23,7 @@ const css = `
   th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
   th { font-weight: 600; color: var(--muted); font-size: 12px; }
   tr:last-child td { border-bottom: 0; }
+  .mark svg { width: .9em; height: .9em; vertical-align: -.1em; margin-right: .35em; }
   td.high, td.warm, td.busy, td.filling-up, td.weak { color: var(--warn); } td.full, td.hot, td.struggling { color: var(--bad); }
   .scroll { max-width: 100%; overflow-x: auto; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -110,13 +114,15 @@ class TermNLChat extends HTMLElement {
   }
 
   // a reader's table: columns, then rows; a row's level (high, hot…), when given, colours its last cell,
-  // whatever the language the words are in
-  table({ columns, rows, levels = [] }) {
+  // whatever the language the words are in; a row's mark (lock: a network that asks for a password) is drawn
+  // before its first cell, a line in the text's colour (Gab, 25 Oct: "Simple shape and one color")
+  table({ columns, rows, levels = [], marks = [] }) {
     const wrap = this.el("div", "scroll"), t = this.el("table");
     if (columns.some(Boolean)) { const tr = this.el("tr"); for (const c of columns) tr.append(this.el("th", "", c)); t.append(tr); }
     rows.forEach((row, i) => {
       const tr = this.el("tr");
       row.forEach((c, j) => tr.append(this.el("td", j === row.length - 1 && levels[i] ? levels[i].replace(/ /g, "-") : "", c)));
+      if (marks[i] === "lock") { const m = this.el("span", "mark"); m.innerHTML = LOCK; tr.firstChild.prepend(m); }
       t.append(tr);
     });
     wrap.append(t);

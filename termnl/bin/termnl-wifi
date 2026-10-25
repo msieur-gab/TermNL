@@ -14,7 +14,7 @@ link() {
 }
 
 scan() {
-	if out=$(nmcli -t -f IN-USE,SIGNAL,SSID device wifi list --rescan yes 2>/dev/null) && [ -n "$out" ]; then
+	if out=$(nmcli -t -f IN-USE,SIGNAL,SECURITY,SSID device wifi list --rescan yes 2>/dev/null) && [ -n "$out" ]; then
 		echo "manager: nmcli"; echo "$out"; return
 	fi
 	for i in $wifis; do
