@@ -17,7 +17,11 @@ Methods tested are added under **Tested**, with their numbers beside the baselin
 - **TermNL's overall shape is what the field recommends:** exact patterns first, a small model second, a
   fallback last.
 - **The best gains look like logic, not a bigger model:** calibrated asking (conformal prediction) and
-  out-of-scope by distance to what was taught. Both run in plain Python, on what TermNL already has.
+  out-of-scope by distance to what was taught, both in plain Python on what TermNL already has (the
+  second tested below, not kept).
+- **A, out of scope by distance, tested 25 Oct: not kept.** With TermNL's clues, the far sentences are
+  as often real requests as out of scope. It found a better lead: the typo corrector turns real words
+  into taught ones ("game" → "name"), method F.
 - **Word proximity, if ever:** at teaching time on the laptop first; on the device only for unknown words,
   only to ask, never to act, and after a measured test (Model2Vec).
 
@@ -106,7 +110,10 @@ it removes the dependency without changing anything already tested.
 | D | Proximity at teaching time | A word table proposes "Also said" words for thin skills; Gab approves | Nothing: laptop only |
 | E | Model2Vec for unknown words | Extra clues for words never taught; may only lead to a question | 8–16 MB and a lookup; measured with `tools/neighbours.py` first |
 
+| F | Real words aren't typos | A list of common English words, plain text: a word on it is never "corrected" into a taught one (game ≠ name, stick ≠ stuck). Found by testing A | A word list of some tens of KB, read at start |
+
 C is independent and can go in at any time. E only if the misses left are mostly unknown words.
+**A was tested on 25 Oct and not kept** (see Tested).
 
 ## How every method is measured
 
@@ -133,7 +140,54 @@ Gab's real turns (24 Oct): 104 of 117 as Claude guessed (`should (Claude):` line
 Each method gets its own section: the date, what changed in the code, the table above re-run, what moved
 (sentences gained and lost, by name), speed and size, and Gab's decision.
 
-*Nothing tested yet.*
+### A — Out of scope by distance: not kept (25 October 2026)
+
+**Result: with TermNL's own clues, distance doesn't tell an out-of-scope sentence from a real request.**
+Nothing was changed in the agent; the scores above stand. Reproduce with `python3 -m tools.distance`.
+
+**What was measured.** Of the 523 test sentences, 194 are read by the model rather than a template:
+11 out of scope (all asked about, none acted on), 170 requests handled or asked first, 13 wrong readings.
+The other 46 out-of-scope sentences are already refused, by the "none" class. For each of the 194, the
+words it was read with (typos corrected, names and values left out) were compared with all 5,514 sentences
+TermNL trains on, using the model's own clues and weights. Ten measures were tried: the closest taught
+sentence (any skill, or the guessed skill), the guessed skill's average sentence, the share of words
+taught, each on all clues, on words and word pairs, and on words alone; the model's own confidence too.
+
+**What it showed.** No measure refuses more than one out-of-scope sentence without losing a request.
+
+| Measure | Out of scope refused | Requests lost |
+|---|---|---|
+| Closest taught sentence, all clues (best) | 1 of 11 | 0 |
+| the same, one line further | 2 of 11 | 2 |
+| Closest taught sentence, words and pairs | 5 of 11 | 4 (and 2 wrong readings refused) |
+| Share of words taught | 2 of 11 | 1 |
+| The model's confidence alone | 2 of 11 | 2 |
+
+The one refused for free is "who won the football game last night"; a line drawn for one sentence is
+fitted to it, not learned. The next farthest are real requests: "take todo.txt and stick it in projects,
+thx", "is my disk getting full? i keep downloading stuff…".
+
+**Why.** The paper measured distance with a sentence model, which knows "crank up" is near "turn up". With
+TermNL's clues, distance is word overlap, which the model already uses. And the out-of-scope sentences left
+are close by nature: "crank up the sound", "connect to home-5g", "format my usb stick", "kill the process
+with id 4312" are about the board, with taught words, only not skills yet. The far ones are the blind
+sets' requests, written by someone who never saw the skill files. Asking about an out-of-scope sentence is
+harmless by the measure's own rule; losing a request is not. So the trade isn't worth it.
+
+**What it found instead: the typo corrector changes real words.** "football game last night" is read as
+"name" because "game" was corrected to "name" and "night" to "right"; "format my usb stick" became
+"stuck". Of 31 corrections made on the test sets, 9 change a real English word into a taught one:
+
+| Correction | Effect |
+|---|---|
+| going → doing ("how's it going with the board") | helps: handled |
+| connect → connected, tune → tunes | harmless |
+| take → make ("take me to the documents folder") | hurts: wrong skill, asked |
+| game → name, night → right (football) | hurts: out of scope read as "say name" |
+| stick → stuck ("format my usb stick") | hurts: read as "stop process" |
+| night → right ("ok shut it all down for the night") | harmless here, asked first anyway |
+
+This becomes method **F** below. The distance idea comes back only with better vectors (E), if ever.
 
 ## Sources
 
