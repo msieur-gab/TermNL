@@ -469,6 +469,9 @@ class Agent:
         refs, lists, frame = self.lists["refs"], self.lists, self.frame
         acts = self.actions_said(said)
         objs = {o for o in lists["objects"] for ph in refs.get(o, []) if where(said, ph)}
+        if not acts and not objs and u and u.get("skill") and u["skill"]["object"] == frame["skill"]["object"] \
+                and any(len(ph) > 1 and all(w in ws for w in ph) for ph in refs.get(u["skill"]["action"], [])):
+            acts = {u["skill"]["action"]}  # its words said, split around "it" ("bring it back"): the model's reading
         if len(acts) > 1 or len(objs) > 1 or (acts and objs):
             return None
         action = next(iter(acts)) if acts else frame["skill"]["action"]
@@ -508,6 +511,9 @@ class Agent:
             v = frame["vals"].get(k) if same else None
             if not v and thing and k == main and spec["kind"] == thing["kind"]:
                 v = thing
+            elif not v and thing and spec["kind"] == "text" and spec["required"] and not spec.get("new") \
+                    and k == next(x for x, sp in skill["values"].items() if sp["required"]):
+                v = thing  # a file or folder said by its name ("bring it back": the file just deleted)
             elif not v and thing and thing.get("place") and k == "place" and spec["kind"] == "@sys.folder":
                 v = thing["place"]
             if v:

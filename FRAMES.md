@@ -329,6 +329,28 @@ so the host searched the documents; the model now guesses "how big a folder is" 
 weak with three unknown words should go to the documents: RESEARCH.md's method A (out of scope by distance)
 is the fix in view, not a threshold moved to pass the test.
 
+## E. Four skills dropped in
+
+25 October, Gab chose four of seven proposed: empty-trash, restore-file, find-text, show-size (the biggest
+things in a folder). Each is a folder with a default Linux command (`rm`, `mv`, `grep`, `du | sort`); empty-trash
+brings an action and an object, restore-file an action, find-text an object. 77 skills.
+
+- "empty the trash" asks its approval; "get rid of everything in the trash" asks delete a file or empty the trash.
+- "bring todo.txt back" restores it; after "now delete it", "bring it back" and "restore it" put the file back in
+  the folder it came from. Two changes to frames made that possible: a follow-up fills a skill's needed name
+  with the thing (restore-file's file is a name, it is in the trash, not in a folder), and an action split
+  around "it" ("bring it back") is taken from the model's reading when its words are all in the sentence.
+- "find the text permacomputing in documents" greps inside the files; "find note.md" is still find file.
+  But "which notes mention wifi" asks what to look for: "wifi" is an object word, and a rule says an object
+  word is never a value. The subtraction audit weighs that rule.
+- "what takes the most space in downloads" and "show me the biggest files here" list the biggest first; "how
+  big is the documents folder" is still check size.
+
+**What moved:** 9 of 665 test answers, none into a wrong action; handled 383, the same. Lost: "can you throw
+todo.txt in the bin" now abstains ("bin" became the trash's word). One out-of-scope sentence of an older set,
+"empty the trash completly", now asks empty-trash: the set was written before the skill existed.
+Tests: `tests/test_trash_and_space.py`; the same three failing as before.
+
 ## Open, for Gab
 
 - How long a frame lasts. Now: until another request is done, "cancel", or a sentence not understood.
