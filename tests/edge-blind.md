@@ -1,0 +1,152 @@
+# Edge cases, blind — never trained on, never tuned against
+
+Written on 25 Oct 2026 by an agent that saw only skill names and purposes
+(briefs/2026-10-25-edge-skills-blind.md). `python3 -m tests.measure edge-blind`.
+
+- show-type: list the images in Downloads
+- show-type: which pdfs do I have in Documents
+- show-type: notes in ideas
+- show-type: can you show me all the videos here
+- check-type: is there a video anywhere in projects
+- check-type: do I have any pdf in Documents or its subfolders
+- check-type: any images in home?
+- check-type: tell me if there's at least one note in ideas
+- read-file: what does todo.txt say
+- read-file: read me groceries.md
+- read-file: show the first lines of seed.md
+- read-file: I'd like to see what's written in note.md
+- show-recent: what files changed today
+- show-recent: recently modified files
+- show-recent: which files did I touch in the last 24 hours
+- show-recent: show me what's been edited since yesterday
+- check-size: how big is Downloads
+- check-size: size of projects
+- check-size: how much space does the ideas folder take up
+- check-size: is Documents a heavy folder, how many megabytes is it
+- show-log: why did nginx fail
+- show-log: show the log of mpd
+- show-log: last lines of the ssh log
+- show-log: the music server crashed, what does its log say
+- check-usb: which usb sticks are plugged in
+- check-usb: is my sd card connected
+- check-usb: list the drives I plugged in
+- check-usb: did the board see the external disk I just put in
+- turn-up-sound: louder
+- turn-up-sound: turn the volume up
+- turn-up-sound: I can barely hear Wax Tailor, raise the sound
+- turn-up-sound: crank it up a bit
+- turn-down-sound: quieter please
+- turn-down-sound: lower the volume
+- turn-down-sound: Hope & Sorrow is way too loud, bring it down
+- turn-down-sound: turn the sound down a little
+- connect-wifi: connect to home-5g, the password is sunflower42
+- connect-wifi: join cafe-guest with password latte2026
+- connect-wifi: log me onto the wifi home-5g, password is blue-door-7
+- connect-wifi: use wifi network cafe-guest password coffee
+- unpack-file: unpack photos.tar.gz
+- unpack-file: extract backup.tar.gz here
+- unpack-file: get the files out of photos.tar.gz
+- unpack-file: untar backup.tar.gz please
+- compress-file: compress report.pdf
+- compress-file: make an archive of movie.mkv
+- compress-file: pack setup.sh into an archive
+- compress-file: can you shrink website.html into a tar.gz next to it
+- send-file: send report.pdf to laptop
+- send-file: copy movie.mkv over to the studio pi
+- send-file: put todo.txt on my laptop
+- send-file: transfer backup.tar.gz to studio pi
+- get-file: get note.md from laptop
+- get-file: bring seed.md over from the studio pi
+- get-file: copy report.pdf from my laptop onto the board
+- get-file: fetch photos.tar.gz from studio pi
+- show-remote: what's on laptop
+- show-remote: list the files on the studio pi
+- show-remote: show me what my laptop has on it
+- show-remote: browse the studio pi
+
+- show-folder: what's in Documents
+- show-folder: show me the projects folder
+- find-file: where is groceries.md
+- find-file: find the file called scraper
+- open-file: open report.pdf
+- open-file: launch website.html
+- move-file: move note.md to ideas
+- move-file: put todo.txt in the Documents folder
+- compress-folder: compress the projects folder
+- compress-folder: make an archive of Downloads
+- check-storage: how much disk space is left
+- check-storage: is the disk almost full
+- download-file: download https://example.com/map.pdf
+- download-file: grab the file at example.org/guide.txt
+- mute-sound: mute
+- mute-sound: silence the speakers
+- unmute-sound: unmute
+- unmute-sound: bring the sound back
+- turn-on-wifi: turn wifi on
+- turn-on-wifi: switch on the wireless
+- turn-off-wifi: turn off wifi
+- turn-off-wifi: disable the wifi
+- check-network: am I online
+- check-network: what's the board's ip address
+- check-service: is nginx running
+- check-service: is the ssh service up
+- restart-service: restart mpd
+- restart-service: restart nginx, it's stuck
+- delete-file: delete groceries.md
+- delete-file: remove setup.sh
+- shut-down-system: shut down
+- shut-down-system: power off the board
+
+- send-file: sand report.pdf to laptop
+- check-size: how bag is Downloads
+- read-file: reed todo.txt
+- unpack-file: unpick backup.tar.gz
+- turn-down-sound: turn the sound dawn
+- show-log: show the lag of nginx
+- check-usb: witch usb sticks are plugged in
+- show-recent: files changed in the lost day
+- connect-wifi: connect to home-5g, the passport is sunflower42
+- get-file: get seed.md form laptop
+
+- show-type: listing the images in home
+- check-type: are there videos in projects
+- read-file: reading todo.txt
+- send-file: sending movie.mkv to studio pi
+- get-file: getting note.md from laptop
+- check-usb: which drives are connected
+- turn-up-sound: turning up the sound
+- compress-file: compressing setup.sh
+- show-recent: recent changes to my files
+- connect-wifi: connecting to home-5g, password sunflower42
+
+- none: will it snow tomorrow
+- turn-down-sound: all fine, just turn the sound down a bit
+- show-type: I have a pile of notes in ideas, list them
+- send-file: send seed.md to the studio pi
+- restart-service: thanks mate, now restart mpd
+- none: my dog chewed the charger cable
+- none: what gift should I buy my wife
+- none: is the oven still on
+- none: where did I leave my left shoe
+- none: I burned my cheek on the stove
+
+- none: format the usb stick
+- none: mount the external drive
+- none: delete note.md on my laptop
+- none: change the wifi password of home-5g
+- none: set the volume to 40 percent
+- none: forget the cafe-guest network
+- none: download and unzip example.com/pack.zip
+- none: upload report.pdf to a website
+- none: email report.pdf to my brother
+- none: attach groceries.md to an email
+- none: eject the sd card
+- none: partition the usb drive
+- turn-on-bluetooth: turn on bluetooth
+- none: make the screen brighter
+- none: what's the weather today
+- none: who won the football last night
+- none: set a timer for ten minutes
+- none: how do I make pancakes
+- none: tell me a joke
+- none: what time is it in Tokyo

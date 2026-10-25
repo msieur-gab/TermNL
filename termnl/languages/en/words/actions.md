@@ -31,6 +31,13 @@ A skill names its action in `does:`; its sentences write it as `<action>`.
 - download: download, fetch
 - set: set, change
 - train: train, retrain, learn
+- read: read, print
+- turn up: turn up, raise, increase, crank up, pump up
+- turn down: turn down, lower, decrease, reduce
+- connect: connect, join, hook up
+- unpack: unpack, extract, unzip, decompress, uncompress, untar
+- send: send, transfer, push
+- get: bring over, pull
 
 ## Opposites
 
@@ -47,6 +54,8 @@ shut it down. Each line: an action, then its opposites.
 - close: open
 - next: previous
 - previous: next
+- turn up: turn down, mute
+- turn down: turn up
 
 ## Meaning with an object
 
