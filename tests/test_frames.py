@@ -1,7 +1,10 @@
 """python3 -m unittest tests.test_frames — follow-ups: a sentence that says part of a request, completed by the
 last request done (FRAMES.md, 25 Oct 2026)."""
+import os
 import unittest
 
+from termnl.agent import Agent
+from tests.device import device
 from tests.test_dialogue import agent
 
 
@@ -43,6 +46,29 @@ class FollowUps(unittest.TestCase):
     def test_same_for_another_file(self):
         _, (_, r) = talk("copy todo.txt to documents", "same for note.md")
         self.assertEqual((r["outcome"], r["command"]), ("act", "cp $HOME'/note.md' $HOME'/Documents/'"))
+
+
+class NamesDontMatter(unittest.TestCase):
+    """Follow-ups find the folder a thing is in by what a skill says it needs ("a folder on the device. If it's
+    not said: where you are"), never by the value's name: here every {place} is renamed {where}."""
+
+    def test_the_same_follow_ups_with_the_folder_named_otherwise(self):
+        from tests.test_drop_in import SKILLS, language
+        from termnl.load import read
+        renamed = {id: read(os.path.join(SKILLS, id, "skill.md")).replace("{place}", "{where}")
+                   for id in ("open-file", "delete-file", "copy-file", "restore-file", "show-folder")}
+        lang = language(renamed)
+        self.assertEqual(lang["errors"], [])
+
+        def talk_(*turns):
+            a = Agent(**lang, settings={}, device=device, random=lambda: 0)
+            return [a.hear(t) for t in turns]
+        r = talk_("open seed.md in ideas", "now delete it")[-1]
+        self.assertEqual((r["outcome"], r["say"]), ("approve", "Move seed.md from ideas to the trash?"))
+        r = talk_("copy todo.txt to documents", "same for note.md")[-1]
+        self.assertEqual(r["command"], "cp $HOME'/note.md' $HOME'/Documents/'")
+        r = talk_("open seed.md in ideas", "now delete it", "yes", "bring it back")[-1]
+        self.assertEqual(r["command"], "mv -n $HOME'/.local/share/Trash/files/seed.md' $HOME'/ideas/'")
 
 
 class Guards(unittest.TestCase):

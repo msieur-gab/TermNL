@@ -351,6 +351,23 @@ todo.txt in the bin" now abstains ("bin" became the trash's word). One out-of-sc
 "empty the trash completly", now asks empty-trash: the set was written before the skill existed.
 Tests: `tests/test_trash_and_space.py`; the same three failing as before.
 
+## F. Follow-ups read what a skill needs, not what it names
+
+25 October, Gab: "fix 2 and re test". Frames found the folder a thing is in by the value's name, `place`
+(and `parent`): a contract nobody wrote down. A skill that called it `{where}` lost its follow-ups silently.
+Now the folder is the one `## What it needs` describes as a folder on the device with a default ("If it's not
+said: where you are", "the folder above"): where things are. A folder with no default, which must be told
+(copy file's "Where to?"), is where something goes, and is never filled from the thing (`where_it_is`).
+
+Proved: `tests/test_frames.py`, NamesDontMatter, renames every `{place}` to `{where}` in open-file,
+delete-file, copy-file, restore-file and show-folder. Before the fix, "now delete it" looked for seed.md in
+home; after, the same three follow-ups work. All 665 test answers are identical; 127 unit tests, the same
+three failing; the follow-ups unchanged.
+
+Still named, on purpose: a thing made by a skill is a file or a folder by the skill's object, `file` or
+`folder`, the two objects tied to the device's own kinds. And `finish_filetype`, older than frames, still
+reads a value called `name` (on main too).
+
 ## Open, for Gab
 
 - How long a frame lasts. Now: until another request is done, "cancel", or a sentence not understood.
