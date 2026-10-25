@@ -579,6 +579,13 @@ class Dialogue(unittest.TestCase):
         b.hear("help")
         self.assertEqual(b.hear("make a folder called bikes")["skill"], "create-folder")  # the chips don't hold the next request
 
+    def test_a_reply_says_the_name_only_when_there_is_one(self):
+        from termnl.text import pick
+        lines = ["Hey {user}, all good."]
+        self.assertEqual(pick(lines + ["All good."], lambda: 0, ""), "All good.")
+        self.assertEqual(pick(lines + ["All good."], lambda: 0, "Gab"), "Hey {user}, all good.")
+        self.assertEqual(Agent(**lang, settings={"name": "Gab"}, device=device, random=lambda: 0.99).hear("what can you do")["say"][:7], "Hi Gab,")
+        self.assertNotIn("{user}", agent().hear("what can you do")["say"])
 
     def test_a_program_that_isnt_a_running_app_is_said_so_with_the_apps_running(self):
         """Gab, 24 Oct, on the board: "kill pipewire", yes → "Which one should I stop?", the name lost. Only apps
