@@ -316,7 +316,7 @@ agreed before starting, that is where it stops: frames made TermNL aware of cont
 `agent.py` to compare replies; it knew neither skill-owned words' follow-ups nor frames. Gone with it:
 `tests/compare_agents.py` and `tests/conversations.json`, which only fed that comparison, the server's
 `--agent back`, and `TERMNL_AGENT` in the tests. All stay in git's history. A host that passes `agent="agent"`
-works as before. 668 + 45 lines and a 47-conversation file fewer; the tests are the same 120.
+works as before. 668 + 45 lines of code and their file of conversations fewer; the tests are the same 120.
 
 ## Open, for Gab
 
