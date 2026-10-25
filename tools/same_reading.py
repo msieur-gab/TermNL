@@ -2,8 +2,7 @@
 
 save: before a rewrite of the skill files (tools/to_plain.py), records how every sentence is read: the
 sentences the templates themselves generate (200 per template), every test set and every Also said line.
-check: after it, with the same model, reads them again and lists each difference (skill, outcome, values).
-The model is not retrained in between, so a difference can only come from the sentences' new form."""
+check: after it, reads them again and lists each difference (skill, outcome, values)."""
 import json
 import os
 import re

@@ -2,8 +2,8 @@
 
 check-kernel brings an object ("kernel") and ping-remote an action ("ping") that no list of words/ has. Born
 as test-only skills, shipped since 25 Oct 2026: here they are taken out of the language, then dropped back in
-as their folders are, with nothing else edited. Templates read them at once; the model knows them after
-"learn what I taught you"."""
+as their folders are, with nothing else edited. Everything reads them at once: there is no model to train
+(ALIGN.md, 25 Oct 2026)."""
 import os
 import unittest
 
@@ -50,9 +50,10 @@ class DropIn(unittest.TestCase):
         r = a.hear("can you reach the studio pi")
         self.assertEqual((r["outcome"], r["skill"], r["command"]), ("act", "ping-remote", "ping -c 3 'studio-pi'"))
         self.assertEqual(a.hear("ping a remote computer")["say"], "Which computer?")
-        # before learning, only its own sentences: "ping" alone needs the model to know it
+        # nothing to learn first (ALIGN.md, 25 Oct 2026): "ping" alone is its action, said without its value
         a = Agent(**language(dropped()), settings={}, device=device, random=lambda: 0)
-        self.assertEqual(a.hear("ping")["outcome"], "abstain")
+        r = a.hear("ping")
+        self.assertEqual((r["outcome"], r["say"]), ("ask", "Which computer?"))
 
     def test_what_a_word_means_with_its_object_is_said_by_the_skill(self):
         # play-music says "turn on the music" plays it (## Words), no longer words/actions.md

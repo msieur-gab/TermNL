@@ -18,8 +18,6 @@ import os
 import random
 import re
 import socket
-import subprocess
-import sys
 import time
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -28,7 +26,7 @@ from urllib.parse import parse_qs, urlsplit
 from . import readers
 from .agent import Agent
 from .device import Device
-from .load import HERE, ROOT, load_language, load_settings
+from .load import ROOT, load_language, load_settings
 from .runner import run
 from .text import fill, pick
 
@@ -41,7 +39,7 @@ TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": 
 
 class TermNL:
     # @doc, what people keep: a sentence goes to the host's documents only when TermNL doesn't understand it,
-    # or only guesses with a word it doesn't know; they answer only above these scores. Measured on 23 Oct with
+    # or only guesses (a word it doesn't know, or a weak reading); they answer only above these scores. Measured on 23 Oct with
     # the desk's MiniLM, Gab's 85 sentences and the 35 Ask test questions: 24 of 24 questions, none of his commands.
     NOTES = {"no skill": 0.40, "guess": 0.45}
 
@@ -71,10 +69,9 @@ class TermNL:
                              home_names=[" ".join(p) for p in self.lang["lists"]["conversation"].get("home folder", [["home"]])])
         os.makedirs(self.device.home, exist_ok=True)
         self.lend()
-        self.training = None  # learning again: {started, process, session}
+        self.training = None  # learning again: {started, session, thread, result}
         self.told = {}  # session → "Done learning…", until its page asks (GET /api/learning) or it speaks again
-        # how the model is trained again on this device: the lowest priority, two threads, so the board stays usable
-        self.trainer = ["nice", "-n", "19", sys.executable, "-m", "termnl.train"]
+        self.lang["trained"] = time.time()  # when the skill files were last read ("are you learning?")
         self.sessions = {}
         self.lock = threading.Lock()
 
@@ -115,33 +112,43 @@ class TermNL:
         return self.sessions[session]
 
     def train(self, session):
-        """"learn what I taught you": trains the model again from the skill files, in the background. The
-        model in use is replaced only when the new one is whole (train.py); the one before stays beside it.
-        The conversation that asked is the one told when it is done (Gab, 24 Oct: "asker, as it happens")."""
-        if self.training and "process" in self.training:
+        """"learn what I taught you": reads the skill files again, as they are now (what people say, Also said, their
+        words), in the background. Nothing is trained: the reader counts (reader.py), in well under a second even on
+        a board. The language in use is replaced only once the new one is whole; a skill file with a problem leaves
+        the one before in place, and says what is wrong. The conversation that asked is the one told when it is
+        done (Gab, 24 Oct: "asker, as it happens")."""
+        if self.training:
             return False
-        env = {**os.environ, "OPENBLAS_NUM_THREADS": "2", "OMP_NUM_THREADS": "2"}
-        process = subprocess.Popen(self.trainer, cwd=os.path.dirname(HERE), env=env, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE, text=True, start_new_session=True)
-        self.training = {"started": time.time(), "process": process, "session": session}
+        self.training = {"started": time.time(), "session": session}
+        thread = threading.Thread(target=self.relearn, daemon=True)
+        self.training["thread"] = thread
+        thread.start()
         return True
 
+    def relearn(self):
+        try:
+            lang = load_language("en")
+            self.training["result"] = lang
+        except Exception as e:  # a skill file that can't be read: the language in use stays
+            self.training["result"] = {"errors": [str(e)]}
+
     def learnt(self):
-        """once training is over: the new model is loaded, and how it went waits for the conversation that asked"""
+        """once the skill files are read again: the new language is used, and how it went waits for the conversation that asked"""
         t = self.training
-        if not t or t["process"].poll() is None:
+        if not t or "result" not in t:
             return
-        out, err = t["process"].communicate()
         seconds = time.time() - t["started"]
         self.training = None
         a = self.Agent(**self.lang, settings=self.settings, device=self.device)
-        if t["process"].returncode != 0:
-            self.told[t["session"]] = a.reply("learning failed", {"error": (err.strip().splitlines() or ["code %d" % t["process"].returncode])[-1]})
+        lang = t["result"]
+        if lang["errors"]:
+            self.told[t["session"]] = a.reply("learning failed", {"error": lang["errors"][0]})
             return
-        self.lang = load_language("en")
+        self.lang = lang
+        self.lang["trained"] = time.time()
         self.lend()
-        for session in self.sessions.values():
-            session.model = self.lang["model"]
+        for session in self.sessions.values():  # every conversation reads with the new language from its next sentence
+            session.lists, session.skills, session.reader = self.lang["lists"], self.lang["skills"], self.lang["reader"]
         took = readers.since(seconds, readers.Words(self.lang["lists"]["readings"]))
         self.told[t["session"]] = a.reply("learnt", {"time": took})
 
@@ -154,7 +161,7 @@ class TermNL:
     def state(self, reads):
         """what only the server knows, for the readers of TermNL itself (readers.py: learning, name)"""
         if reads == "learning":
-            return {"started": (self.training or {}).get("started"), "trained": self.lang["model"].get("trained")}
+            return {"started": (self.training or {}).get("started"), "trained": self.lang.get("trained")}
         if reads == "name":
             return {"user": self.settings.get("name") or ""}
         return {}
@@ -202,7 +209,7 @@ class TermNL:
         """the host's documents answer instead, when TermNL doesn't understand or only guesses, and they match;
         else None. They are only read: what they hold never becomes a command."""
         floor = self.NOTES["no skill"] if r["outcome"] == "abstain" and r.get("reason") == "no skill" else \
-            self.NOTES["guess"] if r["outcome"] == "ask" and r.get("how") == "model" and r.get("unknown") else None
+            self.NOTES["guess"] if r["outcome"] == "ask" and r.get("how") == "near" and (r.get("unknown") or (r.get("p") or 1) < 0.6) else None
         if floor is None or not self.doc:
             return None
         try:

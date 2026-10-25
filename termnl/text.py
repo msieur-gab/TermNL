@@ -80,3 +80,21 @@ def close(a, b):
             if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
                 d[i][j] = min(d[i][j], d[i - 2][j - 2] + 1)
     return d[len(a)][len(b)] <= most
+
+
+def stem(word):
+    """A word without its ending, so "using", "used" and "usage" read alike, "files" reads as file: only for
+    words of four letters or more, and only when enough is left ("us" for using, used and usage)."""
+    if len(word) < 4 or not word.isalpha():
+        return word
+    for end, keep in (("ies", "y"), ("ing", ""), ("age", ""), ("ed", ""), ("es", ""), ("s", "")):
+        if word.endswith(end) and len(word) - len(end) >= 2:
+            base = word[:-len(end)] + keep
+            if end == "es" and not base.endswith(("s", "x", "z", "ch", "sh")):
+                continue
+            if end == "s" and base.endswith("s"):
+                continue
+            if end in ("ing", "ed") and len(base) >= 3 and base[-1] == base[-2] and base[-1] not in "aeiou":
+                base = base[:-1]  # running, stopped
+            return base
+    return word

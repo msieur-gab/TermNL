@@ -61,4 +61,4 @@ shut it down. Each line: an action, then its opposites.
 
 Moved into the skills (25 Oct 2026): "turn on the music" plays it because play-music says so, under its own
 `## Words` (`- turn on, switch on, start → play`). A skill dropped in brings what its words mean; this list
-stays for a language that hasn't moved them yet.
+stays for a language that hasn't moved them yet (read into the skills of that action and those objects).

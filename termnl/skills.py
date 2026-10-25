@@ -20,8 +20,9 @@
                      words, a/b one of these words, ( ) may be left out, {value} a value
   ## Sentences       or, the older form: templates (template.py), each in `backticks` so <action> and
                      <object> show as written on GitHub instead of vanishing as HTML tags
-  ## Also said       how people say it, in plain sentences: for training only, never a rule (Gab's
-                     log, 23 Oct: "what is consuming my ram", "chip temperature")
+  ## Also said       how people say it, in plain sentences, with real values (Gab's log, 23 Oct: "what
+                     is consuming my ram", "chip temperature"). Read like the People say lines, with the
+                     values stood in for (plain.also_template), and counted as the skill's words
   ## What it needs  - {place}: a folder on the device. If it's not said: where you are. (words/values.md)
   ## Values          or, the older form: - name: kind[, required][, new][, default: x]
                        new: must not exist yet in the place (create file); default: here = where you are
@@ -37,8 +38,9 @@ Kinds: text, secret, a shared list (filetype), or a device list (@sys.folder, @s
 @sys.network, @sys.app, @sys.music, @sys.host)."""
 import re
 
+from .reader import Reader
 from .readers import FROM_COMMAND, READERS, placeholder
-from .plain import read_needs, to_template
+from .plain import also_template, read_needs, to_template
 from .template import compile_template, uses
 from .text import read_list, read_pairs, words
 
@@ -183,11 +185,17 @@ def merge_words(skills, lists):
         for name, _ in s["words"]:
             if name not in (action, obj) and (name in lists["actions"] or name in lists["objects"]):
                 errs.append('%s: ## Words: "%s" is not its action or object (%s, %s): a skill gives words only for itself' % (s["id"], name, action, obj))
+        # the words that mean its action when one of these objects is said ("turn on" plays the music): [(objects, phrases)]
+        s["own"] = []
         for objects, phrases, to in s["means"]:
             if to != action:
                 errs.append('%s: ## Words: "→ %s": a skill says only what words mean for itself (%s)' % (s["id"], to, action))
                 continue
-            lists["in_context"].append({"objects": objects or [obj], "action": to, "phrases": phrases})
+            s["own"].append((objects or [obj], phrases))
+        # words/actions.md, Meaning with an object (a language that hasn't moved them into its skills yet)
+        for rule in lists.get("in_context", []):
+            if rule["action"] == action and obj in rule["objects"]:
+                s["own"].append((rule["objects"], rule["phrases"]))
         if s["topic"] and obj and not any(obj in objects for _, objects in lists["topics"]):
             at = next((i for i, (t, _) in enumerate(lists["topics"]) if t.lower() == s["topic"].lower()), None)
             if at is None:  # a new topic goes before the one that holds the rest
@@ -234,11 +242,12 @@ def check(skill, lists):
         skill["replies"].update(asks)
         for p in problems:
             say(p)
+    skill["refs"] = lists["refs"]  # the shared words; its own (## Words) join them when their object is said (reader.py)
     used = set()
     skill["compiled"] = []
     for s in skill["sentences"]:
         try:
-            nodes = compile_template(to_template(s, lists, (action, obj)) if skill.get("plain") else s)
+            nodes = compile_template(to_template(s, {**lists, "refs": skill["refs"]}, (action, obj)) if skill.get("plain") else s)
             skill["compiled"].append(nodes)
             u = uses(nodes)
             for r in sorted(u["refs"]):
@@ -250,6 +259,15 @@ def check(skill, lists):
                     say('{%s} is not declared in ## Values, in "%s"' % (v, s))
         except ValueError as e:
             say(str(e))
+    # the Also said lines, read like the People say lines (plain.also_template)
+    skill["compiled_also"] = []
+    for line in skill["also"]:
+        try:
+            t = also_template(line, skill, lists)
+            if t:
+                skill["compiled_also"].append(compile_template(t))
+        except ValueError as e:
+            say("Also said, %s" % e)
     for name, v in skill["values"].items():
         k = v["kind"]
         known = k in ("text", "secret", "filetype") or (k.startswith("@sys.") and k[5:] in DEVICE_KINDS)
@@ -326,6 +344,8 @@ def load(list_files, skill_files):
     errors = merge_words(skills, lists)  # what each skill brings is known before any skill is checked
     for s in skills:
         errors.extend(check(s, lists))
+    lists["out_of_scope"] = [l[2:].strip() for l in list_files.get("out-of-scope", "").split("\n") if l.startswith("- ")]
+    lists["device_kinds"] = [k for k in DEVICE_KINDS if k != "file"]  # the lists a device reads of itself (reader.near, foreign)
     for c in lists["in_context"]:
         where = "words/actions.md, Meaning with an object"
         if c["action"] not in lists["actions"]:
@@ -349,4 +369,4 @@ def load(list_files, skill_files):
             if key in said and said[key] != s["id"]:
                 errors.append('%s: "%s" is also said for %s' % (s["id"], a, said[key]))
             said[key] = s["id"]
-    return {"lists": lists, "skills": skills, "errors": errors}
+    return {"lists": lists, "skills": skills, "errors": errors, "reader": Reader(lists, skills) if not errors else None}

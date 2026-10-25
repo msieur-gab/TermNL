@@ -17,11 +17,11 @@ class Dialogue(unittest.TestCase):
     def test_skill_files_have_no_problems(self):
         self.assertEqual(lang["errors"], [])
 
-    def test_every_weight_of_the_model_fits_in_one_byte(self):
-        for k in ("action", "object"):
-            m = lang["model"][k]
-            self.assertGreater(m["scale"], 0)
-            self.assertTrue(all(isinstance(x, int) and -127 <= x <= 127 for row in m["weights"].values() for x in row[1:]), k)
+    def test_the_reader_is_built_from_the_skills_alone(self):
+        """since 25 Oct 2026 (ALIGN.md): no model.json, no training; the reader counts the skills' words when they load"""
+        self.assertNotIn("model", lang)
+        self.assertIn("check-storage", lang["reader"].vocab)
+        self.assertIn("gigabytes", lang["reader"].vocab["check-size"])
 
     def test_a_template_request_acts_with_values_quoted(self):
         r = agent().hear("create a file named sprout.md in the ideas folder")
@@ -497,12 +497,15 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(a.hear("turn Wi-Fi on")["skill"], "turn-on-wifi")
 
     def test_a_template_the_model_doubts_asks_which_of_two(self):
-        """24 Oct: both silent wrong actions found by the probes came from templates, never from the model."""
-        for said, labels in [("rename the folder photos to pictures", {"rename a file", "rename a folder"}),
-                             ("is bluetooth running", {"check a service", "check Bluetooth"})]:
-            r = agent().hear(said)
-            self.assertEqual(r["outcome"], "ask", said)
-            self.assertEqual(set(r["chips"]), labels, said)
+        """24 Oct: both silent wrong actions found by the probes came from templates, never from the model.
+        Since 25 Oct (ALIGN.md): "rename the folder photos to pictures" can't be read as a file called "folder
+        photos" any more (a name never holds an object word), so it asks which folder, nothing runs."""
+        r = agent().hear("is bluetooth running")
+        self.assertEqual(r["outcome"], "ask")
+        self.assertEqual(set(r["chips"]), {"check a service", "check Bluetooth"})
+        r = agent().hear("rename the folder photos to pictures")
+        self.assertEqual((r["outcome"], r["skill"]), ("ask", "rename-folder"))
+        self.assertNotIn("command", r)
         a = agent()
         a.hear("is bluetooth running")
         self.assertEqual(a.hear("check Bluetooth")["skill"], "check-bluetooth")
@@ -620,41 +623,46 @@ class Dialogue(unittest.TestCase):
             r = a.hear("yes")
             self.assertEqual((r["outcome"], r.get("trains")), ("act", True), said)
 
-    def test_the_server_learns_in_the_background_and_says_when_it_is_done(self):
+    def test_the_server_learns_by_reading_the_skills_again_and_says_when_it_is_done(self):
+        """since 25 Oct 2026 (ALIGN.md): nothing is trained; "learn what I taught you" reads the skill files again, in
+        the background, and the conversation that asked is told (Gab, 24 Oct: "asker, as it happens")"""
         import shutil
         import tempfile
-        import time
+        import threading
         from termnl.server import TermNL
         root = tempfile.mkdtemp()
         try:
             shutil.copy(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "settings.md"), root)
             app = TermNL(root=root, home=os.path.join(root, "home"))
             app.log = lambda *a, **k: None
-            app.trainer = ["sleep", "1"]  # a stand-in that takes a moment
+            gate = threading.Event()
+            slow, app.relearn = app.relearn, lambda: (gate.wait(5), slow())  # a stand-in that takes a moment
             app.say("learn what i taught you", "t")
             self.assertIn("learning now", app.say("yes", "t")["say"])
             app.say("retrain your model", "t")
-            self.assertIn("still learning", app.say("yes", "t")["say"])  # one training at a time
+            self.assertIn("still learning", app.say("yes", "t")["say"])  # one learning at a time
             self.assertRegex(app.say("are you learning", "other")["say"], r"^I'm still learning: \d+ seconds? so far")
-            app.training["process"].wait()
+            gate.set()
+            app.training["thread"].join()
             self.assertNotIn("learn", app.say("what time is it", "other")["say"])  # not the one that asked
             self.assertEqual(app.learning("other"), {"learning": False, "say": None})
-            self.assertRegex(app.learning("t")["say"], r"learn.* 1 second\b")  # the page that asked fetches it
+            self.assertRegex(app.learning("t")["say"], r"learn.* \d+ seconds?\b")  # the page that asked fetches it
             self.assertNotIn("learn", app.say("what time is it", "t")["say"])  # told once
             self.assertIsNone(app.training)
             self.assertRegex(app.say("are you learning", "t")["say"], r"^I'm not learning right now\.")
             self.assertIn("haven't told me your name", app.say("what is my name", "t")["say"])
             app.say("call me gab", "t")
             self.assertRegex(app.say("what is my name", "t")["say"], r"^(You're|Your name is) Gab\.$")
+            app.relearn = slow
             app.say("learn what i taught you", "t")
             self.assertTrue(app.say("yes", "t")["learning"])  # the page starts asking
-            app.training["process"].wait()
-            self.assertRegex(app.say("what time is it", "t")["say"], r"learn.* 1 second\b")  # or its next reply says it
-            app.trainer = ["sh", "-c", "echo no numpy here >&2; exit 1"]
+            app.training["thread"].join()
+            self.assertRegex(app.say("what time is it", "t")["say"], r"learn.* \d+ seconds?\b")  # or its next reply says it
+            app.relearn = lambda: app.training.__setitem__("result", {"errors": ["a skill file that can't be read"]})
             app.say("learn what i taught you", "t")
             app.say("yes", "t")
-            app.training["process"].wait()
-            self.assertIn("kept what I knew before: no numpy here", app.say("what time is it", "t")["say"])
+            app.training["thread"].join()
+            self.assertIn("kept what I knew before: a skill file that can't be read", app.say("what time is it", "t")["say"])
         finally:
             shutil.rmtree(root)
 

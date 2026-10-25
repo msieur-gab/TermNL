@@ -7,8 +7,8 @@ approve: no
 ---
 
 Gab, 24 Oct, while TermNL was learning: "are you learning" wasn't understood, and "are you retrainng the
-model" was read as starting again. Learning runs in the background (train model); this says whether it is
-still going, or when it last ended.
+model" was read as starting again. Learning (reading the skill files again, train model) runs in the
+background; this says whether it is still going, or when it last ended.
 
 ## People say
 

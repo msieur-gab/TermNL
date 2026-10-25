@@ -6,7 +6,7 @@ section per skill, `## none` for out-of-scope) to the skill files, after checkin
   dropped  read by another skill's template (the template wins anyway; listed, as it may be a template's fault)
   dropped  for none: acted on by today's TermNL
 
-Then retrain: python3 -m termnl.train"""
+Nothing to retrain since 25 Oct 2026 (ALIGN.md): the skills are read again when they load."""
 import os
 import re
 import sys

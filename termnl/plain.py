@@ -147,3 +147,87 @@ def read_needs(lines, values_md):
             problems.append('{%s}: after the kind, write "If it\'s missing, ask: …" or "If it\'s not said: …"' % name)
         values[name] = v
     return values, replies, problems
+
+
+AFTER_TO = {"to", "into", "onto", "in", "inside"}  # before the folder something goes to, when the skill moves things
+AFTER_FROM = {"from", "of"}
+
+
+def also_template(line, skill, lists):
+    """An "Also said" line as a template, so it is read like a People say line (reader.py, since 25 Oct 2026):
+    a word for the skill's own action or object stands for all its words ("is my pi ok" also hears "is my
+    board ok"), a word from words/samples.md or a file-shaped word is the value it stands for ("put todo.txt in
+    the projects folder" → "put {name} in the {to} folder"), everything else is the word as written. The
+    folder slot is the one things go to after "to", "in", "into", or the one that says where things are
+    after "from"; a skill with one folder slot has no choice to make."""
+    ws = words(line)
+    action, obj, values = skill.get("action"), skill.get("object"), skill["values"]
+    refs = lists["refs"]
+    phrases = {}
+    for name in (action, obj):
+        for ph in refs.get(name, []):
+            phrases.setdefault(tuple(ph), name)
+    for objects, phs in skill.get("own", []):  # its own words for its action, when their object is said
+        if any(tuple(ph) in {tuple(ws[i:i + len(ph)]) for i in range(len(ws))} for o in objects for ph in refs.get(o, [])):
+            for ph in phs:
+                phrases.setdefault(tuple(ph), action)
+    exts = {x for t in lists["filetypes"] for x in t.get("exts", [t["ext"]])}
+    by_kind = {}
+    for k, spec in values.items():
+        by_kind.setdefault(spec["kind"], []).append(k)
+    samples = {}
+    for kind, names in by_kind.items():
+        found = [" ".join(p) for t in lists["filetypes"] for p in t["phrases"]] if kind == "filetype" else lists["samples"].get(kind, [])
+        for v in found:
+            samples.setdefault(tuple(words(v)), kind)
+    text_slots = [k for k, spec in values.items() if spec["kind"] in ("text", "@sys.file")]
+    leads = {ph[0] for ph in lists["conversation"].get("before a name", []) if len(ph) == 1}  # called, named
+    folders = by_kind.get("@sys.folder", [])
+    out, i, taken, said = [], 0, set(), set()
+    small = {"the", "a", "an", "my", "this", "that", "your", "our"}
+
+    def folder_slot(at):
+        before = next((ws[j] for j in range(at - 1, -1, -1) if ws[j] not in small), "")
+        if len(folders) == 1:
+            return folders[0]
+        to = [k for k in folders if values[k]["required"] and not values[k].get("default")]
+        at = [k for k in folders if values[k].get("default")]
+        if before in AFTER_TO and to:
+            return to[0]
+        if before in AFTER_FROM and at:
+            return at[0]
+        return next((k for k in folders if k not in taken), folders[0]) if folders else None
+
+    while i < len(ws):
+        hit = next((n for n in range(min(4, len(ws) - i), 0, -1) if tuple(ws[i:i + n]) in phrases), 0)
+        if hit and phrases[tuple(ws[i:i + hit])] not in said:  # an action once per sentence: in "make a new file", new is just new
+            name = phrases[tuple(ws[i:i + hit])]
+            if name == action:
+                said.add(name)
+            out.append("<%s>" % name)
+            i += hit
+            continue
+        hit = next((n for n in range(min(4, len(ws) - i), 0, -1) if tuple(ws[i:i + n]) in samples), 0)
+        if hit and i and ws[i - 1] in leads and text_slots:  # "a folder called projects": the name, not a folder on the device
+            kind = "text"
+            slot = next((k for k in text_slots if k not in taken), text_slots[0])
+        elif hit:
+            kind = samples[tuple(ws[i:i + hit])]
+            slot = folder_slot(i) if kind == "@sys.folder" else next((k for k in by_kind[kind] if k not in taken), by_kind[kind][0])
+        if hit:
+            if slot:
+                taken.add(slot)
+                out.append("{%s}" % slot)
+                i += hit
+                continue
+        w = ws[i]
+        if "." in w and w.rsplit(".", 1)[1] in exts and text_slots:
+            slot = next((k for k in text_slots if k not in taken), text_slots[0])
+            taken.add(slot)
+            out.append("{%s:file}" % slot)  # only a file-shaped word fits here: "create todo.txt" never reads "create the screen brighter"
+        else:
+            out.append(w)
+        i += 1
+    if not any(x.startswith("<") or not x.startswith("{") for x in out):
+        return None  # nothing but values ("documents"): no sentence to read
+    return " ".join(out)

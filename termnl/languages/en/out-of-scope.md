@@ -1,7 +1,7 @@
 # Out of scope
 
-Requests TermLU doesn't handle, so the model learns what "none of my skills" looks like.
-More are welcome; each one teaches the edge.
+Requests TermNL doesn't handle: read like a skill with no command (reader.py), so a sentence these explain
+best is understood as nothing. More are welcome; each one teaches the edge.
 
 - what's the weather tomorrow
 - tell me a joke

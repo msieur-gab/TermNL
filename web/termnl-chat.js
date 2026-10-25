@@ -100,7 +100,7 @@ class TermNLChat extends HTMLElement {
     meta.append(this.el("b", "", r.outcome));
     if (r.skill) meta.append(this.el("span", "", r.skill));
     if (r.how === "template") meta.append(this.el("span", "", "read by a template"));
-    if (r.how === "model") meta.append(this.el("span", "", `model, ${Math.round(r.p * 100)}% sure`));
+    if (r.how === "near") meta.append(this.el("span", "", `read near, ${Math.round(r.p * 100)}% fit`));
     if (r.unknown?.length) meta.append(this.el("span", "", "new words: " + r.unknown.join(", ")));
     if (r.ran) meta.append(this.el("span", r.ran, r.ran));
     turn.append(meta);

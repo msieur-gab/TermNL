@@ -1,7 +1,8 @@
 # Samples
 
-Values the model trains with, one list per kind of value: only to learn how sentences go around a
-value. The real values always come from the device (its folders, services, apps) or from the person.
+Sample values, one list per kind of value: in an "Also said" line, one of these stands for its kind ("put
+todo.txt in the projects folder" is read as "put {name} in the {to} folder"), so the line is read like a
+People say line. The real values always come from the device (its folders, services, apps) or from the person.
 
 - text: bikes, recipes, notes, todo, draft, seed.md, photos 2024, ideas for the trip, report, budget
 - secret: hunter2, s3cret

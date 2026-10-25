@@ -11,9 +11,10 @@ class TrashAndSpace(unittest.TestCase):
             _, (r,) = talk(said)
             self.assertEqual((r["outcome"], r["skill"]), ("approve", "empty-trash"), said)
 
-    def test_get_rid_of_everything_in_the_trash_asks_which(self):
+    def test_get_rid_of_everything_in_the_trash_is_approved_first(self):
+        """since 25 Oct 2026 (ALIGN.md) an Also said line reads exactly: the skill's own approval is the question"""
         _, (r,) = talk("get rid of everything in the trash")
-        self.assertEqual(r["outcome"], "ask")
+        self.assertEqual((r["outcome"], r["skill"]), ("approve", "empty-trash"))
         self.assertNotIn("command", r)
 
     def test_a_file_comes_back_from_the_trash(self):

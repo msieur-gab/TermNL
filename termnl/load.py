@@ -1,9 +1,8 @@
-"""Loads a language (its words, skills and model) and the device's settings, from disk.
+"""Loads a language (its words and skills) and the device's settings, from disk.
 
     termnl/languages/<lang>/words/      actions, objects, filetypes, conversation, samples, readings (.md)
     termnl/languages/<lang>/skills/     one folder per skill, a skill.md in each
-    termnl/languages/<lang>/model.json  trained from the above (python3 -m termnl.train)"""
-import json
+    termnl/languages/<lang>/out-of-scope.md  what no skill does"""
 import os
 
 from .skills import load
@@ -28,16 +27,14 @@ def load_language(lang="en", languages=LANGUAGES):
     lists = {k: read(os.path.join(d, "words", k + ".md")) for k in ("actions", "objects", "filetypes", "conversation", "samples", "readings")}
     if os.path.exists(os.path.join(d, "words", "values.md")):  # how ## What it needs is written (plain.py)
         lists["values"] = read(os.path.join(d, "words", "values.md"))
+    if os.path.exists(os.path.join(d, "out-of-scope.md")):  # what no skill does: the reader learns the edge from it
+        lists["out-of-scope"] = read(os.path.join(d, "out-of-scope.md"))
     skills = {}
     for id in sorted(os.listdir(os.path.join(d, "skills"))):
         f = os.path.join(d, "skills", id, "skill.md")
         if os.path.exists(f):
             skills[id] = read(f)
-    out = load(lists, skills)
-    m = os.path.join(d, "model.json")
-    if os.path.exists(m):
-        out["model"] = json.loads(read(m))
-    return out
+    return load(lists, skills)
 
 
 def load_settings(root=ROOT):
