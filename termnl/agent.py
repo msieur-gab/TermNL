@@ -26,7 +26,6 @@ import random as _random
 import re
 
 from .model import classify
-from .skills import main_slot
 from .template import best, parses
 from .text import close, fill, pick, tokenize, words
 
@@ -504,7 +503,7 @@ class Agent:
         folder). A file is carried by its name, so it is looked for again where it is asked for."""
         frame, out = self.frame, {k: v for k, v in vals.items() if not self.only_points(v)}
         same, thing = frame["skill"]["id"] == skill["id"], frame["thing"]
-        main = main_slot(skill)
+        main = skill.get("main")
         for k, spec in skill["values"].items():
             if k in out:
                 continue
@@ -514,7 +513,7 @@ class Agent:
             elif not v and thing and spec["kind"] == "text" and spec["required"] and not spec.get("new") \
                     and k == next(x for x, sp in skill["values"].items() if sp["required"]):
                 v = thing  # a file or folder said by its name ("bring it back": the file just deleted)
-            elif not v and thing and thing.get("place") and k == where_it_is(skill):
+            elif not v and thing and thing.get("place") and k == skill.get("where"):
                 v = thing["place"]  # the folder the thing is in, into the skill's folder that says where things are
             if v:
                 out[k] = {"text": v.get("label") or v.get("text")} if spec["kind"] == "@sys.file" else \
@@ -528,18 +527,18 @@ class Agent:
         thing = None
         if new and skill["object"] in ("file", "folder"):
             name = vals[new]["text"]
-            k = where_it_is(skill)
+            k = skill.get("where")
             where_ = vals[k] if k and vals.get(k) and vals[k].get("value") else None
             if skill["object"] == "folder":
                 value = (where_["value"] if where_ else self.here["value"]) + "/" + name
                 thing = {"kind": "@sys.folder", "value": value, "label": name}
             else:
                 thing = {"kind": "@sys.file", "label": name, "place": where_ and {"value": where_["value"], "label": where_["label"]}}
-        elif main_slot(skill) and vals.get(main_slot(skill)):
-            k = main_slot(skill)
+        elif skill.get("main") and vals.get(skill["main"]):
+            k = skill["main"]
             v, kind = vals[k], skill["values"][k]["kind"]
             thing = {"kind": kind, **{x: v[x] for x in ("value", "label", "text") if v.get(x) is not None}}
-            at = where_it_is(skill)
+            at = skill.get("where")
             if kind == "@sys.file" and at and vals.get(at):
                 thing["place"] = {x: vals[at][x] for x in ("value", "label") if vals[at].get(x) is not None}
         self.frame = {"skill": skill, "vals": {k: dict(v) for k, v in vals.items()}, "thing": thing}
@@ -924,13 +923,6 @@ def _template_words(nodes):
         elif n["t"] == "alt":
             for a in n["alts"]:
                 yield from _template_words(a)
-
-
-def where_it_is(skill):
-    """The value that says which folder a skill's thing is in, read from ## What it needs, never from its name: a
-    folder on the device with a default ("If it's not said: where you are", "the folder above"). A folder it must
-    be told, with no default, is where something goes (copy file's "Where to?"), never where it is."""
-    return next((k for k, s in skill["values"].items() if s["kind"] == "@sys.folder" and s.get("default")), None)
 
 
 def told(r, u):

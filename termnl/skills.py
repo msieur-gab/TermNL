@@ -205,6 +205,13 @@ def main_slot(skill):
     return next((k for k, s in on_device if s["required"]), on_device[0][0] if on_device else None)
 
 
+def where_it_is(skill):
+    """The value that says which folder a skill's thing is in, read from ## What it needs, never from its name: a
+    folder on the device with a default ("If it's not said: where you are", "the folder above"). A folder it must
+    be told, with no default, is where something goes (copy file's "Where to?"), never where it is."""
+    return next((k for k, s in skill["values"].items() if s["kind"] == "@sys.folder" and s.get("default")), None)
+
+
 def check(skill, lists):
     """Problems that stop a skill from working, as "skill: reason" lines. Empty means fine."""
     errs = []
@@ -296,11 +303,14 @@ def check(skill, lists):
         say('lists: "%s" — a skill can only list skills' % skill["lists"])
     elif "done" not in skill["replies"]:
         say('no "done" reply')
+    # what the agent reads as data, decided here once, from ## What it needs: the value the skill acts on, and the
+    # folder that says where things are (follow-ups: agent.carry, agent.remember)
+    skill["main"], skill["where"] = main_slot(skill), where_it_is(skill)
     if (skill["admin"] or skill["approve"]) and "approve" not in skill["replies"]:
         say('needs approval but has no "approve" reply')
     elif skill["admin"] or skill["approve"]:
         # a request completed by the one before ("now delete it") is approved knowingly: the question names the thing
-        main = main_slot(skill)
+        main = skill["main"]
         if main and "{%s}" % main not in skill["replies"]["approve"]:
             say('the "approve" reply must name {%s}, what it acts on' % main)
     for key, text in skill["replies"].items():
