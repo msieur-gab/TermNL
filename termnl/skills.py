@@ -8,7 +8,14 @@
   reads: memory      a skill that only reads: the device reads itself (readers.py), no command;
                      or a reader of its command's output (reads: wifi, with iw in ## Command)
   waits: 60          how many seconds its command may take (10 if not said): joining a Wi-Fi network
+  topic: Network     where help lists it, when its object is in no topic of words/objects.md
   ---
+  ## Words           what the skill needs to be understood, so a skill folder dropped in works alone:
+                       - music: music, playlist, tunes     words for its action or object; an action or
+                                                           object words/ doesn't have yet is made here
+                       - turn on, start → play             with its object, these words mean its action
+                       - track: turn off, end → stop       the same, with another object
+                     merged into the shared lists when the skills are read (load)
   ## People say     plain sentences (plain.py): a word for the action or object stands for all its
                      words, a/b one of these words, ( ) may be left out, {value} a value
   ## Sentences       or, the older form: templates (template.py), each in `backticks` so <action> and
@@ -118,7 +125,77 @@ def read_skill(id, md):
             "sentences": sentences, "also": also, "values": values, "command": command, "replies": replies,
             "plain": plain, "needs": section(md, "What it needs"), "changes": changes,
             "opens": meta.get("opens", "").strip(), "lists": meta.get("lists", "").strip(), "trains": meta.get("trains", "").strip(),
+            "topic": meta.get("topic", "").strip(), **read_words(md),
             "waits": int(meta.get("waits", "").split()[0]) if meta.get("waits", "").strip()[:1].isdigit() else 10}
+
+
+def read_words(md):
+    """## Words → {"words": [(name, [phrase…])], "means": [(objects or None, [phrase…], action)]}:
+    "- music: music, tunes" gives words for an action or object; "- turn on, start → play" says what
+    words mean with the skill's object; "- track: turn off → stop", with another one."""
+    out = {"words": [], "means": []}
+    for line in section(md, "Words") or []:
+        m = re.match(r"^- (.+)$", line.strip())
+        if not m:
+            continue
+        said, arrow, action = m.group(1).partition("→")
+        head, colon, rest = said.partition(":")
+        phrases = [words(w) for w in (rest if colon else said).split(",") if w.strip()]
+        if arrow:
+            objects = [o.strip() for o in head.split(",") if o.strip()] if colon else None
+            out["means"].append((objects, phrases, action.strip()))
+        elif colon:
+            out["words"].append((head.strip(), phrases))
+    return out
+
+
+def split_does(does, actions):
+    """ "turn off wifi" → ("turn off", "wifi"): the longest action it starts with; (None, "") if none"""
+    found = sorted((a for a in actions if does == a or does.startswith(a + " ")), key=len, reverse=True)
+    return (found[0], does[len(found[0]):].strip()) if found else (None, "")
+
+
+def merge_words(skills, lists):
+    """What each skill says under ## Words and topic:, added to the shared lists before any skill is checked,
+    so the rest of TermNL reads them as if words/ had them. → problems, as "skill: reason" lines."""
+    errs = []
+    refs = lists["refs"]
+
+    def add(name, phrases):
+        have = refs.setdefault(name, [])
+        have.extend(p for p in phrases if p not in have)
+
+    for s in skills:  # first the words, so an action a skill makes is known when its does: is split
+        does = s["does"]
+        for name, phrases in s["words"]:
+            if name in lists["actions"] or name in lists["objects"]:
+                add(name, phrases)
+            elif does == name or does.startswith(name + " "):
+                lists["actions"].append(name)
+                add(name, [words(name)] + phrases)
+            elif does.endswith(" " + name):
+                lists["objects"].append(name)
+                add(name, [words(name)] + phrases)
+            else:
+                errs.append('%s: ## Words: "%s" is neither its action nor its object (does: %s)' % (s["id"], name, does))
+    for s in skills:
+        action, obj = split_does(s["does"], lists["actions"])
+        for name, _ in s["words"]:
+            if name not in (action, obj) and (name in lists["actions"] or name in lists["objects"]):
+                errs.append('%s: ## Words: "%s" is not its action or object (%s, %s): a skill gives words only for itself' % (s["id"], name, action, obj))
+        for objects, phrases, to in s["means"]:
+            if to != action:
+                errs.append('%s: ## Words: "→ %s": a skill says only what words mean for itself (%s)' % (s["id"], to, action))
+                continue
+            lists["in_context"].append({"objects": objects or [obj], "action": to, "phrases": phrases})
+        if s["topic"] and obj and not any(obj in objects for _, objects in lists["topics"]):
+            at = next((i for i, (t, _) in enumerate(lists["topics"]) if t.lower() == s["topic"].lower()), None)
+            if at is None:  # a new topic goes before the one that holds the rest
+                rest = next((i for i, (_, objects) in enumerate(lists["topics"]) if not objects), len(lists["topics"]))
+                lists["topics"].insert(rest, (s["topic"], [obj]))
+            else:
+                lists["topics"][at][1].append(obj)
+    return errs
 
 
 def check(skill, lists):
@@ -127,9 +204,7 @@ def check(skill, lists):
     say = lambda msg: errs.append("%s: %s" % (skill["id"], msg))
     # does: "<action> <object>"; an action may be two words (turn off, shut down)
     does = skill["does"]
-    found = sorted((a for a in lists["actions"] if does == a or does.startswith(a + " ")), key=len, reverse=True)
-    action = found[0] if found else None
-    obj = does[len(action):].strip() if action else ""
+    action, obj = split_does(does, lists["actions"])
     skill["action"], skill["object"] = action, obj
     if not does:
         say("no does: line")
@@ -225,11 +300,10 @@ def check(skill, lists):
 
 def load(list_files, skill_files):
     lists = read_lists(list_files)
-    skills, errors = [], []
-    for id, md in skill_files.items():
-        s = read_skill(id, md)
+    skills = [read_skill(id, md) for id, md in skill_files.items()]
+    errors = merge_words(skills, lists)  # what each skill brings is known before any skill is checked
+    for s in skills:
         errors.extend(check(s, lists))
-        skills.append(s)
     for c in lists["in_context"]:
         where = "words/actions.md, Meaning with an object"
         if c["action"] not in lists["actions"]:

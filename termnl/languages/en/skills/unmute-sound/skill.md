@@ -5,6 +5,10 @@ admin: no
 approve: no
 ---
 
+## Words
+
+- turn on, switch on, bring back → unmute
+
 ## People say
 
 - unmute (the/my) (sound/music)

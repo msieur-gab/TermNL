@@ -5,6 +5,10 @@ admin: yes
 approve: no
 ---
 
+## Words
+
+- stop, kill, cut, shut off, disconnect, close → turn off
+
 ## People say
 
 - turn off (the) bluetooth

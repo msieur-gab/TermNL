@@ -5,6 +5,10 @@ admin: yes
 approve: yes
 ---
 
+## Words
+
+- turn off, switch off → shut down
+
 ## People say
 
 - shut down (the) system

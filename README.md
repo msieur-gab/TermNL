@@ -39,8 +39,7 @@ with `{user}` is only used once a name is set.
     termnl/                     the system
       languages/en/             everything English; another language is a copy of this folder
         words/                  the shared vocabulary, each word with the words people use for it
-          actions.md            create, open, restart…, and what a word means with an object
-                                ("turn on the music" plays it)
+          actions.md            create, open, restart…, and their opposites
           objects.md            file, folder, wifi…
           filetypes.md          markdown → .md…
           conversation.md       yes, no, fillers, the rules' word lists, and TermNL's own replies
@@ -50,7 +49,10 @@ with `{user}` is only used once a name is set.
         skills/<action>-<object>/skill.md
                                 one skill per action + object, written in plain sentences: what people
                                 say, what it needs, its command or reader, and replies (plain.py;
-                                IMPROVEMENTS.md says how to write one)
+                                IMPROVEMENTS.md says how to write one). Under ## Words, what it brings:
+                                an action or object words/ lacks, and what words mean with its object
+                                ("turn on the music" plays it, said by play-music): a folder dropped in
+                                works alone (FRAMES.md; tests/drop-in)
         out-of-scope.md         what TermNL should not try to do
         model.json              trained from the above: python3 -m termnl.train
       agent.py                  the dialogue: one turn in five steps (templates, model, questions, approval)
