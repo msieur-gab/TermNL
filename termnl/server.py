@@ -46,14 +46,17 @@ class TermNL:
     # the desk's MiniLM, Gab's 85 sentences and the 35 Ask test questions: 24 of 24 questions, none of his commands.
     NOTES = {"no skill": 0.40, "guess": 0.45}
 
-    def __init__(self, root=ROOT, home=None, agent="agent", simulate=(), screen=None, doc=None):
-        """simulate, screen and doc are for a host that holds TermNL (Symbiot): the skills (by their `does:`) it
-        simulates on top of settings.md's, never fewer; which commands its own screen does (open a file in its
-        window), not run here but handed over as "screen"; and its documents, doc(question) → {best, results}."""
+    def __init__(self, root=ROOT, home=None, agent="agent", simulate=(), screen=None, doc=None, commands=None):
+        """simulate, screen, doc and commands are for a host that holds TermNL (Symbiot): the skills (by their
+        `does:`) it simulates on top of settings.md's, never fewer; which commands its own screen does (open a
+        file in its window), not run here but handed over as "screen"; its documents, doc(question) → {best,
+        results}; and the commands it lends, by `does:`, in place of a skill's own (the desk's Wi-Fi, which on
+        its board alone may scan and join: {"show wifi": "…", "connect wifi": "…"})."""
         self.root = root
         self.also_simulated = set(simulate)
         self.screen = screen or (lambda command: False)
         self.doc = doc
+        self.commands = dict(commands or {})
         # agent: agent.py; back: back_agent.py, the version before it, kept for comparison
         self.version = agent
         self.Agent = importlib.import_module(".agent" if agent == "agent" else ".back_agent", __package__).Agent
@@ -64,12 +67,21 @@ class TermNL:
         self.device = Device(home or self.settings.get("home") or "~/TermNL-home",
                              home_names=[" ".join(p) for p in self.lang["lists"]["conversation"].get("home folder", [["home"]])])
         os.makedirs(self.device.home, exist_ok=True)
+        self.lend()
         self.training = None  # learning again: {started, process, session}
         self.told = {}  # session → "Done learning…", until its page asks (GET /api/learning) or it speaks again
         # how the model is trained again on this device: the lowest priority, two threads, so the board stays usable
         self.trainer = ["nice", "-n", "19", sys.executable, "-m", "termnl.train"]
         self.sessions = {}
         self.lock = threading.Lock()
+
+    def lend(self):
+        """the host's commands in place of the skills' own; the networks offered are heard as show wifi hears them"""
+        for s in self.lang["skills"]:
+            if s["does"] in self.commands:
+                s["command"] = self.commands[s["does"]]
+        self.device.wifi = next((s["command"] for s in self.lang["skills"] if s["does"] == "show wifi"), self.device.wifi)
+        self.device.networks()  # heard in the background from the start, so "connect to …" knows them
 
     def simulated(self, skill_id):
         does = next((s["does"] for s in self.lang["skills"] if s["id"] == skill_id), "")
@@ -121,6 +133,7 @@ class TermNL:
             self.told[t["session"]] = a.reply("learning failed", {"error": (err.strip().splitlines() or ["code %d" % t["process"].returncode])[-1]})
             return
         self.lang = load_language("en")
+        self.lend()
         for session in self.sessions.values():
             session.model = self.lang["model"]
         took = readers.since(seconds, readers.Words(self.lang["lists"]["readings"]))
@@ -145,13 +158,15 @@ class TermNL:
             self.learnt()
             done = self.told.pop(session, None)
             a = self.agent(session)
+            secret = a.waits_for_secret()  # a password: never searched in the documents, never logged
             r = a.hear(text)
-            r = self.notes(a, r, text) or r
+            r = (None if secret else self.notes(a, r, text)) or r
             if r.pop("trains", None):
                 if not self.train(session):
                     r["say"] = a.reply("still learning")
                 r["learning"] = True  # the page asks until it is done (GET /api/learning)
             command = r.pop("command", None)
+            given = r.pop("given", None)
             for key, value in (r.get("changes") or {}).items():  # "call me Gab", "turn admin mode on"
                 self.set(key, value)
             if r["outcome"] == "act" and r.get("reads"):
@@ -165,14 +180,14 @@ class TermNL:
                 elif self.screen(command):
                     r["ran"], r["screen"] = "screen", command  # the host's screen does it
                 else:
-                    out = self.execute(a, r, command)
+                    out = self.execute(a, r, command, given)
                     if out is not None:
                         r["ran"] = "ran"
                         r["say"] = r["say"].replace("{output}", out.strip())
             r["here"] = a.here["label"]
             if done:  # training ended since this conversation last spoke, and its page didn't ask: said before the reply
                 r["say"] = done + " " + r["say"]
-            self.log(session, text, r, command)
+            self.log(session, "•••" if secret else text, {k: v for k, v in r.items() if not (secret and k in ("teach", "inbox"))}, command)
             r.pop("teach", None)  # the learning inbox comes next; nothing is learned yet
             r.pop("inbox", None)
             return r
@@ -194,9 +209,11 @@ class TermNL:
         return {"outcome": "act", "skill": "@doc", "say": a.reply("in your documents"), "ran": "read",
                 "documents": found["results"][:5]}
 
-    def execute(self, a, r, command):
-        """runs a skill's command → its output, or None when it failed (the reply then says why)"""
-        done = run(command, self.device.home)
+    def execute(self, a, r, command, given=None):
+        """runs a skill's command → its output, or None when it failed (the reply then says why); given: a secret
+        the command reads on its standard input"""
+        waits = next((s["waits"] for s in self.lang["skills"] if s["id"] == r.get("skill")), 10)
+        done = run(command, self.device.home, timeout=waits, given=given)
         self.device.forget()
         if self.settings.get("show commands") == "on":
             r["output"] = (done["out"] + done["err"]).strip()
@@ -220,6 +237,8 @@ class TermNL:
                     r.pop("reads", None)
                     return
                 args["output"] = out
+                if skill["reads"] == "networks":  # a scan just ran: the networks offered are these
+                    self.device.hear(out)
             found = readers.read(r.pop("reads"), words=self.lang["lists"]["readings"], **args)
         except (OSError, ValueError, KeyError, IndexError) as e:
             r["ran"], r["say"] = "failed", a.reply("failed", {"error": str(e)})

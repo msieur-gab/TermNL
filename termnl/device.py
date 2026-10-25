@@ -9,15 +9,16 @@ import glob
 import os
 import re
 import subprocess
+import threading
 import time
 
 from .readers import _wifi_list
 from .runner import path
 
 
-def _run(args):
+def _run(args, timeout=5):
     try:
-        return subprocess.run(args, capture_output=True, text=True, timeout=5, env={**os.environ, "PATH": path()}).stdout
+        return subprocess.run(args, capture_output=True, text=True, timeout=timeout, env={**os.environ, "PATH": path()}).stdout
     except (OSError, subprocess.TimeoutExpired):
         return ""
 
@@ -28,6 +29,9 @@ class Device:
         self.home_names = list(home_names)  # what people call it (conversation.md, "home folder")
         self.fresh = fresh
         self._cache = {}
+        self.wifi = "termnl-wifi scan"  # how the networks around are heard: show wifi's command, or the one a host lends
+        self._heard = (0, [])  # the networks around as last heard, and when
+        self._hearing = None
 
     def path(self, value):
         """$HOME/Documents → the real path"""
@@ -115,12 +119,21 @@ class Device:
                 out.append({"value": n, "names": [n] + ([n.replace("&", "and")] if "&" in n else [])})
         return out
 
-    def _networks(self):
-        """the Wi-Fi networks this device heard last, from each of its Wi-Fi devices (iw, as check wifi)"""
-        heard = ""
-        for i in sorted(os.path.basename(os.path.dirname(w)) for w in glob.glob("/sys/class/net/*/wireless")):
-            heard += _run(["iw", "dev", i, "link"]) + _run(["iw", "dev", i, "scan", "dump"])
-        return [{"value": n, "names": [n]} for n, _, _ in _wifi_list(heard)]
+    def networks(self, every=30):
+        """the Wi-Fi networks around as last heard, answered at once: every sentence reads the device's lists, and
+        a scan takes seconds, so it runs in the background, at most every 30 s (show wifi's own reading also
+        refreshes it, hear)"""
+        at, found = self._heard
+        if time.time() - at > every and not (self._hearing and self._hearing.is_alive()):
+            self._hearing = threading.Thread(target=self.hear, daemon=True)
+            self._hearing.start()
+        return found
+
+    def hear(self, output=None):
+        """the networks around, from a scan's output, or from a scan run now, as show wifi hears them"""
+        if output is None:
+            output = _run(["bash", "-c", self.wifi], timeout=20)
+        self._heard = (time.time(), [{"value": n, "names": [n]} for n, _, _ in _wifi_list(output)])
 
     def _hosts(self):
         """the computers this device can reach with ssh by a name: each `Host` of ~/.ssh/config (the person's own
@@ -148,7 +161,9 @@ class Device:
         self._cache.clear()
 
     def list(self, kind):
-        read = {"folder": self._folders, "service": self._services, "app": self._apps, "network": self._networks, "music": self._music,
+        if kind == "network":
+            return self.networks()
+        read = {"folder": self._folders, "service": self._services, "app": self._apps, "music": self._music,
                 "running": self._running, "host": self._hosts}.get(kind)
         if not read:
             return []

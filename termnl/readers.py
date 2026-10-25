@@ -11,6 +11,7 @@ The words shown with a reading (table headings, "3 days and 2 hours"…) are the
 import ctypes
 import ctypes.util
 import datetime
+import json
 import os
 import platform
 import re
@@ -364,13 +365,37 @@ def _ssid(name):
 
 
 def _wifi_list(output):
-    """`iw dev <wifi> link`, then `iw dev <wifi> scan dump` → [(name, signal of 100, in use)], one per name:
-    the one in use with the signal it has now (link), the others with their strongest access point (a
-    network often has several). Without root, the scan dump is what the device heard last, not a new scan."""
-    blocks = []
+    """The networks heard → [(name, signal of 100, in use)], one per name: the one in use with the signal it
+    has now (link), the others with their strongest access point (a network often has several). The output is
+    `iw dev <wifi> link` then `iw dev <wifi> scan dump` (without root, what the device heard last, not a new
+    scan); or termnl-wifi's, a Wi-Fi manager's list after a line "manager: nmcli|wpa_cli|iwctl"; or a host's
+    one line of JSON, {"networks": [{"ssid", "signal" in dBm}]} (the desk's desk-wifi scan)."""
+    blocks, manager = [], None
     for line in output.splitlines():
-        if line.startswith(("Connected to ", "BSS ")):
+        m = re.match(r"^manager: (\w+)$", line)
+        if m:
+            manager = m.group(1)
+        elif line.startswith("{"):
+            try:
+                heard = json.loads(line).get("networks") or []
+            except ValueError:
+                heard = []
+            blocks += [{"link": False, "used": False, "name": n["ssid"], "signal": _quality(n["signal"])} for n in heard if n.get("ssid")]
+        elif line.startswith(("Connected to ", "BSS ")):
             blocks.append({"link": line.startswith("Connected"), "used": line.startswith("Connected") or "associated" in line})
+        elif manager == "nmcli":  # "*:72:Mesh Network": in use, signal of 100, name (its colons written \:)
+            parts = re.split(r"(?<!\\):", line, maxsplit=2)
+            if len(parts) == 3 and parts[1].isdigit():
+                used = parts[0] == "*"
+                blocks.append({"link": used, "used": used, "name": parts[2].replace("\\:", ":").replace("\\\\", "\\"), "signal": int(parts[1])})
+        elif manager == "wpa_cli":  # bssid, frequency, signal in dBm, flags, name
+            parts = line.split("\t")
+            if len(parts) == 5 and re.match(r"^-?\d+$", parts[2]):
+                blocks.append({"link": False, "used": False, "name": _ssid(parts[4]), "signal": _quality(float(parts[2]))})
+        elif manager == "iwctl":  # "  >  Mesh Network   psk   ****": in use, name, security, up to four stars
+            m = re.match(r"^\s*(>)?\s*(.+?)\s{2,}(open|psk|8021x|wep|owe)\s+(\*+)\s*$", re.sub(r"\x1b\[[0-9;]*m", "", line))
+            if m:
+                blocks.append({"link": bool(m.group(1)), "used": bool(m.group(1)), "name": m.group(2), "signal": 25 * len(m.group(4))})
         elif blocks:
             name = re.match(r"\tSSID: (.*)$", line)
             signal = re.match(r"\tsignal: .*?(-\d+(?:\.\d+)?) dBm", line)  # one board's driver writes "0.-75 dBm"

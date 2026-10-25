@@ -30,7 +30,7 @@ approve: no
 
 ## Command
 
-iw dev | grep -o 'Interface .*' | cut -d' ' -f2 | xargs -I@ sh -c 'iw dev @ link; iw dev @ scan dump' | grep -E '^(Connected|Not connected|BSS)|SSID: |signal: '
+termnl-wifi scan
 
 ## When it's fine
 

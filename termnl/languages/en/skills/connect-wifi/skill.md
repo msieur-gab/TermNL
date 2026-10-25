@@ -3,6 +3,7 @@ does: connect wifi
 label: join a Wi-Fi network
 admin: no
 approve: yes
+waits: 60
 ---
 
 ## People say
@@ -28,7 +29,7 @@ approve: yes
 
 ## Command
 
-nmcli device wifi connect {network} password {password}
+termnl-wifi join {network}
 
 ## Replies
 

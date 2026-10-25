@@ -7,6 +7,7 @@
   moves: place       after it runs, you are in that folder (open folder)
   reads: memory      a skill that only reads: the device reads itself (readers.py), no command;
                      or a reader of its command's output (reads: wifi, with iw in ## Command)
+  waits: 60          how many seconds its command may take (10 if not said): joining a Wi-Fi network
   ---
   ## People say     plain sentences (plain.py): a word for the action or object stands for all its
                      words, a/b one of these words, ( ) may be left out, {value} a value
@@ -22,6 +23,8 @@
   ## Replies         - key: variant | variant
   ## When it's high  (a reading skill) one reply per line, for when the reader says "high"; the
                      reader's values are written {@sys.memory.used}, the person's name {user}
+
+A secret (a password) is never written in the command: the command reads it on its standard input.
 
 Kinds: text, secret, a shared list (filetype), or a device list (@sys.folder, @sys.service,
 @sys.network, @sys.app, @sys.music, @sys.host)."""
@@ -114,7 +117,8 @@ def read_skill(id, md):
             "admin": yes("admin"), "approve": yes("approve"), "moves": meta.get("moves", ""), "reads": meta.get("reads", ""), "when": when,
             "sentences": sentences, "also": also, "values": values, "command": command, "replies": replies,
             "plain": plain, "needs": section(md, "What it needs"), "changes": changes,
-            "opens": meta.get("opens", "").strip(), "lists": meta.get("lists", "").strip(), "trains": meta.get("trains", "").strip()}
+            "opens": meta.get("opens", "").strip(), "lists": meta.get("lists", "").strip(), "trains": meta.get("trains", "").strip(),
+            "waits": int(meta.get("waits", "").split()[0]) if meta.get("waits", "").strip()[:1].isdigit() else 10}
 
 
 def check(skill, lists):
@@ -165,7 +169,10 @@ def check(skill, lists):
         if v["required"] and not v.get("default") and ("ask " + name) not in skill["replies"]:
             say('value %s is required but has no "ask %s" reply' % (name, name))
         in_replies = any("{%s}" % name in l for lines in skill["when"].values() for l in lines)
-        if name not in used and ("{%s}" % name) not in skill["command"] and not in_replies:
+        if k == "secret" and ("{%s}" % name) in skill["command"]:
+            # a password is given to the command on its standard input: never in the command, shown or logged
+            say("value %s is a secret: the command reads it on standard input, it is never written in the command" % name)
+        elif name not in used and ("{%s}" % name) not in skill["command"] and not in_replies and k != "secret":
             say("value %s is used by no sentence, no command and no reply" % name)
     for m in re.finditer(r"\{(\w+)\}", skill["command"]):
         if m.group(1) not in skill["values"]:

@@ -12,6 +12,14 @@ class Quiet(TermNL):
         pass
 
 
+def lent_scan():
+    """a host's scan, as the desk's desk-wifi answers: one line of JSON"""
+    f = tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False)
+    f.write("""echo '{"networks": [{"ssid": "Wonderland", "signal": -40}]}'\n""")
+    f.close()
+    return f.name
+
+
 class Host(unittest.TestCase):
     def app(self, **host):
         home = tempfile.mkdtemp()
@@ -69,6 +77,31 @@ class Host(unittest.TestCase):
         app, _ = self.notes(0.3)
         self.assertEqual(app.say("how does AI impact democracy?", "s")["outcome"], "abstain")
 
+
+    def test_a_command_the_host_lends_replaces_the_skill_s_own(self):
+        """the desk's board scans and joins only through desk-wifi (25 Oct): the networks offered come from it too"""
+        app, home = self.app(commands={"show wifi": "sh " + lent_scan(), "connect wifi": "cat > $HOME/joined"})
+        app.device._hearing.join()
+        r = app.say("which wifi networks are around", "w1")
+        self.assertEqual((r["ran"], r["table"]["rows"][0][0]), ("read", "Wonderland"))
+        self.assertIn("Wonderland", [n["value"] for n in app.device.list("network")])
+
+    def test_a_wifi_password_is_given_exactly_and_never_logged_nor_shown(self):
+        """Gab's board, 25 Oct: the password lost its "!" and was written in the log in plain text"""
+        lines = []
+        class Kept(TermNL):
+            def log(self, session, text, r, command=None):
+                lines.append(repr((text, r, command)))
+        home = tempfile.mkdtemp()
+        app = Kept(home=home, commands={"show wifi": "sh " + lent_scan(), "connect wifi": "cat > $HOME/joined"})
+        app.settings = {"admin mode": "on", "show commands": "on", "simulate": ""}
+        app.device._hearing.join()
+        said = [app.say(t, "w2") for t in ("connect to the wifi", "Wonderland", "s3cret pass!", "yes")]
+        self.assertEqual(said[-1]["ran"], "ran")
+        with open(os.path.join(home, "joined")) as f:
+            self.assertEqual(f.read(), "s3cret pass!\n")
+        self.assertNotIn("s3cret", repr(said) + "".join(lines))
+        self.assertIn("'•••'", lines[2])
 
 if __name__ == "__main__":
     unittest.main()
