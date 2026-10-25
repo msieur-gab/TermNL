@@ -22,6 +22,7 @@ One turn (respond):
 
 The agent never runs anything and never writes a command: it fills in the command a skill declares,
 with every value quoted. Running it is the device's job (runner.py)."""
+import os
 import random as _random
 import re
 
@@ -79,6 +80,8 @@ class Agent:
         self._sys = {}  # kind → (the device's list, its values with their words)
         self.pending = None  # the question waiting for an answer
         self._here = None  # where you are, like a terminal's working folder: home at first
+        # research/less: rules turned off for measuring (TERMNL_OFF=doubts,bare …), scaffolding, not kept
+        self.off = set(filter(None, os.environ.get("TERMNL_OFF", "").split(",")))
         self.frame = None  # the last request done: its skill, its values, and the thing it touched (follow_up)
         said = lists["conversation"]
         self.words = lambda key: said.get(key, [])
@@ -208,7 +211,7 @@ class Agent:
         skill, vals = u["skill"], u["vals"]
 
         # 4. safety: a change is asked about before anything when a typo was read, or when it says no
-        sure = u["sure"] and not (u["fixes"] and skill["action"] not in self.reading)
+        sure = u["sure"] and not ("typoask" not in self.off and u["fixes"] and skill["action"] not in self.reading)
         negated = [" ".join(ph) for ph in self.words("negation") for _ in where(toks, ph)]
         if negated and skill["action"] not in self.reading:
             self.ask_first(skill, vals, text, approves=False)
@@ -307,7 +310,7 @@ class Agent:
         skill, vals, slot, approved = p["skill"], p["vals"], p["slot"], p["approved"]
         if u and u["sure"] and u["skill"]["id"] == skill["id"]:
             spec = skill["values"][slot]
-            if slot not in u["vals"] and spec.get("default") and (vals.get(slot) or {}).get("unknown"):
+            if "defaultdrop" not in self.off and slot not in u["vals"] and spec.get("default") and (vals.get(slot) or {}).get("unknown"):
                 del vals[slot]  # "list my files" after "Which one?": said without it, its default applies
                 self.pending = None
                 return self.next_step(skill, vals, approved)
@@ -388,14 +391,14 @@ class Agent:
         → the same list when nothing changed."""
         out, changed = list(toks), False
         verbs, ends = {w for ph in self.words("split verbs") for w in ph}, {w for ph in self.words("verb ends") for w in ph}
-        for i in range(len(out)):
+        for i in range(len(out) if "joins" not in self.off else 0):
             if out[i]["word"] in verbs and not (i + 1 < len(out) and out[i + 1]["word"] in ends):
                 j = next((j for j in range(i + 2, min(i + 5, len(out))) if out[j]["word"] in ends), None)
                 if j is not None:
                     out.insert(i + 1, out.pop(j))
                     changed = True
         refs = self.lists["refs"]
-        for rule in self.lists.get("in_context", []):
+        for rule in self.lists.get("in_context", []) if "meaning" not in self.off else []:
             if not any(where(out, ph) for o in rule["objects"] for ph in refs.get(o, [])):
                 continue
             to = refs[rule["action"]][0]
@@ -412,6 +415,8 @@ class Agent:
         "Meaning with an object": "turn off" also stops the music). Only when nothing else is said but small
         and pointing words, and two to eight skills fit, as many as the chips show (24 Oct: with the settings
         skills, "turn off" fits seven); otherwise the model's reading goes on."""
+        if "bare" in self.off:
+            return None
         refs, lists = self.lists["refs"], self.lists
         said = [a for a in lists["actions"] for ph in refs.get(a, []) if where(toks, ph)]
         if not said or any(where(toks, ph) for o in lists["objects"] for ph in refs.get(o, [])):
@@ -437,7 +442,7 @@ class Agent:
         readings. → that other skill, or None. (24 Oct: "is bluetooth running" was read by check-service's
         template as a service called bluetooth; "rename the folder photos to pictures" renamed a file
         called "folder photos".)"""
-        if not self.model:
+        if not self.model or "doubts" in self.off:
             return None
         ws, s = [t["word"] for t in u["toks"]], u["skill"]
         pa, po = classify(self.model["action"], text, ws)[0], classify(self.model["object"], text, ws)[0]
@@ -549,7 +554,9 @@ class Agent:
             every = []
             for nodes in skill["compiled"]:
                 every += parses(nodes, toks, self.lists["refs"], {k: self.list_of(v["kind"]) for k, v in skill["values"].items()},
-                                self.stops, self.object_words, self.places)
+                                self.stops if "stops" not in self.off else frozenset(),
+                                self.object_words if "ends" not in self.off else frozenset(),
+                                self.places if "places" not in self.off else frozenset())
             if every:
                 found.append((skill, best(every)))
         top = max((p["score"] for _, p in found), default=0)
@@ -558,7 +565,7 @@ class Agent:
                 for s, p in found if p["score"] == top]
         # a word TermNL knows as an object (bluetooth, wifi) is that object, not a name on the device's list
         # (Gab, 22 Oct: "is bluetooth on" is the board's Bluetooth, not the service called bluetooth)
-        if len(tops) > 1:
+        if len(tops) > 1 and "ties" not in self.off:
             tops = [t for t in tops if not any(v["text"].lower() in self.object_words for v in t["vals"].values())] or tops
         if tops and top >= 1:
             return {"how": "choose", "options": tops} if len(tops) > 1 else {"how": "template", **tops[0], "p": 1, "unknown": []}
@@ -573,7 +580,7 @@ class Agent:
         # an action said in so many words is never answered with its opposite (words/actions.md, Opposites)
         # (24 Oct: "turn the board on" asked "Shut the board down?")
         said = self.actions_said(self.in_context(toks))
-        if any(skill["action"] in self.lists.get("opposites", {}).get(a, ()) for a in said):
+        if "opposites" not in self.off and any(skill["action"] in self.lists.get("opposites", {}).get(a, ()) for a in said):
             return None
         skill = self.as_file(skill, toks)
         vals, used = self.values_in(skill, text, toks)
@@ -584,7 +591,7 @@ class Agent:
         # no app of that name): kept as said, so it is answered as not there, never asked for again (Gab, 24 Oct).
         # When the model is sure of the skill they are no longer new; when it isn't, the question still names them.
         missing = [k for k, spec in skill["values"].items() if k not in vals and spec["required"] and not spec.get("default")]
-        if len(missing) == 1 and skill["values"][missing[0]]["kind"].startswith("@sys.") and self.list_of(skill["values"][missing[0]]["kind"]) is not None \
+        if "unknownvalue" not in self.off and len(missing) == 1 and skill["values"][missing[0]]["kind"].startswith("@sys.") and self.list_of(skill["values"][missing[0]]["kind"]) is not None \
                 and new and new == list(range(new[0], new[-1] + 1)):
             vals[missing[0]] = {"text": self.original(text, toks, new[0], new[-1] + 1), "unknown": True}
             if p >= SURE:
@@ -605,7 +612,7 @@ class Agent:
         """a name ending in a known file type (note.md) is a file: the same action on a file, never on a folder
         (Gab, 23 Oct: "create a note.md in the Documents folder" was read as a folder called note.md)"""
         exts = {t["ext"] for t in self.lists["filetypes"]}
-        if skill["object"] != "folder" or not any("." in t["word"] and t["word"].rsplit(".", 1)[1] in exts for t in toks):
+        if "asfile" in self.off or skill["object"] != "folder" or not any("." in t["word"] and t["word"].rsplit(".", 1)[1] in exts for t in toks):
             return skill
         return next((s for s in self.skills if s["action"] == skill["action"] and s["object"] == "file"), skill)
 
@@ -613,7 +620,7 @@ class Agent:
         """a typo inside a name hid a place (Gab, 23 Oct: "add a new file call gab.md insde Documents" made a file
         named "gab.md insde Documents.md"): corrected, the same skill reads a value the device has, a folder, that
         the name had swallowed. The name itself is still never corrected: it is what comes before the place."""
-        return v["how"] == "template" and v["skill"]["id"] == u["skill"]["id"] and any(
+        return "hidplace" not in self.off and v["how"] == "template" and v["skill"]["id"] == u["skill"]["id"] and any(
             k not in u["vals"] and x.get("value") is not None and not x.get("unknown") for k, x in v["vals"].items())
 
     def values_in(self, skill, text, toks):
@@ -647,6 +654,8 @@ class Agent:
         """A word TermNL doesn't know, one letter away from exactly one word it knows ("chek" → "check"),
         is read as that word. The offsets stay, so a name keeps what was typed. Short words, file names
         and the device's own names are left as they are."""
+        if "typos" in self.off:
+            return list(toks), []
         known = self.vocab | {w for kind in ("folder", "service", "app", "running") for d in self.sys(kind) for ph in d["phrases"] for w in ph}
         out, fixes = [], []
         for t in toks:
