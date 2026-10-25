@@ -23,7 +23,8 @@ BLUETOOTH = "Controller F8:94:C2:CE:CC:A9 (public)\n\tName: gab-Eve\n\tAlias: ga
 
 class Readers(unittest.TestCase):
     def test_every_reader_gives_a_level_it_declares_and_its_values(self):
-        args = {"folder": {"place": tempfile.gettempdir()}, "wifi": {"output": WIFI}, "networks": {"output": WIFI},
+        args = {"folder": {"place": tempfile.gettempdir()}, "files": {"place": tempfile.gettempdir(), "type": "md,txt"},
+                "has": {"place": tempfile.gettempdir(), "type": "md"}, "recent": {"place": tempfile.gettempdir()}, "size": {"place": tempfile.gettempdir()}, "wifi": {"output": WIFI}, "networks": {"output": WIFI},
                 "network": {"output": ADDRESSES}, "bluetooth": {"output": BLUETOOTH}}
         for name, (_, levels, names) in readers.READERS.items():
             r = readers.read(name, words=load_language("en")["lists"]["readings"], **args.get(name, {}))

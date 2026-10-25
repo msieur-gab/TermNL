@@ -22,18 +22,18 @@ Written on 24 Oct 2026 by an agent that saw only skill names and purposes. `pyth
 - find-file: I lost seed.md somewhere, can you look for it?
 - find-file: search the whole computer for website.html
 - find-file: can u find my groceries list file, groceries.md
-- none: connect to home-5g
-- none: hey can you get me on the home-5g wifi
-- none: join the network called home-5g
-- none: log me into home-5g please, the internet isnt working without it
-- none: louder
-- none: I can barely hear Wax Tailor, turn it up a bit
-- none: can you raise the volume?
-- none: crank up the sound pls
-- none: too loud!
-- none: could you lower the volume a little, my neighbours are complaining
-- none: bring the sound down
-- none: make it quiter please
+- connect-wifi: connect to home-5g
+- connect-wifi: hey can you get me on the home-5g wifi
+- connect-wifi: join the network called home-5g
+- connect-wifi: log me into home-5g please, the internet isnt working without it
+- turn-up-sound: louder
+- turn-up-sound: I can barely hear Wax Tailor, turn it up a bit
+- turn-up-sound: can you raise the volume?
+- turn-up-sound: crank up the sound pls
+- turn-down-sound: too loud!
+- turn-down-sound: could you lower the volume a little, my neighbours are complaining
+- turn-down-sound: bring the sound down
+- turn-down-sound: make it quiter please
 - install-app: install vlc
 - install-app: I'd like to have gimp on this computer, can you put it on?
 - install-app: can you get me the vlc player
