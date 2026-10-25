@@ -253,10 +253,71 @@ yet say its opposites. Gab asked whether an `action.md` per skill should hold th
 command is one line, so a second file adds nothing; for reading skills, an `action.md` declaring how a
 command's output is read (ptiLU's `## Answer`) would remove the last Python a skill needs. Next, if wanted.
 
+## B. Frames — done, with an honest count
+
+25 October, Gab: "Okay go", after agreeing a frame is the intent context kept from one turn to the next.
+
+**What TermNL keeps now.** After a request is done, the agent remembers it (`remember`): the skill, its
+values, and the thing it touched: the file opened, the folder made or renamed (under its new name), the
+folder shown, the service restarted. That is the frame.
+
+**When a sentence uses it** (`follow_up`): it points ("it", "the other one", "same") or follows on ("and",
+"now", "same for", "too"); it names an action or an object, never both; and every word left is a value, a
+small word or one of those. The action or object it doesn't say comes from the frame; so do the values it
+doesn't say (`carry`): the same request keeps its own ("and in downloads?"), another one takes the thing
+("now delete it"). A file is carried by its name only, so it is looked for again where it is asked for.
+Words that mean another action with an object work through the frame too, as the skill says them: "turn
+it off" after "play music" stops the music (stop-music's `## Words`).
+
+**The eight conversations:**
+
+| First turn | Then | Now |
+|---|---|---|
+| open seed.md in ideas | now delete it | "Move seed.md from ideas to the trash?" |
+| create a folder called bikes | rename it to cycles | `mv -nT $HOME/bikes $HOME/cycles` |
+| show the files in documents | and in downloads? | lists Downloads |
+| turn on the wifi, yes | and bluetooth too | "Turn Bluetooth on?" |
+| turn on bluetooth, yes | turn it back off | "Turn Bluetooth off?" |
+| open note.md in ideas | open the other one in documents | opens Documents/note.md |
+| play music | louder | still "I can't do that yet": not a frame case, "louder" is a word no skill has |
+| copy todo.txt to documents | same for note.md | `cp $HOME/note.md $HOME/Documents/` |
+
+Before: 1 of 8, by luck. Now: 7 of 8.
+
+**Guards, each a test (`tests/test_frames.py`):**
+- A full request is never a follow-up: "open firefox" and "now open firefox" after a file opens Firefox.
+- A word that isn't a value or a small word makes it a new request: "and what about the weather" is refused.
+- Words pointing at several ("them", "these", "those", "all", `words/conversation.md`) never point at one
+  thing: "delete them" after showing a folder asks "Which file?", never the folder.
+- Negation still asks first: "don't delete it".
+- Nothing done yet, nothing to point at: "now delete it" alone asks file or folder, as before.
+- A request said no to never becomes the frame: only what was done is remembered.
+- "cancel" and a sentence not understood forget the frame: the subject changed.
+- An approval always names what it acts on: the checker now refuses a skill that needs approval and whose
+  `approve` reply doesn't name its main value. All 16 such skills already did.
+
+**Nothing else moved.** The test sets build a new agent for each sentence, so they check that frames change
+nothing without a turn before: 664 of 665 answers are the same. The one that changed is better, by accident:
+"who won the football game last night" is now refused instead of asking about your name. "same" became a
+known word, so "game" is no longer a typo of only one word ("name"). "them" is now a pointing word: added as
+"then" became a known word, which had started reading "them" as a typo of it. Unit tests: 120, the same two
+failing as on main.
+
+**The honest count.** Frames add what follow-ups need and remove no rule. `agent.py` went from 840 to 937
+lines. The four rules the inventory listed are still there, because they answer when there is no frame:
+an action said alone still asks which skill, a pointing word with nothing before is still asked, and the
+answer to "Which one?" is still its own code (`fill_value`). Conceptually they are the same merge; in code,
+folding them would mean rewriting how TermNL answers its own questions, for no change anyone would see. As
+agreed before starting, that is where it stops: frames made TermNL aware of context, not simpler.
+
 ## Open, for Gab
 
-- B (frames) next, or readers in the skill (`action.md`) first.
-- "it" after an approval that was declined: the frame before, or nothing? (A refused delete shouldn't be
-  what "it" points at next.)
-- How long a frame lasts: until the next request, or a few turns, or until the person changes subject?
-- The two failing tests: retrain from the skill files first, so the branch starts green?
+- How long a frame lasts. Now: until another request is done, "cancel", or a sentence not understood.
+  Should it also fade after some minutes, or a few turns?
+- After a refused request, "it" is still the last thing done (the file opened, not the delete refused).
+  Right?
+- "louder", "quieter": words for turn-up-sound and turn-down-sound to add in their `## Words`?
+- Folding the old rules into the merge (a rewrite of `fill_value` and `bare_action`): worth it, or not?
+- Readers declared in the skill (`action.md`), for the 20 reading skills: when a new reading skill is wanted.
+- The two failing tests: they come from main's skill files (retrained here, they still fail).
+- `back_agent.py` knows no frames: retire it, or keep it for comparing turns without a frame.

@@ -14,7 +14,9 @@ One turn (respond):
   3. understand  a skill's template reads the sentence exactly; else the model recognises its action
                  and object; a typo is read as a known word, and a word in its context ("turn on the
                  music" plays it), when that reads better; when the model doubts a template, or an
-                 action comes without its object ("turn off"), the person chooses
+                 action comes without its object ("turn off"), the person chooses; a sentence that says
+                 part of a request ("now delete it", "and in downloads?") is completed by the last
+                 request done, its frame (follow_up)
   4. safety      not sure, a typo in a change, "don't…": ask before anything
   5. next_step   the next value to ask, a file to find, the settings, the approval; or act
 
@@ -24,6 +26,7 @@ import random as _random
 import re
 
 from .model import classify
+from .skills import main_slot
 from .template import best, parses
 from .text import close, fill, pick, tokenize, words
 
@@ -76,11 +79,14 @@ class Agent:
         self._sys = {}  # kind → (the device's list, its values with their words)
         self.pending = None  # the question waiting for an answer
         self._here = None  # where you are, like a terminal's working folder: home at first
+        self.frame = None  # the last request done: its skill, its values, and the thing it touched (follow_up)
         said = lists["conversation"]
         self.words = lambda key: said.get(key, [])
         joined = lambda key: {" ".join(p) for p in said.get(key, [])}
         self.small, self.stops, self.pointing = joined("small words"), joined("not a name start"), joined("pointing words")
         self.places, self.reading = joined("before a place"), joined("reading actions")
+        self.follows = {w for ph in said.get("follow-up words", []) for w in ph}
+        self.many = joined("pointing at several")
         self.name_ends = joined("name ends before")  # … called bikes | in documents
         # the chips that answer a yes/no question: the first word of each list
         self.yes_no = [" ".join(said["yes"][0]), " ".join(said["no"][0])]
@@ -161,7 +167,7 @@ class Agent:
         if not toks:
             return {"outcome": "abstain", "say": self.reply("abstain")}
         if self.is_(toks, "cancel"):
-            self.pending = None
+            self.pending, self.frame = None, None
             return {"outcome": "abstain", "say": self.reply("cancelled"), "reason": "cancelled"}
 
         # 2. answer the question waiting, when it is a closed one (yes, no, a chip)
@@ -186,8 +192,13 @@ class Agent:
             if not other:
                 return self.fill_value(text, toks, u)
 
+        # 3, still: a sentence that says only part of a request, completed by the last one done ("now delete it")
+        f = self.follow_up(text, toks, u) if self.frame else None
+        if f:
+            u, toks = f, f["toks"]
+
         if not u:
-            self.pending = None
+            self.pending, self.frame = None, None  # nothing understood: the subject changed
             return {"outcome": "abstain", "say": self.reply("abstain"), "reason": "no skill", "inbox": text}
         if u["how"] == "choose":
             labels = [f["skill"]["label"] for f in u["options"]]
@@ -437,6 +448,93 @@ class Agent:
         if (action, obj) == (s["action"], s["object"]):
             return None
         return next((o for o in self.skills if o["action"] == action and o["object"] == obj), None)
+
+    def follow_up(self, text, toks, u):
+        """A sentence that says part of a request, completed by the last one done (self.frame): "now delete it"
+        (an action: the thing it touched), "and in downloads?" (a value: the same request there), "and
+        bluetooth too" (an object: the same action), "turn it back off". Only when the sentence points ("it",
+        "the other one") or follows on ("and", "now", "same for"), names an action or an object but not both,
+        and has no word left that isn't a value, a small word or one of those: anything else is a new request.
+        A template that reads the sentence surely, with nothing pointing, is a new request too.
+        → the reading, as understand gives it, or None."""
+        if u and u["how"] == "template" and u["sure"] and not any(self.only_points(v) for v in u["vals"].values()):
+            return None
+        said = self.in_context(toks)
+        ws = [t["word"] for t in said]
+        follows = [ph for ph in self.words("follow-up words") if where(said, ph)]
+        if not follows and not any(w in self.pointing for w in ws):
+            return None
+        if any(w in self.many for w in ws):  # "delete them" after a folder was shown means its files, never the folder
+            return None
+        refs, lists, frame = self.lists["refs"], self.lists, self.frame
+        acts = self.actions_said(said)
+        objs = {o for o in lists["objects"] for ph in refs.get(o, []) if where(said, ph)}
+        if len(acts) > 1 or len(objs) > 1 or (acts and objs):
+            return None
+        action = next(iter(acts)) if acts else frame["skill"]["action"]
+        obj = next(iter(objs)) if objs else frame["skill"]["object"]
+        allowed = {w for x in (action, obj) for ph in refs.get(x, []) for w in ph}
+        skill = next((s for s in self.skills if (s["action"], s["object"]) == (action, obj)), None)
+        if not skill and acts:  # a word that means another action with the thing's object ("turn it off": the music stops)
+            for rule in lists.get("in_context", []):
+                if obj in rule["objects"] and any(where(said, ph) for ph in rule["phrases"]):
+                    skill = next((s for s in self.skills if (s["action"], s["object"]) == (rule["action"], obj)), None)
+                    allowed |= {w for ph in rule["phrases"] for w in ph}
+                    break
+        if not skill or skill.get("changes") or skill.get("lists") or skill.get("trains") or skill.get("opens"):
+            return None
+        vals, _ = self.values_in(skill, text, said)
+        if u and u.get("vals") and u.get("skill") and u["skill"]["action"] == skill["action"]:
+            # what a template read in the sentence ("rename it to cycles": the new name), where the skill has it too
+            for k, v in u["vals"].items():
+                if k in skill["values"] and skill["values"][k]["kind"] == u["skill"]["values"][k]["kind"] and not self.only_points(v):
+                    vals[k] = v
+        allowed |= {w for v in vals.values() for w in words(v.get("text") or v.get("label") or "")}
+        allowed |= self.small | self.pointing | self.follows
+        if any(w not in allowed for w in ws):
+            return None
+        return {"how": "frame", "skill": skill, "vals": self.carry(skill, vals), "p": 1, "unknown": [], "sure": True, "fixes": [], "toks": said}
+
+    def carry(self, skill, vals):
+        """The values a follow-up didn't say, from the last request done: the same request keeps its values
+        ("and in downloads?"); another one takes the thing it touched ("now delete it": that file, in its
+        folder). A file is carried by its name, so it is looked for again where it is asked for."""
+        frame, out = self.frame, {k: v for k, v in vals.items() if not self.only_points(v)}
+        same, thing = frame["skill"]["id"] == skill["id"], frame["thing"]
+        main = main_slot(skill)
+        for k, spec in skill["values"].items():
+            if k in out:
+                continue
+            v = frame["vals"].get(k) if same else None
+            if not v and thing and k == main and spec["kind"] == thing["kind"]:
+                v = thing
+            elif not v and thing and thing.get("place") and k == "place" and spec["kind"] == "@sys.folder":
+                v = thing["place"]
+            if v:
+                out[k] = {"text": v.get("label") or v.get("text")} if spec["kind"] == "@sys.file" else \
+                    {x: v[x] for x in ("value", "label", "text") if v.get(x) is not None}
+        return out
+
+    def remember(self, skill, vals):
+        """After a request is done: what a follow-up may point at. The thing it touched is its main value, or
+        the file or folder it made or renamed (create folder bikes: the folder bikes, in its place)."""
+        new = next((k for k, s in skill["values"].items() if s.get("new") and vals.get(k)), None)
+        thing = None
+        if new and skill["object"] in ("file", "folder"):
+            name = vals[new]["text"]
+            where_ = next((vals[k] for k in ("place", "parent") if vals.get(k) and vals[k].get("value")), None)
+            if skill["object"] == "folder":
+                value = (where_["value"] if where_ else self.here["value"]) + "/" + name
+                thing = {"kind": "@sys.folder", "value": value, "label": name}
+            else:
+                thing = {"kind": "@sys.file", "label": name, "place": where_ and {"value": where_["value"], "label": where_["label"]}}
+        elif main_slot(skill) and vals.get(main_slot(skill)):
+            k = main_slot(skill)
+            v, kind = vals[k], skill["values"][k]["kind"]
+            thing = {"kind": kind, **{x: v[x] for x in ("value", "label", "text") if v.get(x) is not None}}
+            if kind == "@sys.file" and vals.get("place"):
+                thing["place"] = {x: vals["place"][x] for x in ("value", "label") if vals["place"].get(x) is not None}
+        self.frame = {"skill": skill, "vals": {k: dict(v) for k, v in vals.items()}, "thing": thing}
 
     def recognise(self, text, toks):
         """a template's exact reading (several, if they tie: "choose"), or the model's best action + object"""
@@ -783,6 +881,7 @@ class Agent:
             self.settings[key] = value
             return {"outcome": "act", "skill": skill["id"], "changes": {key: value},
                     "say": self.reply(skill["replies"]["done"], self.display(skill, vals))}
+        self.remember(skill, vals)  # what a follow-up may point at ("now delete it")
         if skill["moves"] and vals.get(skill["moves"]):
             v = vals[skill["moves"]]
             self._here = {"value": v["value"], "label": v["label"]}
