@@ -229,6 +229,79 @@ def folder(w, place):
             "table": {"columns": [w("name"), w("kind"), w("size"), w("changed")], "rows": rows} if names else None}
 
 
+def _changed(w, when, today):
+    months = w.list("months", [])
+    month = months[when.month - 1] if len(months) == 12 else when.month
+    return w("today", time=when.strftime("%H:%M")) if when.date() == today else w("date", day=when.day, month=month, year=when.year)
+
+
+def _of_type(name, exts):
+    """report.PDF is a pdf; photos.tar.gz has the extension gz"""
+    return "." in name and name.rsplit(".", 1)[1].lower() in exts
+
+
+def _rows(w, found, top=30):
+    """[(path shown, full path, stat)] → a table of name, size, changed; the newest first when asked"""
+    today = datetime.date.today()
+    rows = [[shown, _size(st.st_size // 1024 or (1 if st.st_size else 0), w), _changed(w, datetime.datetime.fromtimestamp(st.st_mtime), today)]
+            for shown, st in found[:top]]
+    more = len(found) - top
+    return {"columns": [w("name"), w("size"), w("changed")], "rows": rows + ([[w("more", count=more), "", ""]] if more > 0 else [])}
+
+
+def _walk(place, deep):
+    """the files in a folder (and its folders, when deep), hidden ones left out → [(name as shown, stat)]"""
+    out = []
+    for root, dirs, files in os.walk(place):
+        dirs[:] = sorted(d for d in dirs if not d.startswith(".")) if deep else []
+        for f in sorted(files):
+            if f.startswith("."):
+                continue
+            p = os.path.join(root, f)
+            try:
+                st = os.stat(p)
+            except OSError:
+                continue
+            out.append((os.path.relpath(p, place), st))
+    return out
+
+
+def files(w, place, type):
+    """the files of one kind in a folder, not in its folders (show file: "list my pdfs"); type: its extensions"""
+    exts = {e.strip().lower() for e in type.split(",")}
+    found = [(n, st) for n, st in _walk(place, False) if _of_type(n, exts)]
+    return {"level": "fine" if found else "empty", "values": {"count": str(len(found))},
+            "table": _rows(w, found) if found else None}
+
+
+def has(w, place, type):
+    """is there any file of one kind in a folder or its folders (check file: "is there any video here")"""
+    exts = {e.strip().lower() for e in type.split(",")}
+    found = [(n, st) for n, st in _walk(place, True) if _of_type(n, exts)]
+    return {"level": "yes" if found else "no", "values": {"count": str(len(found)), "first": found[0][0] if found else ""},
+            "table": _rows(w, found, top=10) if found else None}
+
+
+def recent(w, place, hours=24):
+    """the files changed in the last day, in a folder and its folders, the newest first (show changes)"""
+    since = time.time() - hours * 3600
+    found = sorted(((n, st) for n, st in _walk(place, True) if st.st_mtime >= since), key=lambda x: -x[1].st_mtime)
+    return {"level": "fine" if found else "none", "values": {"count": str(len(found))}, "table": _rows(w, found) if found else None}
+
+
+
+def size(w, place):
+    """how big a folder is, its folders included, hidden files too (they take room): check size"""
+    total, count = 0, 0
+    for root, dirs, files in os.walk(place):
+        for f in files:
+            try:
+                total += os.lstat(os.path.join(root, f)).st_size
+                count += 1
+            except OSError:
+                pass
+    return {"level": "fine", "values": {"": _size(total // 1024 or (1 if total else 0), w), "count": str(count)}}
+
 # a clock earlier than this can't be right: TermNL was written in 2026. A board without a clock battery
 # can wake up in 1970, or on the day its system image was made, after a power cut.
 MADE = 2026
@@ -383,6 +456,10 @@ READERS = {
     "processes": (processes, ["fine"], ["top", "count"]),
     "system": (system, ["fine"], ["model", "os"]),
     "folder": (folder, ["fine", "empty"], ["count"]),
+    "files": (files, ["fine", "empty"], ["count"]),
+    "has": (has, ["yes", "no"], ["count", "first"]),
+    "recent": (recent, ["fine", "none"], ["count"]),
+    "size": (size, ["fine"], ["", "count"]),
     "health": (health, ["fine", "busy", "struggling"], ["temperature", "memory", "disk", "uptime"]),
     "clock": (clock, ["fine", "unsure", "wrong"], ["", "day", "date"]),
     "learning": (learning, ["learning", "fine", "unknown"], [""]),

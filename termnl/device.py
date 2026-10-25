@@ -1,5 +1,5 @@
 """The device as the agent sees it: the values it can list itself (@sys.folder, @sys.service,
-@sys.app, @sys.network, @sys.music from ~/Music) and the files in a folder, all read from this machine.
+@sys.app, @sys.network, @sys.music from ~/Music, @sys.host from ~/.ssh/config) and the files in a folder, all read from this machine.
 
 Folders and files are those under TermNL's home (settings.md, "home:"), the folder that $HOME means
 in every command. Hidden folders are skipped. Lists are read again after a few seconds, so a folder
@@ -122,13 +122,34 @@ class Device:
             heard += _run(["iw", "dev", i, "link"]) + _run(["iw", "dev", i, "scan", "dump"])
         return [{"value": n, "names": [n]} for n, _, _ in _wifi_list(heard)]
 
+    def _hosts(self):
+        """the computers this device can reach with ssh by a name: each `Host` of ~/.ssh/config (the person's own
+        ssh, not TermNL's home), without patterns. "studio-pi" can also be said "studio pi"."""
+        out, seen = [], set()
+        try:
+            with open(os.path.expanduser("~/.ssh/config"), encoding="utf-8") as f:
+                lines = f.read().splitlines()
+        except OSError:
+            return out
+        for line in lines:
+            parts = line.split()
+            if len(parts) < 2 or parts[0].lower() != "host":
+                continue
+            for h in parts[1:]:
+                if any(c in h for c in "*?!") or h.lower() in seen:
+                    continue
+                seen.add(h.lower())
+                spoken = re.sub(r"[-_.]", " ", h)
+                out.append({"value": h, "names": [h] + ([spoken] if spoken != h else [])})
+        return out
+
     def forget(self):
         """after a command ran: the lists are read again next time (a folder just made is known)"""
         self._cache.clear()
 
     def list(self, kind):
         read = {"folder": self._folders, "service": self._services, "app": self._apps, "network": self._networks, "music": self._music,
-                "running": self._running}.get(kind)
+                "running": self._running, "host": self._hosts}.get(kind)
         if not read:
             return []
         at, found = self._cache.get(kind, (0, None))

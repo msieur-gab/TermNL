@@ -8,9 +8,9 @@ FOLDERS = [
     {"value": "$HOME/projects", "names": ["projects"]},
 ]
 FILES = {
-    "$HOME": ["note.md", "todo.txt"],
+    "$HOME": ["note.md", "todo.txt", "backup.tar.gz"],
     "$HOME/Documents": ["note.md", "report.pdf", "groceries.md"],
-    "$HOME/Downloads": ["movie.mkv", "setup.sh"],
+    "$HOME/Downloads": ["movie.mkv", "setup.sh", "photos.tar.gz"],
     "$HOME/ideas": ["seed.md", "note.md"],
     "$HOME/projects": ["website.html", "scraper.py"],
 }
@@ -22,7 +22,11 @@ LISTS = {
         {"value": "mpd", "names": ["music server", "mpd", "music"]},
         {"value": "bluetooth", "names": ["bluetooth"]},  # a laptop's Bluetooth service has the object's name
     ],
-    "network": [{"value": "home-5g", "names": ["home-5g", "home"]}],
+    "network": [{"value": "home-5g", "names": ["home-5g", "home"]}, {"value": "cafe-guest", "names": ["cafe-guest", "cafe guest"]}],
+    "host": [  # ~/.ssh/config's Host lines
+        {"value": "laptop", "names": ["laptop"]},
+        {"value": "studio-pi", "names": ["studio-pi", "studio pi"]},
+    ],
     "music": [  # artists, albums and titles, as read from ~/Music
         {"value": "Wax Tailor", "names": ["Wax Tailor"]},
         {"value": "Hope & Sorrow", "names": ["Hope & Sorrow", "Hope and Sorrow"]},

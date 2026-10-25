@@ -10,3 +10,4 @@ value. The real values always come from the device (its folders, services, apps)
 - @sys.network: home, office wifi, cafe
 - @sys.app: terminal, firefox, the browser, editor, files
 - @sys.music: wax tailor, hope and sorrow, the tune, daft punk, a thousand leaves, nightcall, tanto tempo
+- @sys.host: laptop, studio pi, desktop, nas, work laptop, the other pi
