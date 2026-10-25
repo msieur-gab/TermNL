@@ -37,6 +37,21 @@ he picks it. Nothing here is decided unless it says so. The thinking behind each
 - **TermNL in Symbiot:** replacing ptiLU, and reaching the board from the phone companion without a
   screen. Pairing and security come with it.
 - **A connector:** TermNL installs anywhere on its own; with Symbiot, one merged index. Method open.
+- **Compiled skills** (25 Oct, `feat/frames`, FRAMES.md G). Today every start reads the 77 skill files and
+  the word lists, checks them, merges each skill's words and turns every sentence into a template (about
+  0.2 s on the laptop with the model; more on the board). Compiled: do it once, when TermNL learns ("learn
+  what I taught you" already reads every skill to train), and save the result next to `model.json`, as ptiLU's
+  `node skills.js` writes `skills.json`. Brings a faster start, skills and model always from the same moment
+  (main's model had drifted from its skill files), an agent that needs only that file (possible since it no
+  longer imports the skill reader). Costs one more generated file, to rebuild when a skill changes ("drop
+  in, then learn", already true for the model), and two copies of the truth if it is forgotten. Gab: worth
+  a note; not before start-up time on the board bothers him.
+- **Readers in the skill** (25 Oct, assessed): of 18 readers, 4 small ones fit a Markdown form (bluetooth,
+  memory, network, storage's main disk), 5 are one skill's own logic that could be its `reader.py`
+  (temperature, processes, clock, Wi-Fi), 9 are building blocks several skills share (folder, files,
+  system, health…). A Markdown interpreter would cost about what it replaces today; an optional,
+  read-only `reader.py` with a small toolbox is the drop-in path for new reading skills (battery, CPU load).
+  Open: the trust a skill with Python in it asks for, once others share skills.
 
 ## Not placed yet
 
