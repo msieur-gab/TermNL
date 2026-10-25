@@ -189,7 +189,7 @@ harmless by the measure's own rule; losing a request is not. So the trade isn't 
 
 This becomes method **F** below. The distance idea comes back only with better vectors (E), if ever.
 
-### H — One reading: the views of a sentence ranked by one rule (25 October 2026, `research/one-reading`)
+### H — One reading: every reading of a sentence, the conversation's too, ranked by one rule (25 October 2026, `research/one-reading`)
 
 **Result: the same answer on every sentence tried, with the six acceptance conditions of `understand`
 replaced by one ranking. Not a gain in understanding; a change of shape, to judge for its own sake.**
@@ -215,10 +215,23 @@ follow-ups, "Which one?" answered, a typo confirmed, "turn off" then "the wifi")
 the same three fail as on `feat/frames`. Speed: median 2.8 → 3.8 ms a sentence on the laptop, as every
 view is now read even when the first is a template.
 
-**What it did not do.** `agent.py` is 945 → 950 lines: conditions became criteria, not fewer lines. The
-lines come only from the next step, where the answer to a pending question (`fill_value`) and the frame
-(`follow_up`) become two more views ranked by the same rule; that step changes how TermNL answers its own
-questions and is where the risk of this road lies. This one carries none that the sentences can see.
+**Second step, the same day: the conversation's readings too.** The answer to "Which one?" (`fill_value`,
+which built its own replies) is now `answer_reading`: the request waiting with its value filled, a reading
+like any other, that `next_step` carries on with (a value not on the list is kept as said, unknown, and asked
+about with the list, as `next_step` already did for a sentence). The frame (`follow_up`) is a reading too.
+`rank` puts the answer first, then the frame, then what the sentence says on its own. `respond` lost its two
+interleaved steps ("2, still", "3, still"); a yes or no to an open question is answered in step 2 with the
+closed ones. Measured as the first step: 0 of 665, 0 of 771; 4,620 generated conversations (every skill's
+first two training sentences, each followed by eight follow-ups and by ten answers, with and without a
+"yes" between) read by both: 1 differs, a bug fixed — after "launch the notes" asked which file, the answer
+"turn it off" was read from the words re-ordered for "turn off" and came out as the name "turn it"; now
+the name is what was typed. The same three unit tests fail. A reply's `how` now says `answer` where
+before it said nothing. 3.6 ms a sentence.
+
+**What it did not do.** `agent.py` is 945 → 947 lines. The promise of fewer lines did not hold: six
+acceptance conditions and two interleaved steps became one five-part rule and two readings, the same
+length. What is less is the number of places that decide: one (`rank`). Whether that is worth a branch
+is Gab's call; the sentences see no difference either way.
 
 **New tool.** `python3 -m tools.receipt` writes every test sentence's answer to `data/receipt.json`;
 `--against before.json` lists what moved since, each with its cause (a typo read differently, another

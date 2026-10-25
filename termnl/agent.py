@@ -170,11 +170,21 @@ class Agent:
             self.pending, self.frame = None, None
             return {"outcome": "abstain", "say": self.reply("cancelled"), "reason": "cancelled"}
 
-        # 2. answer the question waiting, when it is a closed one (yes, no, a chip)
-        if self.pending and self.pending["waiting"] != "value":
+        # 2. answer the question waiting with a closed answer: yes, no, a chip; to "Which one?", no stops and
+        #    yes asks again (its value is read in understand, as an answer)
+        p = self.pending
+        if p and p["waiting"] != "value":
             r = self.answer(toks)
             if r:
                 return r
+        elif p and self.is_(toks, "no"):
+            self.pending = None
+            return self.declined(p["skill"])
+        elif p and self.is_(toks, "yes"):
+            skill, slot, v = p["skill"], p["slot"], p["vals"].get(p["slot"]) or {}
+            ask = skill["replies"].get("ask " + slot)
+            say = self.reply(ask) if ask else self.reply("unknown value", {"value": self.quoted(v.get("text") or v.get("label") or "")})
+            return {"outcome": "ask", "skill": skill["id"], "say": say, "chips": self.chips(self.list_of(skill["values"][slot]["kind"]))}
         if not self.pending and (self.is_(toks, "yes") or self.is_(toks, "no")):
             # a lone yes or no with nothing waiting (an old chip, a question lost): say so, don't guess
             return {"outcome": "abstain", "say": self.reply("nothing waiting"), "reason": "nothing waiting"}
@@ -183,19 +193,6 @@ class Agent:
         u = self.understand(text, toks)
         if u:
             toks = u["toks"]
-
-        # 2, still: "Which one?" is answered by a value, unless the person clearly asks for something else
-        p = self.pending
-        if p and p["waiting"] == "value":
-            says_action = any(where(toks, ph) for a in self.lists["actions"] for ph in self.lists["refs"].get(a, []))
-            other = u and u["sure"] and u["skill"]["id"] != p["skill"]["id"] and (u["how"] == "template" or says_action)
-            if not other:
-                return self.fill_value(text, toks, u)
-
-        # 3, still: a sentence that says only part of a request, completed by the last one done ("now delete it")
-        f = self.follow_up(text, toks, u) if self.frame else None
-        if f:
-            u, toks = f, f["toks"]
 
         if not u:
             self.pending, self.frame = None, None  # nothing understood: the subject changed
@@ -215,7 +212,7 @@ class Agent:
             return told({"outcome": "ask", "skill": skill["id"], "chips": self.yes_no,
                          "say": self.reply("negated", {"words": ", ".join(negated), "label": skill["label"]})}, u)
         if sure:
-            return told(noted(self.next_step(skill, vals), u["fixes"], self), u)
+            return told(noted(self.next_step(skill, vals, u.get("approved", False)), u["fixes"], self), u)
         if skill["admin"] and not self.on("admin mode"):
             return told({"outcome": "abstain", "skill": skill["id"], "say": self.reply("sounds like", {"label": skill["label"]}), "reason": "admin mode off"}, u)
         # understood, but not surely: ask, naming the words it doesn't know. A skill that needs approval
@@ -299,44 +296,41 @@ class Agent:
         own = skill["replies"].get("unknown " + slot)
         return self.reply(own, {slot: self.quoted(said)}) if own and found else self.reply("unknown value", {"value": self.quoted(said)})
 
-    def fill_value(self, text, toks, u):
-        """An answer to "Which one?" or "What should I call it?". The same request said again adds its
-        values; "no" stops; "yes" asks again; "call it bikes" gives the name after its lead-in words
-        (conversation.md, "before a name"); a value on the list, or free text for a name."""
+    def answer_reading(self, text, toks, u):
+        """The sentence as the answer to "Which one?" or "What should I call it?": the request waiting, with
+        its value filled. The same request said again adds its values (said without the value, its default
+        applies); "call it bikes" gives the name after its lead-in words (conversation.md, "before a name"); a
+        value on the list, or free text for a name; a value not on the list is kept as said, unknown, so it is
+        asked about with the list (next_step). None when nothing waits, or when the sentence surely asks for
+        something else (another skill, by a template or an action said): the question is dropped."""
         p = self.pending
-        skill, vals, slot, approved = p["skill"], p["vals"], p["slot"], p["approved"]
+        if not p or p["waiting"] != "value":
+            return None
+        skill, vals, slot, approved = p["skill"], {k: dict(v) for k, v in p["vals"].items()}, p["slot"], p["approved"]
+        says_action = any(where(toks, ph) for a in self.lists["actions"] for ph in self.lists["refs"].get(a, []))
+        if u and u["sure"] and u["skill"]["id"] != skill["id"] and (u["how"] == "template" or says_action):
+            return None
+        reading = lambda: {"how": "answer", "skill": skill, "vals": vals, "approved": approved, "p": 1, "unknown": [], "sure": True, "fixes": [], "toks": toks}
         if u and u["sure"] and u["skill"]["id"] == skill["id"]:
             spec = skill["values"][slot]
             if slot not in u["vals"] and spec.get("default") and (vals.get(slot) or {}).get("unknown"):
                 del vals[slot]  # "list my files" after "Which one?": said without it, its default applies
-                self.pending = None
-                return self.next_step(skill, vals, approved)
+                return reading()
             for k, v in u["vals"].items():
                 if not vals.get(k) or vals[k].get("unknown"):
                     vals[k] = v
             if vals.get(slot):
-                self.pending = None
-                return self.next_step(skill, vals, approved)
-        if self.is_(toks, "no"):
-            self.pending = None
-            return self.declined(skill)
+                return reading()
         found = self.list_of(skill["values"][slot]["kind"])
-        if self.is_(toks, "yes"):
-            v, ask = vals.get(slot) or {}, skill["replies"].get("ask " + slot)
-            say = self.reply(ask) if ask else self.reply("unknown value", {"value": self.quoted(v.get("text") or v.get("label") or "")})
-            return {"outcome": "ask", "skill": skill["id"], "say": say, "chips": self.chips(found)}
         if found is None and skill["values"][slot]["kind"] == "secret":  # a password, exactly as typed ("!" included)
             vals[slot] = {"text": text.strip()}
-            return self.next_step(skill, vals, approved)
-        if found is None:
+        elif found is None:
             start = max((len(ph) for ph in self.words("before a name") if len(ph) < len(toks) and at(toks, ph, 0)), default=0)
             vals[slot] = {"text": self.original(text, toks, start, len(toks))}
-            return self.next_step(skill, vals, approved)
-        hit = best_in(toks, found)
-        if not hit:
-            return {"outcome": "ask", "skill": skill["id"], "say": self.not_there(skill, slot, text.strip(), found), "chips": self.chips(found)}
-        vals[slot] = {"value": hit["o"]["value"], "label": hit["o"]["label"]}
-        return self.next_step(skill, vals, approved)
+        else:
+            hit = best_in(toks, found)
+            vals[slot] = {"value": hit["o"]["value"], "label": hit["o"]["label"]} if hit else {"text": text.strip(), "unknown": True}
+        return reading()
 
     # ---- 3. understand
 
@@ -359,17 +353,19 @@ class Agent:
         bare = self.bare_action(text, context)
         if bare:
             readings.append(bare)
-        if not readings:
-            return None
-        u = min(readings, key=self.rank)
-        u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"])
-        other = self.doubts(text, u) if u["how"] == "template" else None
-        if other:  # two readings: the person chooses ("Do you mean rename a file or rename a folder?")
-            said = u["toks"]
-            u = {"how": "choose", "options": [{"skill": u["skill"], "vals": u["vals"]},
-                                              {"skill": other, "vals": self.values_in(other, text, said)[0]}],
-                 "toks": said, "fixes": u["fixes"], "sure": False}
-        return u
+        u = min(readings, key=self.rank) if readings else None
+        if u:
+            u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"])
+            other = self.doubts(text, u) if u["how"] == "template" else None
+            if other:  # two readings: the person chooses ("Do you mean rename a file or rename a folder?")
+                said = u["toks"]
+                u = {"how": "choose", "options": [{"skill": u["skill"], "vals": u["vals"]},
+                                                  {"skill": other, "vals": self.values_in(other, text, said)[0]}],
+                     "toks": said, "fixes": u["fixes"], "sure": False}
+        # what the conversation adds: the sentence as the answer to "Which one?", and as part of the last
+        # request done; each a reading too, ranked before what the sentence alone says
+        more = [r for r in (self.answer_reading(text, toks, u), self.follow_up(text, toks, u)) if r]
+        return min(more + ([u] if u else []), key=self.rank, default=None)
 
     def views(self, toks):
         """the ways a sentence is read, each with the typos it reads as words: as typed, in its context
@@ -386,8 +382,9 @@ class Agent:
 
     @staticmethod
     def rank(r):
-        """the order readings are picked in; the smallest wins (understand)"""
-        how = 1 if r.get("bare") else {"template": 0, "choose": 0, "model": 2}[r["how"]]
+        """the order readings are picked in; the smallest wins (understand): the answer to the question
+        waiting, then the last request done completed, then the sentence on its own"""
+        how = 1 if r.get("bare") else {"answer": -2, "frame": -1, "template": 0, "choose": 0, "model": 2}[r["how"]]
         values = sum(1 for v in r.get("vals", {}).values() if v.get("value") is not None and not v.get("unknown")) if r["how"] == "template" else 0
         return (how, len(r.get("unknown", [])), -values, len(r["fixes"]), -r.get("p", 0))
 
@@ -469,7 +466,7 @@ class Agent:
         and has no word left that isn't a value, a small word or one of those: anything else is a new request.
         A template that reads the sentence surely, with nothing pointing, is a new request too.
         → the reading, as understand gives it, or None."""
-        if u and u["how"] == "template" and u["sure"] and not any(self.only_points(v) for v in u["vals"].values()):
+        if not self.frame or u and u["how"] == "template" and u["sure"] and not any(self.only_points(v) for v in u["vals"].values()):
             return None
         said = self.in_context(toks)
         ws = [t["word"] for t in said]
