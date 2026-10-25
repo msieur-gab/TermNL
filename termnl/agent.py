@@ -179,6 +179,7 @@ class Agent:
             return {"outcome": "abstain", "say": self.reply("nothing waiting"), "reason": "nothing waiting"}
 
         # 3. understand
+        typed = toks
         u = self.understand(text, toks)
         if u:
             toks = u["toks"]
@@ -189,7 +190,7 @@ class Agent:
             says_action = any(where(toks, ph) for a in self.lists["actions"] for ph in self.lists["refs"].get(a, []))
             other = u and u["sure"] and u["skill"]["id"] != p["skill"]["id"] and (u["how"] == "template" or says_action)
             if not other:
-                return self.fill_value(text, toks, u)
+                return self.fill_value(text, typed, u)  # the words as typed: a name is never cut from words re-ordered for reading
 
         # 3, still: a sentence that says only part of a request, completed by the last one done ("now delete it")
         f = self.follow_up(text, toks, u) if self.frame else None
@@ -802,9 +803,10 @@ class Agent:
     def finish_filetype(self, skill, vals):
         """A file's name gets the extension of its type, unless it already has a known one (seed.md)."""
         type_key = next((k for k, s in skill["values"].items() if s["kind"] == "filetype"), None)
-        if not type_key or not vals.get("name"):
+        name_key = next((k for k, s in skill["values"].items() if s.get("new") and s["kind"] == "text"), None)  # the new name, whatever it is called
+        if not type_key or not name_key or not vals.get(name_key):
             return
-        name = vals["name"]["text"]
+        name = vals[name_key]["text"]
         m = re.search(r"\.(\w+)$", name)
         known = next((t for t in self.lists["filetypes"] if t["ext"] == (m.group(1).lower() if m else "")), None)
         if known:
@@ -812,7 +814,7 @@ class Agent:
             return
         said = vals.get(type_key) or {}
         kind = next((t for t in self.lists["filetypes"] if t["value"] in (said.get("value"), said.get("text"))), self.lists["filetypes"][0])
-        vals["name"] = {"text": "%s.%s" % (name, kind["ext"])}
+        vals[name_key] = {"text": "%s.%s" % (name, kind["ext"])}
 
     def topics(self, exclude=None):
         """the skills by topic (words/objects.md, Topics), the most ordinary actions first (the order of
