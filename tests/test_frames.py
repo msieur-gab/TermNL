@@ -70,6 +70,17 @@ class NamesDontMatter(unittest.TestCase):
         r = talk_("open seed.md in ideas", "now delete it", "yes", "bring it back")[-1]
         self.assertEqual(r["command"], "mv -n $HOME'/.local/share/Trash/files/seed.md' $HOME'/ideas/'")
 
+    def test_a_new_name_gets_its_extension_whatever_the_value_is_called(self):
+        # 25 Oct (fix B): before, a create-file whose {name} was called {file} made "plans", without .md
+        from tests.test_drop_in import SKILLS, language
+        from termnl.load import read
+        md = read(os.path.join(SKILLS, "create-file", "skill.md")).replace("{name}", "{file}").replace("ask name", "ask file")
+        lang = language({"create-file": md})
+        self.assertEqual(lang["errors"], [])
+        for said, made in (("create a markdown file called plans", "plans.md"), ("create a file called notes.txt", "notes.txt")):
+            r = Agent(**lang, settings={}, device=device, random=lambda: 0).hear(said)
+            self.assertEqual(r["command"], "touch $HOME'/%s'" % made, said)
+
 
 class Guards(unittest.TestCase):
     def test_a_full_request_is_never_a_follow_up(self):

@@ -25,6 +25,14 @@ he picks it. Nothing here is decided unless it says so. The thinking behind each
   session since I still believe user should be able to write their own skills", implying that all the
   @sys and @data values could be offered "in drop down or alike", and "perhaps that we rethink the
   grammar". The template grammar works, but people can't write it today.
+- **A skill says what it is not** (25 Oct, found by the bug hunt on `feat/frames`). A skill's sentence is
+  trusted whole even when one word of it matches: "download and unzip example.com/pack.zip" downloads
+  "and unzip example.com/pack.zip" without asking; "delete note.md on my laptop" looks for a file called
+  "note.md on my laptop". Today the device checks and the approvals catch the harm (the download fails, the
+  file isn't found, delete always asks). The simple rule ("under half the words matched: ask first") stops
+  both but makes every "download https://…" ask, a web address being many words. The fix in view: a skill
+  owns its borders, a "not me" section ("delete … on my laptop → send or remote, not me"), as proposed on
+  25 Oct morning (FRAMES.md).
 
 ## Parked
 

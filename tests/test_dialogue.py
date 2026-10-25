@@ -252,6 +252,13 @@ class Dialogue(unittest.TestCase):
             a.hear("make a new folder")
             self.assertEqual(a.hear(said)["command"], "mkdir -p $HOME'/%s'" % name, said)
 
+    # 25 Oct (fix A): an answer is read as typed, never from words re-ordered for reading ("switch … off").
+    def test_a_name_answered_is_the_words_typed_never_cut(self):
+        for said in ("switch it off", "turn it off"):
+            a = agent()
+            a.hear("make a new folder")
+            self.assertEqual(a.hear(said)["command"], "mkdir -p $HOME'/%s'" % said, said)
+
     # Review of 22 Oct: a place the device doesn't have is asked about, never folded into the name.
     def test_an_unknown_place_is_asked_never_swallowed_by_the_name(self):
         for said in ["make a folder called seeds in garden", "create a note called groceries in garden"]:
