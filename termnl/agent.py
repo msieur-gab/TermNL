@@ -1,5 +1,5 @@
-"""The dialogue, written as one turn in five steps (since 22 Oct 2026; the version before it is kept
-as back_agent.py, and tests/compare_agents.py checks the two still agree).
+"""The dialogue, written as one turn in five steps (since 22 Oct 2026; the version before it, back_agent.py,
+was retired on 25 Oct 2026 and stays in git's history).
 
 Every request ends in one of four outcomes:
   act      understood, everything known, nothing to approve: the command is ready to run

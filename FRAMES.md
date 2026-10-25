@@ -310,6 +310,14 @@ answer to "Which one?" is still its own code (`fill_value`). Conceptually they a
 folding them would mean rewriting how TermNL answers its own questions, for no change anyone would see. As
 agreed before starting, that is where it stops: frames made TermNL aware of context, not simpler.
 
+## C. `back_agent.py` retired
+
+25 October, Gab: "remove back_agent". The version of the dialogue before 22 October was kept beside
+`agent.py` to compare replies; it knew neither skill-owned words' follow-ups nor frames. Gone with it:
+`tests/compare_agents.py` and `tests/conversations.json`, which only fed that comparison, the server's
+`--agent back`, and `TERMNL_AGENT` in the tests. All stay in git's history. A host that passes `agent="agent"`
+works as before. 668 + 45 lines and a 47-conversation file fewer; the tests are the same 120.
+
 ## Open, for Gab
 
 - How long a frame lasts. Now: until another request is done, "cancel", or a sentence not understood.
@@ -320,4 +328,3 @@ agreed before starting, that is where it stops: frames made TermNL aware of cont
 - Folding the old rules into the merge (a rewrite of `fill_value` and `bare_action`): worth it, or not?
 - Readers declared in the skill (`action.md`), for the 20 reading skills: when a new reading skill is wanted.
 - The two failing tests: they come from main's skill files (retrained here, they still fail).
-- `back_agent.py` knows no frames: retire it, or keep it for comparing turns without a frame.

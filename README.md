@@ -56,8 +56,6 @@ with `{user}` is only used once a name is set.
         out-of-scope.md         what TermNL should not try to do
         model.json              trained from the above: python3 -m termnl.train
       agent.py                  the dialogue: one turn in five steps (templates, model, questions, approval)
-      back_agent.py             the version before, same behaviour, kept for comparison (python3 -m
-                                termnl.server --agent back); tests/compare_agents.py checks they agree
       plain.py                  plain sentences and "What it needs" read into what the agent uses
       readers.py                the device read in words people use (temperature, memory…)
       device.py, runner.py      the device's own lists, and running a command
@@ -78,8 +76,6 @@ with `{user}` is only used once a name is set.
 
     python3 -m termnl.check             # every skill file
     python3 -m unittest                 # the dialogue and the readers
-    TERMNL_AGENT=termnl.back_agent python3 -m unittest   # the same tests, for back_agent
-    python3 -m tests.compare_agents     # agent and back_agent, reply by reply, on tests and logs
     python3 -m tests.measure -v         # how the phrasings in tests/phrasings.md are understood
     python3 -m tests.measure all        # and tests/probes.md, heldout.md and blind.md (never trained on)
     python3 -m tests.real -v            # the real conversations in tests/real.md, turn by turn

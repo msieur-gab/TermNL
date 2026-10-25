@@ -67,7 +67,7 @@ are his; don't rework them. The section of 22 October below is history.
 5. **Still open from `IMPROVEMENTS.md`** ("Open, for Gab"): should reading ask first ("what is currently
    running" asks at 73%), the plain form and the old one, the front matter's words, Claude's object list
    and the 247 sentences from a larger model to review, "start the browser…", three template over-reaches,
-   `back_agent.py` (port or retire).
+   `back_agent.py` (retired on 25 Oct 2026, `feat/frames`).
 6. **Training time** will keep growing with skills; measure it on the board when skills are added.
 
 ## Gotchas met on 24 Oct

@@ -59,6 +59,6 @@ he picks it. Nothing here is decided unless it says so. The thinking behind each
 - **Shared words in two families:** "start" (create + open), "note" (file + markdown).
 - **No "undo"**, no Dialogflow-style context.
 - **Further cuts in `agent.py`** mean removing behaviour (for example "not here, but in Documents"):
-  Gab's call. `back_agent.py` and `tests.compare_agents` keep the two versions in step.
+  Gab's call. (`back_agent.py` and `tests.compare_agents` were retired on 25 Oct 2026, FRAMES.md.)
 - **Word embeddings for unknown words:** tested 22 Oct, not worth it now (GloVe-50: 3 useful neighbours
   of 26; opposites side by side). Model2Vec could be tried with `tools/neighbours.py`.

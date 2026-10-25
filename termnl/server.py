@@ -25,9 +25,8 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
-import importlib
-
 from . import readers
+from .agent import Agent
 from .device import Device
 from .load import HERE, ROOT, load_language, load_settings
 from .runner import run
@@ -58,9 +57,12 @@ class TermNL:
         self.screen = screen or (lambda command: False)
         self.doc = doc
         self.commands = dict(commands or {})
-        # agent: agent.py; back: back_agent.py, the version before it, kept for comparison
+        # one dialogue, agent.py (back_agent.py, the version before it, was retired on 25 Oct 2026); its name
+        # stays in the logs, and a host that still passes agent="agent" works as before
+        if agent != "agent":
+            raise ValueError('only agent.py is left: agent="agent"')
         self.version = agent
-        self.Agent = importlib.import_module(".agent" if agent == "agent" else ".back_agent", __package__).Agent
+        self.Agent = Agent
         self.lang = load_language("en")
         if self.lang["errors"]:
             raise SystemExit("\n".join(self.lang["errors"]))
@@ -331,10 +333,9 @@ def main():
     p.add_argument("--host", default="127.0.0.1", help="address to answer on (default: this machine only)")
     p.add_argument("--port", type=int, default=8810)
     p.add_argument("--home", help="the folder home means, instead of settings.md's (for trying things out)")
-    p.add_argument("--agent", default="agent", choices=["agent", "back"], help="which dialogue: agent.py, or back_agent.py (the version before)")
     a = p.parse_args()
-    app = TermNL(home=a.home, agent=a.agent)
-    print("TermNL (agent %s) on http://%s:%d — home: %s" % (a.agent, a.host, a.port, app.device.home))
+    app = TermNL(home=a.home)
+    print("TermNL on http://%s:%d — home: %s" % (a.host, a.port, app.device.home))
     ThreadingHTTPServer((a.host, a.port), handler(app)).serve_forever()
 
 
