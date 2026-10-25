@@ -198,6 +198,13 @@ def merge_words(skills, lists):
     return errs
 
 
+def main_slot(skill):
+    """the value a skill acts on: its first value from the device that it needs (a file, a folder, a service),
+    else its first value from the device"""
+    on_device = [(k, s) for k, s in skill["values"].items() if s["kind"].startswith("@sys.")]
+    return next((k for k, s in on_device if s["required"]), on_device[0][0] if on_device else None)
+
+
 def check(skill, lists):
     """Problems that stop a skill from working, as "skill: reason" lines. Empty means fine."""
     errs = []
@@ -291,6 +298,11 @@ def check(skill, lists):
         say('no "done" reply')
     if (skill["admin"] or skill["approve"]) and "approve" not in skill["replies"]:
         say('needs approval but has no "approve" reply')
+    elif skill["admin"] or skill["approve"]:
+        # a request completed by the one before ("now delete it") is approved knowingly: the question names the thing
+        main = main_slot(skill)
+        if main and "{%s}" % main not in skill["replies"]["approve"]:
+            say('the "approve" reply must name {%s}, what it acts on' % main)
     for key, text in skill["replies"].items():
         for m in re.finditer(r"\{(\w+)\}", text):
             if m.group(1) not in skill["values"] and m.group(1) not in ("output", "user"):
