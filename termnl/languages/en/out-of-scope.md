@@ -47,3 +47,14 @@ Near misses and more, from a larger model (24 Oct 2026, briefs/2026-10-24-also-s
 - what's the weather tomorrow
 - send a message to my sister
 - remind me to buy milk
+
+From data/also-said-edge-2026-10-25.md:
+
+- erase the SD card and make it a fresh drive
+- mount the external drive in home
+- change the password of home-5g
+- set the volume to 40
+- put the sound at exactly 70 percent
+- email report.pdf to me
+- attach todo.txt to an email
+- upload photos.tar.gz to a website
