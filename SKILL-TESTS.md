@@ -48,3 +48,24 @@ https://example.net/guide.zip · call todo.txt chores.txt instead · notes in id
 Wrong actions, unchanged: "which wifi network is this" (shows the networks around), "I want to look at
 report.pdf" (finds it instead of opening it). Two of the 12 carry a reason ("…, I can't log in from my
 laptop"): that is how a sentence is read, not a missing wording.
+
+## A request said with its reason (10 lines in agent.py)
+
+"restart ssh, I can't log in from my laptop": the whole sentence fell to a loose model guess, or to nothing,
+while "restart ssh" alone is read exactly by the skill's template. Now, when a sentence isn't read surely
+and has punctuation, its parts are read alone; when exactly one part is read by a template, it is the
+request, asked about first since the rest was left aside. No new word list.
+
+| | before | after |
+|---|---|---|
+| 6 old sets, handled of 595 | 553 | 555 |
+| wrong skill offered | 28 | 27 |
+| the skills' own tests, handled of 462 | 403 | 407 |
+| wrong skill offered | 36 | 32 |
+| wrong actions | 2 | 2 |
+| adding 10 skills moved | 27, 6 lost | 26, 5 lost |
+| reply time, median / slowest 5% | 8.4 / 20 ms | 8.6 / 31 ms |
+
+8 answers changed, 7 fixed, none broken. A looser version (any one part understood, not only by a
+template) fixed 2 more but offered 2 wrong skills where it used to say "I can't": not kept. Only sentences
+both unsure and cut by punctuation pay the extra reading, hence the slower tail.
