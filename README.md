@@ -17,7 +17,7 @@ Files and folders are made in the folder `home:` names in `settings.md` (`~/Term
 listed in `simulate:` (restart, shut down, Wi-Fi, Bluetooth, services) never run here: TermNL says what
 it would have done. The page's switches (show commands, admin mode) are written back to `settings.md`.
 
-Python 3.9 or newer, standard library only. Training the model needs numpy (`python3-numpy`).
+Python 3.9 or newer, standard library only, training included.
 
 ## Said in words: your name and your settings
 

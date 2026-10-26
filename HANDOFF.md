@@ -23,6 +23,7 @@ are his; don't rework them. The section of 22 October below is history.
 
 ## Measured on the board (Orange Pi Zero 2W, 4× Cortex-A53, 1.5 GB), 24 Oct
 
+- **Since 26 Oct (feat/frame-self-training) training is plain Python: numpy is no longer needed.** Before:
 - **Training needs numpy, and only the official wheel works.** Debian's `python3-numpy` crashes with
   "Illegal instruction"; numpy 2.5.3 from PyPI (cp313, aarch64) runs. It sits in `~/.models/shared/python`
   (downloaded on the laptop with `pip download --platform … --only-binary`, unpacked with
