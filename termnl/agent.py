@@ -587,7 +587,6 @@ class Agent:
         said = self.actions_said(self.in_context(toks))
         if any(skill["action"] in self.lists.get("opposites", {}).get(a, ()) for a in said):
             return None
-        skill = self.as_file(skill, toks)
         vals, used = self.values_in(skill, text, toks)
         taught = set(self.model["taught"].get(skill["id"], []))
         negation = {w for ph in self.words("negation") for w in ph}  # handled by its own rule
@@ -612,14 +611,6 @@ class Agent:
                 if where(toks, ph) and sum(1 for b in self.lists["actions"] if ph in refs.get(b, [])) == 1:
                     out.add(a)
         return out
-
-    def as_file(self, skill, toks):
-        """a name ending in a known file type (note.md) is a file: the same action on a file, never on a folder
-        (Gab, 23 Oct: "create a note.md in the Documents folder" was read as a folder called note.md)"""
-        exts = {t["ext"] for t in self.lists["filetypes"]}
-        if skill["object"] != "folder" or not any("." in t["word"] and t["word"].rsplit(".", 1)[1] in exts for t in toks):
-            return skill
-        return next((s for s in self.skills if s["action"] == skill["action"] and s["object"] == "file"), skill)
 
     def hid_a_place(self, u, v):
         """a typo inside a name hid a place (Gab, 23 Oct: "add a new file call gab.md insde Documents" made a file
