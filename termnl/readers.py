@@ -334,7 +334,7 @@ def clock(w):
 # TermNL reads itself too: the server gives what only it knows (server.py, state)
 
 def learning(w, started=None, trained=None):
-    """learning again now, for how long so far; or when the skill files in use were last read (load.py)"""
+    """learning again now, for how long so far; or when the model in use was trained (train.py writes it in)"""
     now = time.time()
     if started:
         return {"level": "learning", "values": {"": since(now - started, w)}}

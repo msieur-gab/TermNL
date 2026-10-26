@@ -1,5 +1,5 @@
 """python3 -m tools.why "sentence" [more…] — how TermNL reads a sentence: the words after cleaning and
-correction, its shape, what the funnel names, the templates that read it, the nearest Also said lines."""
+correction, its shape, what the funnel names, the templates that read it, the model's action and object."""
 import sys
 
 from termnl.agent import Agent
@@ -24,14 +24,11 @@ def why(agent, text):
             print("    template:  %s %s" % (u["skill"]["id"], {k: v.get("label") or v.get("text") for k, v in u["vals"].items()}))
         else:
             print("    template:  none")
-        top = {}
-        for s, line in r.lines:
-            weigh = lambda ws: sum(r.weight(w) for w in ws)
-            p = 2 * weigh(shape & line) / (weigh(shape) + weigh(line)) if shape else 0
-            if p > top.get(s["id"], (0, None))[0]:
-                top[s["id"]] = (p, line)
-        for id, (p, line) in sorted(top.items(), key=lambda x: -x[1][0])[:4]:
-            print("    %.2f %-18s %s" % (p, id, sorted(line)))
+        if r.model:
+            from termnl.model import classify
+            ws = [t["word"] for t in ts]
+            pa, po = classify(r.model["action"], text, ws)[:3], classify(r.model["object"], text, ws)[:3]
+            print("    model:     action %s; object %s" % (", ".join("%s %.2f" % (x["label"], x["p"]) for x in pa), ", ".join("%s %.2f" % (x["label"], x["p"]) for x in po)))
     out = agent.hear(text)
     agent.pending = None
     print("  → %s %s (%s %s) %s %s" % (out["outcome"], out.get("skill"), out.get("how"), out.get("p"), out.get("say"), out.get("chips") or ""))

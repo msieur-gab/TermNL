@@ -131,6 +131,8 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places
             # free text, or a list value that isn't on the list (read, but scored down)
             free = found is None and pos > 0 and toks[pos - 1]["word"] in named  # after "called": any words
             for end in range(pos + 1, n + 1):
+                if end > pos + 1 and toks[end - 1].get("break") and not free:
+                    break  # a value never crosses a comma: "restart ssh, I can't log in" names ssh; after "called", anything goes
                 if toks[end - 1]["word"] in ends and not free:
                     break  # "which files mention x" isn't a name; a list value is never "folder" or "bluetooth"
                 if found is None and any(toks[j]["word"] in places for j in range(pos + 1, end - 1)):

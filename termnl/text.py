@@ -5,12 +5,21 @@ import re
 # A word: letters of any alphabet or digits, with . _ - ' inside (seed.md, wi-fi, what's).
 WORD_RE = re.compile(r"\w(?:[\w.\-']*\w)?|\.\.")  # and "..", the folder above (cd ..)
 QUOTES = str.maketrans({"’": "'", "‘": "'", "`": "'"})
+BREAK_RE = re.compile(r"[,;:!?]")
 
 
 def tokenize(text):
-    """[{word, start, end}], words lowercased; offsets index the text with its quotes made plain."""
+    """[{word, start, end}], words lowercased; offsets index the text with its quotes made plain. A word that
+    comes after a comma, a colon or another break in the sentence carries "break": a name never crosses one."""
     clean = text.translate(QUOTES)
-    return [{"word": m.group(0).lower(), "start": m.start(), "end": m.end()} for m in WORD_RE.finditer(clean)]
+    out, last = [], 0
+    for m in WORD_RE.finditer(clean):
+        t = {"word": m.group(0).lower(), "start": m.start(), "end": m.end()}
+        if BREAK_RE.search(clean[last:m.start()]):
+            t["break"] = True
+        out.append(t)
+        last = m.end()
+    return out
 
 
 def words(phrase):

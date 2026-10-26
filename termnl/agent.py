@@ -11,7 +11,7 @@ Every request ends in one of four outcomes:
 One turn (respond):
   1. clean       fillers off, a typo read as the word it is one letter from (reading.py)
   2. answer      a question is waiting: yes, no, one of its chips, or a value for "Which one?"
-  3. read        a template reads the sentence exactly, or the nearest Also said line (reading.py);
+  3. read        a template reads the sentence exactly, or the model its action and object (reading.py);
                  a sentence that says part of a request ("now delete it", "and in downloads?") is
                  completed by the last request done, its frame (follow_up)
   4. safety      not sure, a typo in a change, "don't…": ask before anything
@@ -38,7 +38,7 @@ def quote(p):
 
 
 class Agent:
-    def __init__(self, lists, skills, settings=None, device=None, random=_random.random, **_):
+    def __init__(self, lists, skills, model=None, settings=None, device=None, random=_random.random, **_):
         self.lists, self.skills = lists, skills
         self.settings = settings if settings is not None else {}
         self.device, self.random = device, random
@@ -55,7 +55,7 @@ class Agent:
         self.many = joined("pointing at several")
         # the chips that answer a yes/no question: the first word of each list
         self.yes_no = [" ".join(said["yes"][0]), " ".join(said["no"][0])]
-        self.reader = Reader(lists, skills, self.sys)
+        self.reader = Reader(lists, skills, self.sys, model)
 
     # ---- the device, the settings, the lists
 
@@ -146,7 +146,7 @@ class Agent:
         if u:
             toks = u["toks"]
             u.setdefault("fixes", [])
-            u["sure"] = u["how"] == "template" or (u["how"] in ("said", "part") and self.sure(u))
+            u["sure"] = u["how"] == "template" or (u["how"] in ("model", "part") and self.sure(u))
 
         # 2, still: "Which one?" is answered by a value, unless the person clearly asks for something else
         p = self.pending
@@ -199,20 +199,13 @@ class Agent:
         return told(noted(out, u["fixes"], self), u)
 
     def sure(self, u):
-        """A sentence that says an Also said line word for word is as sure as a template. Otherwise the nearest
-        line alone never decides: close enough (SURE), and the sentence must name the skill's action in so many
-        words ("squash todo.txt down" doesn't name turn down); for a skill that only reads, its object or one of
-        the things it reads will do ("is mpd up": a service). A request read in part is sure only when it reads."""
-        skill, (acts, objs) = u["skill"], u["names"]
+        """A reading the model is sure of (SURE), with no word unknown, goes ahead; a request read in part is
+        sure only when it reads (nothing changes on the device)."""
         if u["unknown"]:
             return False
         if u["how"] == "part":
-            return skill["action"] in self.reading
-        if u["p"] >= 0.99:
-            return True
-        named = skill["action"] in acts or skill["action"] in self.reading and (
-            skill["object"] in objs or any(v["kind"] in u["shape"] for v in skill["values"].values()))
-        return u["p"] >= SURE and named
+            return u["skill"]["action"] in self.reading
+        return u["p"] >= SURE
 
     # ---- 2. answer
 

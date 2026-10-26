@@ -1,4 +1,4 @@
-"""Reads a sentence into a skill and its values, in four looks, each taken from the skill files alone:
+"""Reads a sentence into a skill and its values, in four looks, each taken from the skill files:
 
   1. words      fillers off ("please", "can you"); a typo of a word TermNL knows, one letter away from
                 exactly one, is read as that word (the name a person typed keeps its spelling)
@@ -6,19 +6,21 @@
                 ## Words): "new file called x" names create and file, so only skills doing that fit
   3. templates  a skill's ## People say reads the sentence exactly; when two read it alike, the funnel
                 decides, and when it can't, the person does
-  4. nearest    else the closest ## Also said line of any skill, every word folded to what it means
-                ("make" is create, "note.md" is a file, "ideas" is a folder); how close says how sure
+  4. model      else the action and object the trained model reads (model.py, trained from every skill's
+                ## People say and ## Also said: python3 -m termnl.train), the funnel deciding ties; how
+                sure the model is says how sure the reading is
 
-Nothing is trained: a skill folder dropped in is read at once, by its own sentences."""
+A skill folder dropped in is read by the funnel and its templates at once, and by the model once it
+is trained again ("learn what I taught you")."""
 import re
-from math import log
 
+from .model import classify
 from .template import best, parses
 from .text import close, tokenize, words
 
 FILE_RE = re.compile(r"\.[a-z0-9]{1,5}$", re.I)
-SURE, MAYBE = 0.8, 0.5  # how close the nearest Also said line must be: to go ahead, and to ask at all
-NEAR = 0.1  # lines this close to the nearest count as near too; the funnel decides among their skills
+SURE, MAYBE = 0.5, 0.15  # how sure the model must be of its action and object: to go ahead, and to ask at all
+NEAR = 0.1  # readings the model holds this close to its best count as one: the funnel decides among their skills
 UNSURE = 0.75  # how sure a template is of a reading with a value not on its list
 CHOICES = 8  # as many readings as the chips can show
 
@@ -47,17 +49,17 @@ def best_in(toks, found, fuzzy=False, start=None):
 
 
 class Reader:
-    def __init__(self, lists, skills, sys):
+    def __init__(self, lists, skills, sys, model=None):
         """sys(kind) → the device's values of a kind, [{value, label, phrases}], read live"""
-        self.lists, self.skills, self.sys = lists, skills, sys
+        self.lists, self.skills, self.sys, self.model = lists, skills, sys, model
         said = lists["conversation"]
         joined = lambda key: {" ".join(p) for p in said.get(key, [])}
-        self.small = joined("small words") | joined("filler start") | joined("filler end") | joined("pointing words") | joined("follow-up words")
+        self.small = joined("small words") | joined("filler start") | joined("filler end") | joined("pointing words") | joined("follow-up words") \
+            | joined("negation")  # "not" is read by its own rule (agent.py): a reading isn't held back by it
         self.stops, self.places, self.name_ends = joined("not a name start"), joined("before a place"), joined("name ends before")
         self.verbs, self.ends = joined("split verbs"), joined("verb ends")
         self.object_words = {ph[0] for o in lists["objects"] for ph in lists["refs"].get(o, []) if len(ph) == 1}
-        self.name_words = self.object_words | {ph[0] for a in lists["actions"] for ph in lists["refs"].get(a, []) if len(ph) == 1} \
-            | {ph[0] for t in lists["filetypes"] for ph in t["phrases"] if len(ph) == 1}  # "pdfs" is a kind of file, not a name
+        self.name_words = self.object_words | {ph[0] for a in lists["actions"] for ph in lists["refs"].get(a, []) if len(ph) == 1}
         self.named = {ph[-1] for ph in said.get("before a name", [])}  # called, named: what follows is a name
         # a phrase → everything it means: "start" means create and open; longest phrases first
         self.means = {}
@@ -72,19 +74,9 @@ class Reader:
         self.vocab = {w for phs in list(lists["refs"].values()) + list(said.values()) for ph in phs for w in ph}
         self.vocab |= {w for ph in self.means for w in ph} | {w for s in skills for nodes in s.get("compiled", []) for w in _template_words(nodes)}
         self.known = self.vocab | {w for s in skills for line in s["also"] for w in words(line)}  # a word an Also said line uses is known
-        # words/samples.md: the names Also said lines are written with, each a value of its kind
-        self.samples = [{"value": kind, "phrases": [words(n) for n in names]} for kind, names in lists["samples"].items()]
-        for s in skills:  # once per skill, however many agents read it: its Also said lines as shapes, and the
-            if "shapes" not in s:  # words each value follows in its own sentences (values_in)
-                s["shapes"] = [self.shape(tokenize(line), training=True) for line in s["also"]]
+        for s in skills:  # once per skill, however many agents read it: the words each value follows in its own sentences (values_in)
+            if "leads" not in s:
                 s["leads"] = leads(s.get("compiled", []), self.stops)
-        self.lines = [(s, shape) for s in skills for shape in s["shapes"]]
-        # a word's weight: the rarer among the Also said lines, the more it says ("pause" over "@value")
-        count = {}
-        for _, shape in self.lines:
-            for w in shape:
-                count[w] = count.get(w, 0) + 1
-        self.weight = lambda w: log(len(self.lines) / count.get(w, 1)) if self.lines else 1
 
     # ---- 1. words
 
@@ -143,33 +135,32 @@ class Reader:
 
     # ---- 2. funnel
 
-    def shape(self, toks, training=False):
+    def shape(self, toks):
         """What the sentence says, as a set: each action, object and file type by its name (every one a phrase
         means: "start" is create and open), a file-shaped word as "@file", a name the device has as "@value"
         and its kind ("@sys.folder"), a word TermNL doesn't know as itself and "@value" (a name, most likely),
-        the small words dropped. Training: the sample names of words/samples.md are the values, as the Also
-        said lines are written with them, and every other word is itself: the line teaches it."""
-        toks, out, i = self.joined(toks), set(), 0
-        lists = self.samples if training else [{"value": "@sys." + kind, "phrases": [ph for d in self.sys(kind) for ph in d["phrases"]]}
-                                               for kind in ("folder", "service", "app", "network", "music", "host")]
+        the small words dropped."""
+        toks, steps, i = self.joined(toks), [], 0  # steps: what each word means, in order
+        lists = [{"value": "@sys." + kind, "phrases": [ph for d in self.sys(kind) for ph in d["phrases"]]}
+                 for kind in ("folder", "service", "app", "network", "music", "host")]
         while i < len(toks):
             ph = next((ph for ph in self.phrases if at(toks, ph, i)), None)
-            if ph:
-                out |= self.means[ph]
-                i += len(ph)
-                continue
             hit = best_in(toks[i:], lists, start=0)
-            if hit:  # a value, and its kind when known ("documents" is a value, and a folder)
-                out |= {"@value", hit["o"]["value"]} if hit["o"]["value"].startswith("@") else {"@value"}
+            if hit and (not ph or hit["len"] > len(ph)):  # a value, and its kind when known ("music server" is a service)
+                steps.append({"@value", hit["o"]["value"]} if hit["o"]["value"].startswith("@") else {"@value"})
                 i += hit["len"]
+                continue
+            if ph:
+                steps.append(self.means[ph])
+                i += len(ph)
                 continue
             w = toks[i]["word"]
             if FILE_RE.search(w):
-                out.add("@file")
+                steps.append({"@file"})
             elif w not in self.small:  # a word TermNL doesn't know is a name, most likely, and itself
-                out |= {w} if training or w in self.known else {w, "@value"}
+                steps.append({w} if w in self.known else {w, "@value"})
             i += 1
-        return out
+        return {x for step in steps for x in step}
 
     def names(self, shape):
         """the actions and objects a shape names (a file-shaped word names a file)"""
@@ -202,6 +193,8 @@ class Reader:
         if len(tops) > 1:  # a name never holds a word for an object ("folder photos" is the folder photos)
             tops = [t for t in tops if not any(set(words(v["text"])) & self.object_words for v in t["vals"].values() if v.get("value") is None)] or tops
         tops = self.funnel(tops, shape)
+        if not tops:
+            return None
         # a value not on its list ("what's" as a file type) makes the reading a guess, not an exact one
         p = UNSURE if any(v["unknown"] for t in tops for v in t["vals"].values()) else 1
         if len(tops) > 1:
@@ -218,32 +211,64 @@ class Reader:
 
     # ---- 4. nearest
 
-    def nearest(self, text, toks, shape):
-        """the skill whose Also said line is closest to the sentence (Dice: twice the weight of the words shared
-        over the weight of the words of both) → a reading with how close as p, "choose" when several tie, or None"""
-        if not shape:
+    def bare(self, toks, shape):
+        """An action said without its object ("turn off", "switch it off"): the person chooses among the skills
+        that do it, and those the action means with an object (a skill's ## Words: "turn off" also stops the
+        music). Only when the sentence names an action and nothing else, and two to CHOICES skills fit."""
+        acts, objs = self.names(shape)
+        if not acts or objs or any(x not in acts for x in shape):
             return None
-        scored, weigh = {}, lambda ws: sum(self.weight(w) for w in ws)
-        for skill, line in self.lines:
-            p = 2 * weigh(shape & line) / (weigh(shape) + weigh(line))
-            if p > scored.get(skill["id"], (0, None))[0]:
-                scored[skill["id"]] = (p, skill)
-        top = max((p for p, _ in scored.values()), default=0)
-        if top < MAYBE:
+        pairs = {(a, s["object"]) for a in acts for s in self.skills if s["action"] == a}
+        for rule in self.lists.get("in_context", []):
+            if any(where(toks, ph) for ph in rule["phrases"]):
+                pairs |= {(rule["action"], o) for o in rule["objects"]}
+        fit = [{"skill": s, "vals": {}} for s in self.skills if (s["action"], s["object"]) in pairs]
+        if not 2 <= len(fit) <= CHOICES:
             return None
-        # the lines nearly as close count as one: the funnel decides among them, and the person when it can't
-        readings = self.funnel([{"skill": s, "p": p} for p, s in scored.values() if p >= top - NEAR], shape)
+        return {"how": "choose", "options": fit, "p": 1, "toks": toks}
+
+    def opposed(self, skill, toks):
+        """a skill that does the opposite of an action said in so many words (words/actions.md, Opposites): "turn
+        the board on" is never answered with "Shut the board down?" """
+        return any(skill["action"] in self.lists.get("opposites", {}).get(a, ()) for a in self.alone(self.joined(toks)))
+
+    def by_model(self, text, toks, shape):
+        """the skill whose action and object the model reads (the chance of both, as p); readings nearly as
+        likely count as one and the funnel decides among them, the person when it can't; a reading the model
+        holds less likely than "none of them" is no reading → a reading, "choose", or None"""
+        if not self.model:
+            return None
+        ws = [t["word"] for t in toks]
+        pa, po = classify(self.model["action"], text, ws), classify(self.model["object"], text, ws)
+        P = lambda found, label: next((x["p"] for x in found if x["label"] == label), 0)
+        scored = [(P(pa, s["action"]) * P(po, s["object"]), s) for s in self.skills]
+        top, best_ = max(scored, key=lambda x: x[0], default=(0, None))
+        if top < MAYBE or max(P(pa, "none"), P(po, "none")) > top or self.opposed(best_, toks):
+            return None  # an action said in so many words is never answered with its opposite (24 Oct: "turn the board on")
+        readings = self.funnel([{"skill": s, "p": p} for p, s in scored if p >= top - NEAR * top], shape)
         top = max(r["p"] for r in readings)
-        readings = [r for r in readings if r["p"] >= top - NEAR]
+        readings = [r for r in readings if r["p"] >= top - NEAR * top]
         if len(readings) > CHOICES:
             return None
         for r in readings:
             r["vals"] = self.values_in(r["skill"], text, toks)
         if len(readings) > 1:
             return {"how": "choose", "options": readings, "p": top, "toks": toks}
-        taken = {w for v in readings[0]["vals"].values() for w in words(v.get("text") or v.get("label") or "")}
-        unknown = [t["word"] for t in toks if t["word"] not in self.known | self.small | taken and not FILE_RE.search(t["word"]) and not self.on_device(t["word"])]
-        return {"how": "said", **readings[0], "p": top, "unknown": unknown, "toks": toks}
+        skill, vals = readings[0]["skill"], readings[0]["vals"]
+        taught = set(self.model["taught"].get(skill["id"], ()))  # the words this skill's own sentences use
+        taken = {w for v in vals.values() for w in words(v.get("text") or v.get("label") or "")}
+        unknown = [t["word"] for t in toks if t["word"] not in self.small | taught | taken and not FILE_RE.search(t["word"])
+                   and not self.on_device(t["word"])]
+        # the new words, side by side, are the value the skill still lacks from the device's list ("kill pipewire":
+        # no app of that name): kept as said, so it is answered as not there, never asked for again (Gab, 24 Oct)
+        missing = [k for k, spec in skill["values"].items() if k not in vals and spec["required"] and not spec.get("default")]
+        new = [i for i, t in enumerate(toks) if t["word"] in unknown]
+        if len(missing) == 1 and skill["values"][missing[0]]["kind"].startswith("@sys.") and self.list_of(skill["values"][missing[0]]["kind"]) is not None \
+                and new and new == list(range(new[0], new[-1] + 1)):
+            vals[missing[0]] = {"text": original(text, toks, new[0], new[-1] + 1), "unknown": True}
+            if top >= SURE:
+                unknown = []
+        return {"how": "model", **readings[0], "p": top, "unknown": unknown, "toks": toks}
 
     def on_device(self, word):
         return any(word in ph for kind in ("folder", "service", "app", "network", "music", "host") for d in self.sys(kind) for ph in d["phrases"])
@@ -305,24 +330,32 @@ class Reader:
     def read(self, text, toks):
         """→ a reading {how, skill, vals, p, unknown, toks} (or {how: "choose", options}), or None.
         how: "template" (exact), "part" (a template read one part of the sentence: asked about first),
-        "said" (the nearest Also said line, p how close)."""
+        "model" (the model's action and object, p how sure)."""
         u = self.read_one(text, toks)
         if not u or u["p"] < 1:  # a request said with its reason ("restart ssh, I can't log in"): the part that reads best
             parts = [p for p in re.split(r"[,;:!?]", text) if p.strip()]
             for part in parts if len(parts) > 1 else []:
                 v = self.read_one(part, self.clean(part))
-                if v and (not u or v["p"] > u["p"]):
-                    u = {**v, "how": "part"} if v["how"] == "template" else v
+                if v and v["how"] != "choose" and (not u or v["p"] > u["p"]) and v["shape"] - v["names"][0]:  # "restart it" names no thing: no request
+                    u = {**v, "how": "part"}  # a part is never acted on unasked, however it was read
         return u
 
     def read_one(self, text, toks):
-        """the whole of a sentence, read by a template or the nearest line: the closer reading wins, a template
-        when as close"""
+        """the whole of a sentence, read by a template or the model: the surer reading wins, a template when as sure"""
         shape = self.shape(toks)
         u = self.by_template(text, toks, shape)
-        v = self.nearest(text, toks, shape) if not u or u["p"] < 1 else None
-        if v and (not u or v["p"] > u["p"]):
-            u = v
+        said = self.joined(toks)
+        if not u and said is not toks:  # the words read in their context ("turn on the music" plays it)
+            u = self.by_template(text, said, shape)
+        if u and u["how"] != "choose" and self.opposed(u["skill"], toks):
+            u = None
+        v = (self.bare(toks, shape) or self.by_model(text, toks, shape)) if not u or u["p"] < 1 else None
+        if v and u and u["how"] == "template" and v["how"] == "model" and v["p"] >= SURE and v["skill"]["id"] != u["skill"]["id"]:
+            # a template's reading with a value not on its list is a strong vote, not a verdict: when the model is sure
+            # of another skill, the person chooses (24 Oct: "rename the folder photos to pictures" renamed a file)
+            u = {"how": "choose", "options": [{k: u[k] for k in ("skill", "vals")}, {k: v[k] for k in ("skill", "vals")}], "p": u["p"], "toks": toks}
+        elif v and (not u or v["p"] > u["p"] and (u["how"] == "choose" or v["how"] != "model" or v["skill"]["id"] != u["skill"]["id"])):
+            u = v  # the model's reading of the same skill adds nothing: the template read its values exactly
         if u:
             u["names"], u["shape"] = self.names(shape), shape
         return u
