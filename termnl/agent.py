@@ -392,7 +392,11 @@ class Agent:
             return bare
         if u:
             other = self.doubts(text, u) if u["how"] == "template" else None
-            if other:  # two readings: the person chooses ("Do you mean rename a file or rename a folder?")
+            if other and any(v.get("unknown") for v in u["vals"].values()):
+                # read only by taking a word it doesn't know as its value ("do i have bluetooth" as a kind of file):
+                # the skill the sentence names reads it (Gab, 26 Oct: "do you have carrots … yes they are here")
+                u = {**u, "how": "model", "skill": other, "vals": self.values_in(other, text, u["toks"])[0], "p": DOUBT, "unknown": []}
+            elif other:  # two readings: the person chooses ("Do you mean rename a file or rename a folder?")
                 said = u["toks"]
                 u = {"how": "choose", "options": [{"skill": u["skill"], "vals": u["vals"]},
                                                   {"skill": other, "vals": self.values_in(other, text, said)[0]}],
@@ -741,10 +745,15 @@ class Agent:
         r = self.find_files(skill, vals, approved) or self.already_there(skill, vals)
         if r:
             return r
-        if skill["admin"] and not self.on("admin mode"):
+        # the home folder itself compressed, deleted or renamed needs admin and approval, as any admin skill (Gab,
+        # 26 Oct: "Any skill on whole home"); home as where something happens, or read, stays free
+        main = skill["main"]
+        home = (not skill.get("reads") and main != skill["where"] and skill["values"].get(main, {}).get("kind") == "@sys.folder"
+                and (vals.get(main) or {}).get("value") == "$HOME")
+        if (skill["admin"] or home) and not self.on("admin mode"):
             self.pending = None
             return {"outcome": "abstain", "skill": skill["id"], "say": self.reply("admin off"), "reason": "admin mode off"}
-        if (skill["admin"] or skill["approve"]) and not approved:
+        if (skill["admin"] or skill["approve"] or home) and not approved:
             self.question("approve", yes=lambda: self.act(skill, vals), no=lambda: self.declined(skill))
             return self.with_show({"outcome": "approve", "skill": skill["id"], "say": self.reply(skill["replies"]["approve"], self.display(skill, vals)),
                                    "chips": self.yes_no}, skill, vals)

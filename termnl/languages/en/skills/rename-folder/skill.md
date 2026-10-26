@@ -43,4 +43,5 @@ mv -nT {folder} {parent}/{new}
 
 ## Replies
 
+- approve: Rename the folder {folder} to {new}?
 - done: Done, {folder} is now {new}. | Renamed the folder {folder} to {new}.
