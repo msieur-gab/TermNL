@@ -72,6 +72,11 @@ def uses(nodes, acc=None):
     return acc
 
 
+# a value a list doesn't have ("pipewire", "the music server") is a few words, never a clause: "is there a way
+# to see if bluetooth is enabled" is not a file type called "way to see if bluetooth is enabled" (26 Oct)
+UNKNOWN_WORDS = 3
+
+
 def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places=frozenset(), named=frozenset()):
     """Every way the words can be read by the template.
       refs:  name → [[word, ...], ...]               phrases for <name>
@@ -130,7 +135,7 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places
                 return
             # free text, or a list value that isn't on the list (read, but scored down)
             free = found is None and pos > 0 and toks[pos - 1]["word"] in named  # after "called": any words
-            for end in range(pos + 1, n + 1):
+            for end in range(pos + 1, n + 1 if found is None else min(n, pos + UNKNOWN_WORDS) + 1):
                 if end > pos + 1 and toks[end - 1].get("break") and not free:
                     break  # a value never crosses a comma: "restart ssh, I can't log in" names ssh; after "called", anything goes
                 if toks[end - 1]["word"] in ends and not free:

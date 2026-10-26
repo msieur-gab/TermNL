@@ -98,3 +98,32 @@ typos and the 129 unit tests. Numbers are what turning the rule OFF changes: min
 The wordings did not make the rules obsolete: every rule but one still saves sentences, prevents a wrong
 action, or holds a behaviour a unit test asks for. The last four rows save no sentence; what they keep is
 dialogue (a question instead of a guess) and values, which only the unit tests see.
+
+## Does TermNL understand its own sentences?
+
+Each skill's 1,113 "Also said" lines, heard one by one: 83 came back as another skill or a choice. 46 of
+them were caught by one skill, check-type ("is there…", "do I have…"), 9 by show-type. Not because the
+sentences were ignored: a slot expecting a value from a list (a file type, a folder) also takes words it
+doesn't know, so it can ask "I don't see X. Which one?". In "is there a way to see if bluetooth is enabled",
+check-type's {type} took "way to see if bluetooth is enabled" as an unknown file type.
+
+**Kept (template.py, 5 lines): a value a list doesn't have is at most 3 words, never a clause.**
+
+| | before | after |
+|---|---|---|
+| the skills' own sentences read as their skill, of 1,113 | 1,030 | 1,074 |
+| 6 old sets, handled of 595 / wrong offers | 555 / 27 | 556 / 26 |
+| the skills' tests, handled of 462 / wrong offers | 407 / 32 | 408 / 31 |
+| typos, handled of 502 | 440 | 439 |
+| unit tests failing | 1 | 1 (the same) |
+
+What the test sets can't see, the values: "create a file called notes.txt in projects, I need somewhere to
+jot things" asked "I don't see 'projects, I need somewhere to jot things'. Which one?"; now it reads
+projects, and asks only "Do you want me to create a file?". "send an email to my boss…", out of scope, is
+refused instead of asked about.
+
+**Tried and not kept: the "Also said" lines matched as patterns.** Values made general ("fetch {name} from
+the {host}"): 10 fewer requests handled, 11 more wrong offers, twice as slow, 7 unit tests broken, because
+a slot takes unknown words (above), "show me {name}" swallowed "show me what's running". Word for word,
+values general: still 3 fewer handled. Only the lines naming no value, word for word: 1 more handled out of
+1,127, nothing worth its code. The model already learns these lines; the problem was the loose slots.
