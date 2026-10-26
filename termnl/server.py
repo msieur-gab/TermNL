@@ -18,8 +18,6 @@ import os
 import random
 import re
 import socket
-import subprocess
-import sys
 import time
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -28,7 +26,7 @@ from urllib.parse import parse_qs, urlsplit
 from . import readers
 from .agent import Agent
 from .device import Device
-from .load import HERE, ROOT, load_language, load_settings
+from .load import ROOT, load_language, load_settings
 from .runner import run
 from .text import fill, pick
 
@@ -71,10 +69,7 @@ class TermNL:
                              home_names=[" ".join(p) for p in self.lang["lists"]["conversation"].get("home folder", [["home"]])])
         os.makedirs(self.device.home, exist_ok=True)
         self.lend()
-        self.training = None  # learning again: {started, process, session}
         self.told = {}  # session → "Done learning…", until its page asks (GET /api/learning) or it speaks again
-        # how the model is trained again on this device: the lowest priority, two threads, so the board stays usable
-        self.trainer = ["nice", "-n", "19", sys.executable, "-m", "termnl.train"]
         self.sessions = {}
         self.lock = threading.Lock()
 
@@ -115,53 +110,37 @@ class TermNL:
         return self.sessions[session]
 
     def train(self, session):
-        """"learn what I taught you": trains the model again from the skill files, in the background. The
-        model in use is replaced only when the new one is whole (train.py); the one before stays beside it.
-        The conversation that asked is the one told when it is done (Gab, 24 Oct: "asker, as it happens")."""
-        if self.training and "process" in self.training:
-            return False
-        env = {**os.environ, "OPENBLAS_NUM_THREADS": "2", "OMP_NUM_THREADS": "2"}
-        process = subprocess.Popen(self.trainer, cwd=os.path.dirname(HERE), env=env, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE, text=True, start_new_session=True)
-        self.training = {"started": time.time(), "process": process, "session": session}
-        return True
-
-    def learnt(self):
-        """once training is over: the new model is loaded, and how it went waits for the conversation that asked"""
-        t = self.training
-        if not t or t["process"].poll() is None:
-            return
-        out, err = t["process"].communicate()
-        seconds = time.time() - t["started"]
-        self.training = None
+        """"learn what I taught you": the skill files are read again, as they are now, so a skill dropped in or a
+        sentence added is live; nothing is trained. Every conversation starts afresh with the new skills.
+        The conversation that asked is the one told how it went (Gab, 24 Oct: "asker, as it happens")."""
+        started = time.time()
         a = self.Agent(**self.lang, settings=self.settings, device=self.device)
-        if t["process"].returncode != 0:
-            self.told[t["session"]] = a.reply("learning failed", {"error": (err.strip().splitlines() or ["code %d" % t["process"].returncode])[-1]})
-            return
-        self.lang = load_language("en")
+        lang = load_language("en")
+        if lang["errors"]:
+            self.told[session] = a.reply("learning failed", {"error": lang["errors"][0]})
+            return True
+        self.lang = lang
         self.lend()
-        for session in self.sessions.values():
-            session.model = self.lang["model"]
-        took = readers.since(seconds, readers.Words(self.lang["lists"]["readings"]))
-        self.told[t["session"]] = a.reply("learnt", {"time": took})
+        self.sessions = {}
+        took = readers.since(time.time() - started, readers.Words(self.lang["lists"]["readings"]))
+        self.told[session] = a.reply("learnt", {"time": took})
+        return True
 
     def learning(self, session):
         """what the chat page asks every few seconds while learning: still at it, and this conversation's note"""
         with self.lock:
-            self.learnt()
-            return {"learning": self.training is not None, "say": self.told.pop(session, None)}
+            return {"learning": False, "say": self.told.pop(session, None)}
 
     def state(self, reads):
         """what only the server knows, for the readers of TermNL itself (readers.py: learning, name)"""
         if reads == "learning":
-            return {"started": (self.training or {}).get("started"), "trained": self.lang["model"].get("trained")}
+            return {"started": None, "trained": self.lang["read"]}
         if reads == "name":
             return {"user": self.settings.get("name") or ""}
         return {}
 
     def say(self, text, session):
         with self.lock:
-            self.learnt()
             done = self.told.pop(session, None)
             a = self.agent(session)
             secret = a.waits_for_secret()  # a password: never searched in the documents, never logged
@@ -202,7 +181,7 @@ class TermNL:
         """the host's documents answer instead, when TermNL doesn't understand or only guesses, and they match;
         else None. They are only read: what they hold never becomes a command."""
         floor = self.NOTES["no skill"] if r["outcome"] == "abstain" and r.get("reason") == "no skill" else \
-            self.NOTES["guess"] if r["outcome"] == "ask" and r.get("how") == "model" and r.get("unknown") else None
+            self.NOTES["guess"] if r["outcome"] == "ask" and r.get("how") == "said" and r.get("unknown") else None
         if floor is None or not self.doc:
             return None
         try:

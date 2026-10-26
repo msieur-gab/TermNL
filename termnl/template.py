@@ -72,16 +72,18 @@ def uses(nodes, acc=None):
     return acc
 
 
-def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places=frozenset()):
+def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places=frozenset(), named=frozenset()):
     """Every way the words can be read by the template.
       refs:  name → [[word, ...], ...]               phrases for <name>
       slots: name → None (free text) | [{value, label, phrases: [[word...]]}]   a list
     A list value not on the list is still read: close to a listed one (a typo), it is marked fuzzy and
     confirmed; otherwise marked unknown and asked about. Free text never starts with a place word
-    (stops: "in", "inside", "for"…), so a name can't swallow the place that follows it, and never
-    ends with an object word (ends: "folder", "file"…), so "the ideas folder" isn't a name. Nor does it
-    hold a place word with words after it (places: "in", "inside", "into"), so in "seeds in garden" the
-    garden is read as a place, and asked about when the device has none by that name."""
+    (stops: "in", "inside", "for"…), so a name can't swallow the place that follows it, and never holds
+    a word for an action or an object (ends: "folder", "file", "delete"…), so "which files mention x" isn't a
+    name, unless a naming word comes right before it (named: "called", "named"): a folder called music. Nor
+    does it hold a place word with words after it (places: "in", "inside", "into"), so in "seeds in garden"
+    the garden is read as a place, and asked about when the device has none by that name. A list value is
+    never a word for an object (ends): "bluetooth" is the board's Bluetooth, not the service called bluetooth."""
     out = []
     n = len(toks)
 
@@ -118,6 +120,8 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places
             if found:
                 for v in found:
                     for ph in v["phrases"]:
+                        if len(ph) == 1 and ph[0] in ends:
+                            continue  # a word for an object is that object, not a thing named like it ("is bluetooth on")
                         if at(ph, pos):
                             nxt(pos + len(ph), {**caps, name: {"start": pos, "end": pos + len(ph), "value": v["value"], "label": v["label"]}}, score + len(ph))
                         elif near(ph, pos):
@@ -125,9 +129,10 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places
             if pos < n and toks[pos]["word"] in stops:
                 return
             # free text, or a list value that isn't on the list (read, but scored down)
+            free = found is None and pos > 0 and toks[pos - 1]["word"] in named  # after "called": any words
             for end in range(pos + 1, n + 1):
-                if found is None and toks[end - 1]["word"] in ends:
-                    continue  # "the ideas folder" is a folder, not a name
+                if toks[end - 1]["word"] in ends and not free:
+                    break  # "which files mention x" isn't a name; a list value is never "folder" or "bluetooth"
                 if found is None and any(toks[j]["word"] in places for j in range(pos + 1, end - 1)):
                     break  # "seeds in garden": the name stops before the place
                 if found is not None and toks[end - 1]["word"] in places:
@@ -135,7 +140,7 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places
                 cap = {"start": pos, "end": end}
                 if found is not None:
                     cap["unknown"] = True
-                nxt(end, {**caps, name: cap}, score - (2 if found is not None else 0))
+                nxt(end, {**caps, name: cap}, score - (1 if found is not None else 0))
 
     m(nodes, 0, 0, {}, 0, lambda pos, caps, score: out.append({"caps": caps, "score": score}) if pos == n else None)
     return out
