@@ -456,10 +456,15 @@ class Agent:
         r = self.find_files(skill, vals, approved) or self.already_there(skill, vals)
         if r:
             return r
-        if skill["admin"] and not self.on("admin mode"):
+        # the home folder itself compressed, deleted or renamed needs admin and approval, as any admin skill (Gab,
+        # 26 Oct: "Any skill on whole home"); home as where something happens, or read, stays free
+        main = skill["main"]
+        home = (not skill.get("reads") and main != skill["where"] and skill["values"].get(main, {}).get("kind") == "@sys.folder"
+                and (vals.get(main) or {}).get("value") == "$HOME")
+        if (skill["admin"] or home) and not self.on("admin mode"):
             self.pending = None
             return {"outcome": "abstain", "skill": skill["id"], "say": self.reply("admin off"), "reason": "admin mode off"}
-        if (skill["admin"] or skill["approve"]) and not approved:
+        if (skill["admin"] or skill["approve"] or home) and not approved:
             self.question("approve", yes=lambda: self.act(skill, vals), no=lambda: self.declined(skill))
             return self.with_show({"outcome": "approve", "skill": skill["id"], "say": self.reply(skill["replies"]["approve"], self.display(skill, vals)),
                                    "chips": self.yes_no}, skill, vals)

@@ -710,5 +710,59 @@ class GabsBoardSession(unittest.TestCase):
         self.assertEqual(r["command"], "touch $HOME'/Documents/note_02.md'")
 
 
+class OwnWords(unittest.TestCase):
+    """Gab, 26 Oct, on "do i have bluetooth" offered "look for a kind of file or check Bluetooth?": "is there
+    bluetooth on the board, then show … if you go ask a seller do you have carrots, … most of the time it will
+    be yes they are here". A skill that reads a sentence only by taking a word it doesn't know as its value
+    gives way to the skill the sentence names."""
+
+    def test_do_i_have_x_goes_to_the_skill_of_x(self):
+        for said, skill in (("do i have bluetooth", "check-bluetooth"), ("do i have enough memory free", "check-memory"),
+                            ("is there room for more files", "check-storage"), ("are there any updates", "update-system"),
+                            ("do I have notes about the board", "find-text")):
+            r = agent({"admin mode": "on"}).hear(said)
+            self.assertEqual(r.get("skill"), skill, said)
+
+    def test_a_kind_of_file_it_knows_is_still_looked_for(self):
+        r = agent().hear("do i have any pdf files")
+        self.assertEqual((r["outcome"], r.get("skill")), ("act", "check-type"))
+
+
+class WholeHome(unittest.TestCase):
+    """Gab, 26 Oct: "ziping the home should require admin and ask for approval", for "Any skill on whole home";
+    the archive of home goes "In Downloads"."""
+
+    def test_acting_on_the_home_folder_itself_needs_admin_and_approval(self):
+        for said in ("compress my home folder", "delete the home folder", "rename the home folder to old"):
+            self.assertEqual(agent().hear(said)["reason"], "admin mode off", said)
+            r = agent({"admin mode": "on"}).hear(said)
+            self.assertEqual(r["outcome"], "approve", said)
+
+    def test_home_as_the_place_something_happens_stays_free(self):
+        self.assertEqual(agent().hear("create a folder called bikes in home")["command"], "mkdir -p $HOME'/bikes'")
+        self.assertEqual(agent().hear("compress the ideas folder")["outcome"], "act")
+
+    def test_the_archive_of_home_goes_to_downloads_and_leaves_itself_out(self):
+        import tempfile
+        from termnl.runner import run
+        a = agent({"admin mode": "on"})
+        a.hear("compress my home folder")
+        command = a.hear("yes")["command"]
+        home = tempfile.mkdtemp()
+        try:
+            os.makedirs(os.path.join(home, "Downloads"))
+            open(os.path.join(home, "note.md"), "w").write("hello")
+            done = run(command, home)
+            self.assertEqual(done["code"], 0, done["err"])
+            self.assertEqual(done["out"].strip(), "~/Downloads/home.tar.gz")
+            import tarfile
+            names = tarfile.open(os.path.join(home, "Downloads", "home.tar.gz")).getnames()
+            self.assertTrue(any(n.endswith("note.md") for n in names), names)
+            self.assertFalse(any(n.endswith("home.tar.gz") for n in names), names)
+        finally:
+            import shutil
+            shutil.rmtree(home)
+
+
 if __name__ == "__main__":
     unittest.main()

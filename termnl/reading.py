@@ -290,7 +290,9 @@ class Reader:
         after "called"/"named", a file-shaped word."""
         vals, used = {}, set()
         leads = skill.get("leads", {})
-        listed = [(k, self.list_of(spec["kind"]) or []) for k, spec in skill["values"].items()]
+        # a value with no default first: "put todo.txt in the projects folder" says where it goes; where it is
+        # can be where you are
+        listed = [(k, self.list_of(spec["kind"]) or []) for k, spec in sorted(skill["values"].items(), key=lambda x: bool(x[1].get("default")))]
 
         def after_lead(k, found):
             for i, t in enumerate(toks):
