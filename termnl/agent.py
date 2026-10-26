@@ -197,6 +197,16 @@ class Agent:
         if f:
             u, toks = f, f["toks"]
 
+        # 3, still: a request said with its reason ("restart ssh, I can't log in from my laptop"). When the whole
+        # sentence isn't read surely, its parts, cut at punctuation, are read alone: when exactly one is read by a
+        # template, it is the request, asked about first since the rest was left aside.
+        parts = [p for p in re.split(r"[,;:!?]", text) if p.strip()]
+        if len(parts) > 1 and not self.pending and (not u or not u["sure"]):
+            one = [v for part in parts if (t := self.clean(part)) and (v := self.understand(part, t)) and v["how"] == "template"]
+            if len(one) == 1:
+                u, toks = one[0], one[0]["toks"]
+                u["sure"] = False
+
         if not u:
             self.pending, self.frame = None, None  # nothing understood: the subject changed
             return {"outcome": "abstain", "say": self.reply("abstain"), "reason": "no skill", "inbox": text}
