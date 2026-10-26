@@ -666,5 +666,49 @@ class Dialogue(unittest.TestCase):
             shutil.rmtree(root)
 
 
+class GabsBoardSession(unittest.TestCase):
+    """Gab's session on the board, 26 Oct 2026 (feat/frames, the chat page): moving, deleting and restoring
+    went well, then three tries at making a file in Documents all failed ("the file creation is truly having
+    a problem"). The same on main."""
+
+    def first_turns(self, a):
+        """what came before, as typed; it went well, and left "Which file?" waiting before the time was asked"""
+        for said in ("move note.md to document", "Documents", "and delete it", "yes", "yes", "restore it", "delete it"):
+            a.hear(said)
+        self.assertEqual(a.hear("what time is it")["skill"], "check-time")
+
+    def test_a_file_type_never_runs_past_inside(self):
+        """"noe" for "note": "document" is a word for file, and the type took "noe inside" ("I don't see “noe
+        inside”. Which one?"); a value stops before "in", "inside", "into", as a name does"""
+        r = agent().hear("create a new noe inside document")
+        self.assertNotIn("noe inside", r["say"])
+        self.assertNotEqual(r["outcome"], "act")
+
+    def test_a_request_said_while_a_question_waits_is_read_as_said_alone(self):
+        """"Which one?" took the whole of "create note_02 inside document" as the file type, and the request
+        that followed lost its name and folder ("What should I call it?"): a request said while a question
+        waits gets the reply it gets alone"""
+        for request in ("create note_02 inside document", "create note_02.md inside document", "create note_02.md in documents"):
+            alone = agent().hear(request)
+            a = agent()
+            a.hear("create a new noe inside document")
+            after = a.hear(request)
+            self.assertEqual((after["outcome"], after.get("skill"), after["say"], after.get("command")),
+                             (alone["outcome"], alone.get("skill"), alone["say"], alone.get("command")), request)
+
+    def test_the_session_as_typed(self):
+        a = agent()
+        self.first_turns(a)
+        a.hear("create a new noe inside document")
+        r = a.hear("create note_02 inside document")
+        self.assertNotIn("create note_02", r["say"])  # not taken as the answer to the question waiting
+        r = a.hear("create note_02.md inside document")
+        self.assertEqual(r["skill"], "create-file")
+        self.assertNotIn(r["say"], ("What should I call it?", "What name should the file have?"))  # the name was said
+        if r["outcome"] == "ask":  # "Documents, right?"
+            r = a.hear("yes")
+        self.assertEqual(r["command"], "touch $HOME'/Documents/note_02.md'")
+
+
 if __name__ == "__main__":
     unittest.main()
