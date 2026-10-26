@@ -3,7 +3,9 @@
     set   phrasings (default): tests/phrasings.md, hand-written on 22 Oct, partly tuned against
           probes:    tests/probes.md, written 24 Oct to diagnose, tuned against (optimistic)
           heldout:   tests/heldout.md, written 24 Oct before any change, never tuned against
-          all:       the three, one after the other
+          blind, scale-blind, edge-blind: written blind on 24–25 Oct
+          skills:    every skill's own tests.md (written blind on 26 Oct, from the skill's purpose only)
+          all:       every set, one after the other
 
 A line `- none: …` is a sentence TermNL should not act on: abstaining is right, asking is harmless, acting
 is wrong. Then, with the default set and if tests/real.md is here, the conversations people really had
@@ -16,12 +18,27 @@ from termnl.agent import Agent
 from termnl.load import ROOT, load_language
 from tests.device import device
 
-SETS = ("phrasings", "probes", "heldout", "blind", "scale-blind", "edge-blind")
+SETS = ("phrasings", "probes", "heldout", "blind", "scale-blind", "edge-blind", "skills")
 
 
 def lines_of(name):
+    if name == "skills":  # each skill's own tests.md, beside its skill.md: every line is a sentence for that skill
+        return [(id, t) for id, ts in skill_tests().items() for t in ts]
     with open(os.path.join(ROOT, "tests", name + ".md"), encoding="utf-8") as f:
         return [m.groups() for m in (re.match(r"^- ([\w-]+): (.+)$", l) for l in f.read().split("\n")) if m]
+
+
+def skill_tests(lang="en"):
+    """skill id → the sentences of its tests.md (lines starting with "- "), for the skills that have one"""
+    from termnl.load import language_dir
+    d = os.path.join(language_dir(lang), "skills")
+    out = {}
+    for id in sorted(os.listdir(d)):
+        f = os.path.join(d, id, "tests.md")
+        if os.path.exists(f):
+            with open(f, encoding="utf-8") as fh:
+                out[id] = [l[2:].strip() for l in fh.read().split("\n") if l.startswith("- ")]
+    return out
 
 
 def kind_of(want, r):
