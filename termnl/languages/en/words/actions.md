@@ -26,7 +26,7 @@ A skill names its action in `does:`; its sentences write it as `<action>`.
 - copy: copy, duplicate
 - delete: delete, remove, erase, trash, get rid of
 - install: install
-- update: update, upgrade
+- update: update, upgrade, updates, upgrades
 - compress: compress, zip, pack
 - download: download, fetch
 - set: set, change
