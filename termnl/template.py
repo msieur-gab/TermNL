@@ -72,6 +72,11 @@ def uses(nodes, acc=None):
     return acc
 
 
+# a value a list doesn't have ("pipewire", "the music server") is a few words, never a clause: "is there a way
+# to see if bluetooth is enabled" is not a file type called "way to see if bluetooth is enabled" (26 Oct)
+UNKNOWN_WORDS = 3
+
+
 def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places=frozenset()):
     """Every way the words can be read by the template.
       refs:  name → [[word, ...], ...]               phrases for <name>
@@ -125,7 +130,7 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places
             if pos < n and toks[pos]["word"] in stops:
                 return
             # free text, or a list value that isn't on the list (read, but scored down)
-            for end in range(pos + 1, n + 1):
+            for end in range(pos + 1, n + 1 if found is None else min(n, pos + UNKNOWN_WORDS) + 1):
                 if found is None and toks[end - 1]["word"] in ends:
                     continue  # "the ideas folder" is a folder, not a name
                 if found is None and any(toks[j]["word"] in places for j in range(pos + 1, end - 1)):
