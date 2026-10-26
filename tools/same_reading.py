@@ -10,7 +10,7 @@ import re
 import sys
 
 from termnl.agent import Agent
-from termnl.examples import examples
+from termnl.examples import examples, text_of
 from termnl.load import ROOT, load_language
 from tests.device import device
 
@@ -18,7 +18,7 @@ SAVED = os.path.join(ROOT, "tools", ".same_reading.json")
 
 
 def corpus(lang):
-    texts = {e["text"] for e in examples(lang["skills"], lang["lists"], per_template=200, seed=11)}
+    texts = {text_of(e) for e in examples(lang["skills"], lang["lists"], per_template=200, seed=11)}
     for name in ("phrasings", "probes", "heldout", "blind"):
         with open(os.path.join(ROOT, "tests", name + ".md"), encoding="utf-8") as f:
             texts |= {m.group(1) for m in (re.match(r"^- [\w-]+: (.+)$", l) for l in f) if m}

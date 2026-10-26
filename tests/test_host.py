@@ -72,7 +72,9 @@ class Host(unittest.TestCase):
 
     def test_the_documents_stay_quiet_when_they_do_not_really_match(self):
         app, asked = self.notes(0.42)  # over the floor for what TermNL doesn't understand, under it for a guess
-        self.assertEqual(app.say("what is permacomputing?", "q")["outcome"], "ask")
+        # since 26 Oct (feat/tagger) "what is permacomputing?" is nothing TermNL does: no skill knows a word of it
+        # but the small ones, so it isn't a guess with a new word, and the documents answer it
+        self.assertEqual(app.say("what is permacomputing?", "q")["skill"], "@doc")
         self.assertEqual(app.say("how does AI impact democracy?", "r")["skill"], "@doc")
         app, _ = self.notes(0.3)
         self.assertEqual(app.say("how does AI impact democracy?", "s")["outcome"], "abstain")

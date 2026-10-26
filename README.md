@@ -17,7 +17,7 @@ Files and folders are made in the folder `home:` names in `settings.md` (`~/Term
 listed in `simulate:` (restart, shut down, Wi-Fi, Bluetooth, services) never run here: TermNL says what
 it would have done. The page's switches (show commands, admin mode) are written back to `settings.md`.
 
-Python 3.9 or newer, standard library only. Training the model needs numpy (`python3-numpy`).
+Python 3.9 or newer, standard library only, training included (since 26 Oct 2026, feat/tagger: no numpy).
 
 ## Said in words: your name and your settings
 
@@ -30,7 +30,7 @@ toggle beside the commands and your name. "help" lists what TermNL can do, by th
 "learn what I taught you" (approved first) trains the model again from the skill files, in the background, at
 the lowest priority and on two threads: the board stays usable. The conversation that asked is told when it is
 done: its chat page asks every few seconds (`GET /api/learning`), or its next reply says it; "are you learning?"
-says how far along it is, or when it last learnt (Gab, 24 Oct: about 3½ minutes on the board). The
+says how far along it is, or when it last learnt (about a minute on a laptop; the board is to be measured). The
 model in use is replaced only once the new one is whole; the one before is kept as `model.previous.json`. Replies can say `{user}`: "Hey {user}, no problem: your CPU is at…"; a variant
 with `{user}` is only used once a name is set.
 
@@ -55,7 +55,9 @@ with `{user}` is only used once a name is set.
                                 works alone (FRAMES.md; tests/drop-in)
         out-of-scope.md         what TermNL should not try to do
         model.json              trained from the above: python3 -m termnl.train
-      agent.py                  the dialogue: one turn in five steps (templates, model, questions, approval)
+      agent.py                  the dialogue: one turn in five steps (templates, tagger + classifier, questions, approval)
+      tagger.py                 which word is what: the action, the object, a value of some kind (a perceptron)
+      model.py                  which skill the whole sentence asks for, with the tags in hand (logistic regression)
       plain.py                  plain sentences and "What it needs" read into what the agent uses
       readers.py                the device read in words people use (temperature, memory…)
       device.py, runner.py      the device's own lists, and running a command

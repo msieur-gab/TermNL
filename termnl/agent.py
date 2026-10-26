@@ -11,12 +11,12 @@ Every request ends in one of four outcomes:
 One turn (respond):
   1. clean       fillers off ("please", "can you"…)
   2. answer      a question is waiting: yes, no, one of its chips, or a value for "Which one?"
-  3. understand  a skill's template reads the sentence exactly; else the model recognises its action
-                 and object; a typo is read as a known word, and a word in its context ("turn on the
-                 music" plays it), when that reads better; when the model doubts a template, or an
-                 action comes without its object ("turn off"), the person chooses; a sentence that says
-                 part of a request ("now delete it", "and in downloads?") is completed by the last
-                 request done, its frame (follow_up)
+  3. understand  a skill's sentence reads the words exactly (exact); else the tagger says what each word
+                 is and the classifier which skill the whole sentence asks for, how surely (read); a typo
+                 is read as a known word when that reads better (correct); an action said alone ("turn
+                 off"), or two skills too close to tell, the person chooses; a sentence that says part
+                 of a request ("now delete it", "and in downloads?") is completed by the last request
+                 done, its frame (follow_up)
   4. safety      not sure, a typo in a change, "don't…": ask before anything
   5. next_step   the next value to ask, a file to find, the settings, the approval; or act
 
@@ -25,9 +25,11 @@ with every value quoted. Running it is the device's job (runner.py)."""
 import random as _random
 import re
 
-from .model import classify
-from .template import best, parses
+from .model import classify, features
+from .tagger import FILE_RE, FOLDERS, NAMES, decode, role_of, same_family, spans
+from .template import best, parses, uses
 from .text import close, fill, pick, tokenize, words
+from .train import context
 
 
 def sq(s):
@@ -41,10 +43,12 @@ def quote(p):
     return sq(p)
 
 
-# how sure the model must be of its action × object pair: to act, and to ask at all
-SURE, MAYBE = 0.5, 0.15
-# how sure the model must be of another action or object to doubt a template's reading (doubts)
-DOUBT = 0.6
+# how sure the classifier must be of a skill: to act, and to ask at all; how far ahead of the next skill
+# it must be to act; and how close two skills may be before the person is asked which
+SURE, MAYBE, MARGIN, CHOOSE = 0.6, 0.15, 0.2, 0.05
+# how much of a sentence (its words that aren't small) a skill must know, as its own words or as values, to
+# be asked about at all: "what gift should I buy my wife" is nobody's
+KNOWN = 0.3
 
 
 def at(toks, phrase, i):
@@ -79,6 +83,22 @@ class Agent:
         self.pending = None  # the question waiting for an answer
         self._here = None  # where you are, like a terminal's working folder: home at first
         self.frame = None  # the last request done: its skill, its values, and the thing it touched (follow_up)
+        self._ctx = None  # what the tagger looks up on this device (context)
+        # skill → the actions its Also said lines say it with ("copy movie.mkv over to the studio pi" is sending it),
+        # and the objects its sentences name: its own, and any other it mentions ("unmute the sound/music")
+        phrases = {name: {" ".join(p) for p in lists["refs"].get(name, [])} for name in lists["actions"] + lists["objects"]}
+        self.actions_of, self.objects_of = {}, {}
+        for s in skills:
+            also = words_of(s["also"])
+            self.actions_of[s["id"]] = {a for a in lists["actions"] if also & phrases[a]}
+            self.objects_of[s["id"]] = {s["object"]} | {r for nodes in s.get("compiled", []) for r in uses(nodes)["refs"] if r in lists["objects"]} \
+                | {o for o in lists["objects"] if also & phrases[o]}
+        # skill → the phrases that mean its action with its object (## Words: "turn on, start → play"), for exact
+        self.means = {}
+        for s in skills:
+            for rule in lists.get("in_context", []):
+                if rule["action"] == s["action"] and s["object"] in rule["objects"]:
+                    self.means.setdefault(s["id"], []).extend(ph for ph in rule["phrases"] if ph not in lists["refs"].get(s["action"], []))
         said = lists["conversation"]
         self.words = lambda key: said.get(key, [])
         joined = lambda key: {" ".join(p) for p in said.get(key, [])}
@@ -87,6 +107,7 @@ class Agent:
         self.follows = {w for ph in said.get("follow-up words", []) for w in ph}
         self.many = joined("pointing at several")
         self.name_ends = joined("name ends before")  # … called bikes | in documents
+        self.leads = {ph[0] for ph in said.get("before a name", []) if len(ph) == 1}  # called, named, titled
         # the chips that answer a yes/no question: the first word of each list
         self.yes_no = [" ".join(said["yes"][0]), " ".join(said["no"][0])]
         self.object_words = {ph[0] for o in lists["objects"] for ph in lists["refs"].get(o, []) if len(ph) == 1}
@@ -342,88 +363,196 @@ class Agent:
 
     def understand(self, text, toks):
         """What the sentence asks for → {how, skill, vals, p, unknown, sure, fixes, toks}, or None.
-        A typo is read as a known word only when the sentence as typed isn't read by a template, and only
-        if the corrected sentence reads better (by a template, or with fewer words unknown). Words are read
-        in their context the same way (in_context). An action said alone asks which one (bare_action); a
-        template the model doubts asks which of two skills (doubts)."""
-        u = self.recognise(text, toks)
-        if not u or u["how"] == "model":
-            # as typed, no template reads it: the words read in their context may ("turn on the music")
-            said = self.in_context(toks)
-            v = self.recognise(text, said) if said is not toks else None
-            if v and (not u or v["how"] != "model" or (v["p"] > u["p"] and len(v["unknown"]) <= len(u["unknown"]))):
-                v["toks"] = said
-                u = v
-        if not u or u["how"] != "choose":
-            base = u["toks"] if u and "toks" in u else toks
-            fixed, fixes = self.correct(base)
-            fixed = self.in_context(fixed) if fixes else fixed  # "stop the bluetoth"
-            v = self.recognise(text, fixed) if fixes else None
-            if v and v["how"] != "choose" and ((not u or u["how"] == "model") and (not u or v["how"] == "template" or len(v["unknown"]) < len(u["unknown"]))
-                                               or u and u["how"] == "template" and self.hid_a_place(u, v)):
+        A skill's sentence that reads the words exactly is trusted (how: template; several tied: the
+        person chooses), unless it is weak and the classifier is sure of another skill. Otherwise the tagger
+        says what each word is and the classifier which skill the whole sentence asks for, with how surely
+        (how: model). A typo is read as a known word only when the sentence as typed isn't read exactly, or
+        when the corrected sentence reads a place the typo had hidden in a name."""
+        u = self.exact(text, toks)
+        fixed, fixes = self.correct(toks)
+        if fixes:
+            v = self.exact(text, fixed)
+            if v and (not u or u["how"] != "template" or self.hid_a_place(u, v)):
                 v["fixes"], v["toks"] = fixes, fixed
                 u = v
+        if u and u["how"] == "template" and self.weak(u):
+            # read exactly, but for a value the device doesn't have, or free text where a name should be ("show me
+            # what's inside the downloads folder" fits show-type's sentence, with "what's inside" as the type; "create
+            # a note.md in the Documents folder" fits create-folder's, with a file's name). When the classifier is sure
+            # of another skill, the person chooses between the two.
+            r = self.read(text, u["toks"] if "toks" in u else toks)
+            if r and r["how"] == "model" and r["skill"] is not u["skill"] and r["p"] >= SURE and not self.weak(r):
+                u = {"how": "choose", "options": [{"skill": r["skill"], "vals": r["vals"]}, {"skill": u["skill"], "vals": u["vals"]}],
+                     "toks": u.get("toks", toks), "fixes": u.get("fixes", []), "sure": False}
+        if not u:
+            u = self.read(text, toks)
+            if fixes:
+                v = self.read(text, fixed)
+                if v and (not u or u["how"] == "choose" or v["how"] != "choose" and v["p"] > u["p"] and len(v["unknown"]) <= len(u["unknown"])):
+                    v["fixes"], v["toks"] = fixes, fixed
+                    u = v
+        if u and u["how"] != "choose":
+            self.as_file(u)
         if u:
             u.setdefault("fixes", [])
             u.setdefault("toks", toks)
-            u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and not u["unknown"])
-        bare = self.bare_action(text, self.in_context(toks)) if not u or u["how"] == "model" else None
-        if bare:
-            return bare
-        if u:
-            other = self.doubts(text, u) if u["how"] == "template" else None
-            if other:  # two readings: the person chooses ("Do you mean rename a file or rename a folder?")
-                said = u["toks"]
-                u = {"how": "choose", "options": [{"skill": u["skill"], "vals": u["vals"]},
-                                                  {"skill": other, "vals": self.values_in(other, text, said)[0]}],
-                     "toks": said, "fixes": u["fixes"], "sure": False}
+            u["sure"] = u["how"] == "template" or (u["how"] == "model" and u["p"] >= SURE and u["margin"] >= MARGIN and not u["unknown"])
         return u
 
-    def in_context(self, toks):
-        """Words read in their context, tried when the sentence as typed isn't read by a template. A split
-        verb is joined ("turn the music off" → "turn off the music"; conversation.md, "split verbs" and
-        "verb ends"), then a word that means another action with an object said in the sentence becomes
-        that action ("turn on the music" → "play the music", "stop the wifi" → "turn off the wifi";
-        words/actions.md, "Meaning with an object"). The offsets stay, so a name keeps what was typed.
-        → the same list when nothing changed."""
-        out, changed = list(toks), False
-        verbs, ends = {w for ph in self.words("split verbs") for w in ph}, {w for ph in self.words("verb ends") for w in ph}
-        for i in range(len(out)):
-            if out[i]["word"] in verbs and not (i + 1 < len(out) and out[i + 1]["word"] in ends):
-                j = next((j for j in range(i + 2, min(i + 5, len(out))) if out[j]["word"] in ends), None)
-                if j is not None:
-                    out.insert(i + 1, out.pop(j))
-                    changed = True
-        refs = self.lists["refs"]
-        for rule in self.lists.get("in_context", []):
-            if not any(where(out, ph) for o in rule["objects"] for ph in refs.get(o, [])):
-                continue
-            to = refs[rule["action"]][0]
-            for ph in sorted(rule["phrases"], key=len, reverse=True):
-                for i in reversed(where(out, ph)):
-                    span = out[i:i + len(ph)]
-                    out[i:i + len(ph)] = [{"word": w, "start": span[0]["start"], "end": span[-1]["end"]} for w in to]
-                    changed = True
-        return out if changed else toks
+    def as_file(self, u):
+        """a new name ending in a known file type (note.md, words/filetypes.md) is a file: the same action on a
+        file, never on a folder (Gab, 23 Oct: "create a note.md in the Documents folder" was a folder called note.md)"""
+        skill = u["skill"]
+        exts = {x for t in self.lists["filetypes"] for x in t.get("exts", [t["ext"]])}
+        named = [v for k, v in u["vals"].items() if skill["values"][k].get("new") and v.get("text")]
+        if skill["object"] != "folder" or not any("." in v["text"] and v["text"].rsplit(".", 1)[1].lower() in exts for v in named):
+            return
+        other = next((s for s in self.skills if s["action"] == skill["action"] and s["object"] == "file"), None)
+        if other:
+            u["skill"], u["vals"] = other, {k: v for k, v in u["vals"].items() if k in other["values"]}
 
-    def bare_action(self, text, toks):
+    @staticmethod
+    def weak(u):
+        """an exact reading that leans on a value it couldn't check: a listed value the device doesn't have, or
+        free text taken as a name"""
+        return any(v.get("unknown") or v.get("value") is None for v in u["vals"].values())
+
+    def exact(self, text, toks):
+        """a skill's sentence that reads the words exactly, its values in their places (several, if they
+        tie: "choose"), or None"""
+        found, refs = [], self.lists["refs"]
+        for skill in self.skills:
+            # the words that mean the skill's action with its object (## Words: "turn on → play") read as the action
+            # when the object is said ("turn on the music"), with or without a model
+            mine = refs
+            extra = self.means.get(skill["id"])
+            if extra and any(where(toks, ph) for ph in refs.get(skill["object"], [])):
+                mine = {**refs, skill["action"]: refs.get(skill["action"], []) + extra}
+            every = []
+            for nodes in skill["compiled"]:
+                every += parses(nodes, toks, mine, {k: self.list_of(v["kind"]) for k, v in skill["values"].items()},
+                                self.stops, self.object_words, self.places)
+            if every:
+                found.append((skill, best(every)))
+        top = max((p["score"] for _, p in found), default=0)
+        if not found or top < 1:
+            return None
+        tops = [{"skill": s, "vals": {k: {"text": self.original(text, toks, c["start"], c["end"]), "value": c.get("value"), "label": c.get("label"),
+                                          "unknown": bool(c.get("unknown")), "fuzzy": bool(c.get("fuzzy"))} for k, c in p["caps"].items()}}
+                for s, p in found if p["score"] == top]
+        # a word TermNL knows as an object (bluetooth, wifi) is that object, not a name on the device's list
+        # (Gab, 22 Oct: "is bluetooth on" is the board's Bluetooth, not the service called bluetooth)
+        if len(tops) > 1:
+            tops = [t for t in tops if not any(v["text"].lower() in self.object_words for v in t["vals"].values())] or tops
+        if len(tops) == 1:  # … and when a skill does the same action on that object, the person chooses (24 Oct: "is
+            # bluetooth running" was a service called bluetooth on a laptop that has one, or the board's Bluetooth)
+            t = tops[0]
+            named = {v["text"].lower() for v in t["vals"].values() if v.get("value") is not None or v.get("unknown")}
+            objects = {o for o in self.lists["objects"] for ph in self.lists["refs"].get(o, []) if " ".join(ph) in named}
+            others = [s for s in self.skills if s["action"] == t["skill"]["action"] and s["object"] in objects and s is not t["skill"]]
+            if others:
+                tops = tops + [{"skill": s, "vals": {}} for s in others]
+        return {"how": "choose", "options": tops} if len(tops) > 1 else {"how": "template", **tops[0], "p": 1, "unknown": []}
+
+    @staticmethod
+    def hid_a_place(u, v):
+        """a typo inside a name hid a place (Gab, 23 Oct: "add a new file call gab.md insde Documents" made a file
+        named "gab.md insde Documents.md"): corrected, the same skill reads a value the device has, a folder, that
+        the name had swallowed. The name itself is still never corrected: it is what comes before the place."""
+        return v["how"] == "template" and v["skill"]["id"] == u["skill"]["id"] and any(
+            k not in u["vals"] and x.get("value") is not None and not x.get("unknown") for k, x in v["vals"].items())
+
+    def context(self):
+        """what the tagger looks up on this device: its folders, services, apps… as words (train.context)"""
+        kinds = ("folder", "service", "network", "app", "running", "music", "host")
+        lists = {k: self.sys(k) for k in kinds}
+        key = tuple(id(v) for v in lists.values())
+        if self._ctx is None or self._ctx[0] != key:
+            found = {k: {w for d in v for ph in d["phrases"] for w in ph} for k, v in lists.items()}
+            found["type"] = {w for t in self.lists["filetypes"] for ph in t["phrases"] for w in ph}
+            self._ctx = (key, context(self.lists, found, self.model["vocab"]))
+        return self._ctx[1]
+
+    def tag(self, toks):
+        """what each word is (tagger.py): A, O, V:role or _"""
+        t = self.model["tagger"]
+        return decode(t["weights"], t["tags"], [x["word"] for x in toks], self.context())
+
+    def read(self, text, toks):
+        """the tagger's and the classifier's reading → {how: model, skill, vals, p, margin, unknown}; an action
+        said alone, or skills too close to tell apart, → {how: choose, options}; nothing → None"""
+        if not self.model:
+            return None
+        ws = [t["word"] for t in toks]
+        tags = self.tag(toks)
+        acts = self.actions_said(toks, tags)
+        bare = self.bare(toks, tags, acts)
+        if bare:
+            return bare
+        ranked = classify(self.model["skill"], features(ws, tags))
+        none = next((r["p"] for r in ranked if r["label"] == "none"), 0)
+        by_id = {s["id"]: s for s in self.skills}
+        # an action said in so many words is the action done ("turn the board on" is never shutting it down), or
+        # what a skill says those words mean with its object (## Words: "turn on → play", for the music)
+        objs = self.objects_said(toks, tags)
+        found = [(by_id[r["label"]], r["p"]) for r in ranked if r["label"] in by_id and self.does(by_id[r["label"]], acts, toks, tags, objs)]
+        if not found:
+            return None
+        # the skills that don't do what was said are out, and the rest share the odds: "the music server is stuck,
+        # restart it" is restart a service, however much "stuck" sounded like stopping a process. Only to be asked
+        # about, though: to act, a skill needs the classifier's own confidence (sure, below)
+        total = sum(q for _, q in found) + none
+        skill, p = found[0]
+        if p / total < MAYBE or none > p:
+            return None
+        second = found[1][1] if len(found) > 1 else 0.0
+        close = [s for s, q in found if q >= p - CHOOSE * total]
+        if 2 <= len(close) <= 8:
+            return {"how": "choose", "options": [{"skill": s, "vals": self.slots(s, text, toks, tags)[0]} for s in close],
+                    "toks": toks, "fixes": [], "sure": False, "p": p}
+        vals, used = self.slots(skill, text, toks, tags)
+        taught = set(self.model["taught"].get(skill["id"], []))
+        negation = {w for ph in self.words("negation") for w in ph}  # handled by its own rule
+        new = [i for i, t in enumerate(toks) if i not in used and t["word"] not in self.small | taught | negation | self.pointing]
+        telling = [i for i, t in enumerate(toks) if t["word"] not in self.small | self.pointing]
+        if telling and 1 - len([i for i in new if i in telling]) / len(telling) < KNOWN:
+            return None
+        # the new words, side by side, are the value the skill still lacks from the device's list ("kill pipewire":
+        # no app of that name): kept as said, so it is answered as not there, never asked for again (Gab, 24 Oct)
+        missing = [k for k, spec in skill["values"].items() if k not in vals and spec["required"] and not spec.get("default")]
+        if len(missing) == 1 and skill["values"][missing[0]]["kind"].startswith("@sys.") and self.list_of(skill["values"][missing[0]]["kind"]) is not None \
+                and new and new == list(range(new[0], new[-1] + 1)):
+            vals[missing[0]] = {"text": self.original(text, toks, new[0], new[-1] + 1), "unknown": True}
+            if p >= SURE:
+                new = []
+        return {"how": "model", "skill": skill, "vals": vals, "p": p, "margin": p - second, "unknown": [toks[i]["word"] for i in new], "tags": tags}
+
+    def does(self, skill, acts, toks, tags, objs=()):
+        """the skill does an action said in so many words (any of them), or its ## Words say the words said mean
+        its action with its object, and its sentences name an object said in so many words ("turn the board on"
+        is nothing the Wi-Fi does); nothing said in so many words: any skill"""
+        if objs and not any(o in self.objects_of[skill["id"]] for o in objs):
+            return False
+        if not acts or skill["action"] in acts or any(a in self.actions_of[skill["id"]] for a in acts):
+            return True
+        if not any(where(toks, ph) for ph in self.lists["refs"].get(skill["object"], [])):
+            return False
+        return any(skill["object"] in rule["objects"] and rule["action"] == skill["action"] and any(self.says(toks, tags, ph) for ph in rule["phrases"])
+                   for rule in self.lists.get("in_context", []))
+
+    def bare(self, toks, tags, acts):
         """An action said without its object ("turn on", "switch it off"): the person chooses among the skills
-        that do it, those of the action and those the action means with an object (words/actions.md,
-        "Meaning with an object": "turn off" also stops the music). Only when nothing else is said but small
-        and pointing words, and two to eight skills fit, as many as the chips show (24 Oct: with the settings
-        skills, "turn off" fits seven); otherwise the model's reading goes on."""
-        refs, lists = self.lists["refs"], self.lists
-        said = [a for a in lists["actions"] for ph in refs.get(a, []) if where(toks, ph)]
-        if not said or any(where(toks, ph) for o in lists["objects"] for ph in refs.get(o, [])):
+        that do it, those of the action and those the action means with an object (a skill's ## Words: "turn
+        off" also stops the music). Only when nothing else is said but small and pointing words, and two to
+        eight skills fit, as many as the chips show."""
+        if not acts or any(t == "O" or t.startswith("V:") for t in tags):
             return None
-        longest = max((len(ph) for a in said for ph in refs[a] if where(toks, ph)))
-        action = next(a for a in said for ph in refs[a] if len(ph) == longest and where(toks, ph))
-        covered = {i for ph in refs[action] for at_ in where(toks, ph) for i in range(at_, at_ + len(ph))}
-        if any(i not in covered and t["word"] not in self.small | self.pointing for i, t in enumerate(toks)):
+        if any(t == "_" and tok["word"] not in self.small | self.pointing for t, tok in zip(tags, toks)):
             return None
-        pairs = {(action, s["object"]) for s in self.skills if s["action"] == action}
-        spoken = [ph for ph in refs[action] if where(toks, ph)]
-        for rule in lists.get("in_context", []):
+        refs = self.lists["refs"]
+        pairs = {(a, s["object"]) for a in acts for s in self.skills if s["action"] == a}
+        spoken = [ph for a in acts for ph in refs[a] if self.says(toks, tags, ph)]
+        for rule in self.lists.get("in_context", []):
             if any(ph in spoken for ph in rule["phrases"]):
                 pairs |= {(rule["action"], o) for o in rule["objects"]}
         fit = [s for s in self.skills if (s["action"], s["object"]) in pairs]
@@ -431,23 +560,69 @@ class Agent:
             return None
         return {"how": "choose", "options": [{"skill": s, "vals": {}} for s in fit], "toks": toks, "fixes": [], "sure": False}
 
-    def doubts(self, text, u):
-        """A template's reading is a strong vote, not a verdict: when the model is sure (DOUBT) of another
-        action or object, and a skill does that action on that object, the person chooses between the two
-        readings. → that other skill, or None. (24 Oct: "is bluetooth running" was read by check-service's
-        template as a service called bluetooth; "rename the folder photos to pictures" renamed a file
-        called "folder photos".)"""
-        if not self.model:
-            return None
-        ws, s = [t["word"] for t in u["toks"]], u["skill"]
-        pa, po = classify(self.model["action"], text, ws)[0], classify(self.model["object"], text, ws)[0]
-        action = pa["label"] if pa["p"] >= DOUBT and pa["label"] != "none" else s["action"]
-        obj = po["label"] if po["p"] >= DOUBT and po["label"] != "none" else s["object"]
-        # only when another skill is that action on that object: "show the files here" names files, but
-        # there is no "show file" skill, so show folder's reading stands
-        if (action, obj) == (s["action"], s["object"]):
-            return None
-        return next((o for o in self.skills if o["action"] == action and o["object"] == obj), None)
+    def slots(self, skill, text, toks, tags):
+        """The skill's values, from the words the tagger says are values: each value takes the span of its
+        role (a folder something goes to, a file, a new name…), else one of its family (any folder, any
+        name). A value from a list is looked up on it: found, or a typo of one (fuzzy), or not there
+        (unknown, said as typed). A list value the tagger missed is still found by its name in the sentence.
+        → (vals, the positions used)"""
+        ws = [t["word"] for t in toks]
+        if tags is None:  # no model yet (a language just dropped in): a file by its shape, a name after "called", lists below
+            found = [("file", i, i + 1) for i, w in enumerate(ws) if FILE_RE.match(w)]
+            lead = next((i for i, w in enumerate(ws) if w in self.leads), None)
+            if lead is not None and lead + 1 < len(ws) and not found:
+                end = next((j for j in range(lead + 1, len(ws)) if ws[j] in self.name_ends), len(ws))
+                found.append(("name", lead + 1, end))
+        else:
+            found = [("file", i, j) if all(FILE_RE.match(w) for w in ws[i:j]) else (r, i, j) for r, i, j in spans(ws, tags)]  # a file's name has its shape
+        taken, vals, used = set(), {}, set()
+        roles = {k: role_of(k, spec) for k, spec in skill["values"].items()}
+        for fam in (set(FOLDERS), set(NAMES)):
+            # one value of a family said ("put report.pdf in documents": one folder), one the skill can't do without
+            # (move file: where to): that one, whatever the tagger called it
+            said = [x for x in found if x[0] in fam]
+            must = [k for k, spec in skill["values"].items() if roles[k] in fam and spec["required"] and not spec.get("default")]
+            if len(said) == 1 and len(must) == 1:
+                roles[must[0]] = said[0][0]
+        for pick_family in (False, True):
+            for k, spec in skill["values"].items():
+                if k in vals:
+                    continue
+                hit = next((x for x in found if x not in taken and (x[0] == roles[k] if not pick_family else same_family(x[0], roles[k]))), None)
+                if not hit:
+                    continue
+                taken.add(hit)
+                _, i, j = hit
+                if spec["kind"] == "text" and self.after_a_place_word(ws, i):
+                    continue  # "make a folder for my bike photos": what follows "for" is not the name (22 Oct)
+                listed = self.list_of(spec["kind"])
+                if listed is not None:
+                    on = best_in(toks, listed, fuzzy=True)
+                    if on and on["i"] < j and on["i"] + on["len"] > i:  # the listed name, where the tagger saw a value
+                        vals[k] = {"value": on["o"]["value"], "label": on["o"]["label"], "fuzzy": on["fuzzy"]}
+                        used.update(range(on["i"], on["i"] + on["len"]))
+                    else:
+                        vals[k] = {"text": self.original(text, toks, i, j), "unknown": True}
+                        used.update(range(i, j))
+                else:
+                    vals[k] = {"text": self.original(text, toks, i, j)}
+                    used.update(range(i, j))
+        for k, spec in skill["values"].items():  # a listed name said, that the tagger didn't read as a value
+            listed = self.list_of(spec["kind"])
+            if k in vals or listed is None:
+                continue
+            on = best_in([t if n not in used else {"word": ""} for n, t in enumerate(toks)], listed)
+            if on:
+                vals[k] = {"value": on["o"]["value"], "label": on["o"]["label"]}
+                used.update(range(on["i"], on["i"] + on["len"]))
+        return vals, used
+
+    def after_a_place_word(self, ws, i):
+        """the words before position i, articles apart, end in a word a name never starts after ("in", "for", "with":
+        conversation.md, "not a name start")"""
+        while i > 0 and ws[i - 1] in ("the", "a", "an", "my"):
+            i -= 1
+        return i > 0 and ws[i - 1] in self.stops
 
     def follow_up(self, text, toks, u):
         """A sentence that says part of a request, completed by the last one done (self.frame): "now delete it"
@@ -459,16 +634,16 @@ class Agent:
         → the reading, as understand gives it, or None."""
         if u and u["how"] == "template" and u["sure"] and not any(self.only_points(v) for v in u["vals"].values()):
             return None
-        said = self.in_context(toks)
-        ws = [t["word"] for t in said]
-        follows = [ph for ph in self.words("follow-up words") if where(said, ph)]
+        ws = [t["word"] for t in toks]
+        follows = [ph for ph in self.words("follow-up words") if where(toks, ph)]
         if not follows and not any(w in self.pointing for w in ws):
             return None
         if any(w in self.many for w in ws):  # "delete them" after a folder was shown means its files, never the folder
             return None
         refs, lists, frame = self.lists["refs"], self.lists, self.frame
-        acts = self.actions_said(said)
-        objs = {o for o in lists["objects"] for ph in refs.get(o, []) if where(said, ph)}
+        tags = self.tag(toks) if self.model else None
+        acts = self.actions_said(toks, tags)  # with the tags, "turn it off" says turn off
+        objs = {o for o in lists["objects"] for ph in refs.get(o, []) if where(toks, ph)}
         if not acts and not objs and u and u.get("skill") and u["skill"]["object"] == frame["skill"]["object"] \
                 and any(len(ph) > 1 and all(w in ws for w in ph) for ph in refs.get(u["skill"]["action"], [])):
             acts = {u["skill"]["action"]}  # its words said, split around "it" ("bring it back"): the model's reading
@@ -480,13 +655,13 @@ class Agent:
         skill = next((s for s in self.skills if (s["action"], s["object"]) == (action, obj)), None)
         if not skill and acts:  # a word that means another action with the thing's object ("turn it off": the music stops)
             for rule in lists.get("in_context", []):
-                if obj in rule["objects"] and any(where(said, ph) for ph in rule["phrases"]):
+                if obj in rule["objects"] and any(self.says(toks, tags, ph) for ph in rule["phrases"]):
                     skill = next((s for s in self.skills if (s["action"], s["object"]) == (rule["action"], obj)), None)
                     allowed |= {w for ph in rule["phrases"] for w in ph}
                     break
         if not skill or skill.get("changes") or skill.get("lists") or skill.get("trains") or skill.get("opens"):
             return None
-        vals, _ = self.values_in(skill, text, said)
+        vals, _ = self.slots(skill, text, toks, tags)
         if u and u.get("vals") and u.get("skill") and u["skill"]["action"] == skill["action"]:
             # what a template read in the sentence ("rename it to cycles": the new name), where the skill has it too
             for k, v in u["vals"].items():
@@ -496,7 +671,7 @@ class Agent:
         allowed |= self.small | self.pointing | self.follows
         if any(w not in allowed for w in ws):
             return None
-        return {"how": "frame", "skill": skill, "vals": self.carry(skill, vals), "p": 1, "unknown": [], "sure": True, "fixes": [], "toks": said}
+        return {"how": "frame", "skill": skill, "vals": self.carry(skill, vals), "p": 1, "unknown": [], "sure": True, "fixes": [], "toks": toks}
 
     def carry(self, skill, vals):
         """The values a follow-up didn't say, from the last request done: the same request keeps its values
@@ -544,106 +719,36 @@ class Agent:
                 thing["place"] = {x: vals[at][x] for x in ("value", "label") if vals[at].get(x) is not None}
         self.frame = {"skill": skill, "vals": {k: dict(v) for k, v in vals.items()}, "thing": thing}
 
-    def recognise(self, text, toks):
-        """a template's exact reading (several, if they tie: "choose"), or the model's best action + object"""
-        found = []
-        for skill in self.skills:
-            every = []
-            for nodes in skill["compiled"]:
-                every += parses(nodes, toks, self.lists["refs"], {k: self.list_of(v["kind"]) for k, v in skill["values"].items()},
-                                self.stops, self.object_words, self.places)
-            if every:
-                found.append((skill, best(every)))
-        top = max((p["score"] for _, p in found), default=0)
-        tops = [{"skill": s, "vals": {k: {"text": self.original(text, toks, c["start"], c["end"]), "value": c.get("value"), "label": c.get("label"),
-                                          "unknown": bool(c.get("unknown")), "fuzzy": bool(c.get("fuzzy"))} for k, c in p["caps"].items()}}
-                for s, p in found if p["score"] == top]
-        # a word TermNL knows as an object (bluetooth, wifi) is that object, not a name on the device's list
-        # (Gab, 22 Oct: "is bluetooth on" is the board's Bluetooth, not the service called bluetooth)
-        if len(tops) > 1:
-            tops = [t for t in tops if not any(v["text"].lower() in self.object_words for v in t["vals"].values())] or tops
-        if tops and top >= 1:
-            return {"how": "choose", "options": tops} if len(tops) > 1 else {"how": "template", **tops[0], "p": 1, "unknown": []}
-        if not self.model:
-            return None
-        ws = [t["word"] for t in toks]
-        pa, po = classify(self.model["action"], text, ws), classify(self.model["object"], text, ws)
-        P = lambda found, label: next((x["p"] for x in found if x["label"] == label), 0)
-        skill, p = max(((s, P(pa, s["action"]) * P(po, s["object"])) for s in self.skills), key=lambda x: x[1], default=(None, 0))
-        if not skill or p < MAYBE or max(P(pa, "none"), P(po, "none")) > p:
-            return None
-        # an action said in so many words is never answered with its opposite (words/actions.md, Opposites)
-        # (24 Oct: "turn the board on" asked "Shut the board down?")
-        said = self.actions_said(self.in_context(toks))
-        if any(skill["action"] in self.lists.get("opposites", {}).get(a, ()) for a in said):
-            return None
-        skill = self.as_file(skill, toks)
-        vals, used = self.values_in(skill, text, toks)
-        taught = set(self.model["taught"].get(skill["id"], []))
-        negation = {w for ph in self.words("negation") for w in ph}  # handled by its own rule
-        new = [i for i, t in enumerate(toks) if i not in used and t["word"] not in self.small | taught | negation]
-        # the new words, side by side, are the value the skill still lacks from the device's list ("kill pipewire":
-        # no app of that name): kept as said, so it is answered as not there, never asked for again (Gab, 24 Oct).
-        # When the model is sure of the skill they are no longer new; when it isn't, the question still names them.
-        missing = [k for k, spec in skill["values"].items() if k not in vals and spec["required"] and not spec.get("default")]
-        if len(missing) == 1 and skill["values"][missing[0]]["kind"].startswith("@sys.") and self.list_of(skill["values"][missing[0]]["kind"]) is not None \
-                and new and new == list(range(new[0], new[-1] + 1)):
-            vals[missing[0]] = {"text": self.original(text, toks, new[0], new[-1] + 1), "unknown": True}
-            if p >= SURE:
-                new = []
-        return {"how": "model", "skill": skill, "vals": vals, "p": p, "unknown": [toks[i]["word"] for i in new]}
+    def says(self, toks, tags, ph):
+        """the phrase is said: its words together (tagged as the action, when the words are tagged: "trash" in
+        "empty the trash" is the object), or apart as the words tagged as the action ("turn it back off")"""
+        ph = list(ph)
+        if not tags:
+            return bool(where(toks, ph))
+        if any(all(tags[i + j] == "A" for j in range(len(ph))) for i in where(toks, ph)):
+            return True
+        return [t["word"] for t, g in zip(toks, tags) if g == "A" and t["word"] not in self.follows] == ph
 
-    def actions_said(self, toks):
+    def actions_said(self, toks, tags=None):
         """the actions a sentence names in so many words, each by a phrase of one action only (words/actions.md):
-        "turn on" names turn on; "start" names none, as it is a word for both create and open"""
+        "turn on" names turn on; "start" names none, as it is a word for both create and open. With the tags,
+        the words of the action apart too ("turn the board on" says turn on)."""
         refs, out = self.lists["refs"], set()
         for a in self.lists["actions"]:
             for ph in refs.get(a, []):
-                if where(toks, ph) and sum(1 for b in self.lists["actions"] if ph in refs.get(b, [])) == 1:
+                if self.says(toks, tags, ph) and sum(1 for b in self.lists["actions"] if ph in refs.get(b, [])) == 1:
                     out.add(a)
         return out
 
-    def as_file(self, skill, toks):
-        """a name ending in a known file type (note.md) is a file: the same action on a file, never on a folder
-        (Gab, 23 Oct: "create a note.md in the Documents folder" was read as a folder called note.md)"""
-        exts = {t["ext"] for t in self.lists["filetypes"]}
-        if skill["object"] != "folder" or not any("." in t["word"] and t["word"].rsplit(".", 1)[1] in exts for t in toks):
-            return skill
-        return next((s for s in self.skills if s["action"] == skill["action"] and s["object"] == "file"), skill)
-
-    def hid_a_place(self, u, v):
-        """a typo inside a name hid a place (Gab, 23 Oct: "add a new file call gab.md insde Documents" made a file
-        named "gab.md insde Documents.md"): corrected, the same skill reads a value the device has, a folder, that
-        the name had swallowed. The name itself is still never corrected: it is what comes before the place."""
-        return v["how"] == "template" and v["skill"]["id"] == u["skill"]["id"] and any(
-            k not in u["vals"] and x.get("value") is not None and not x.get("unknown") for k, x in v["vals"].items())
-
-    def values_in(self, skill, text, toks):
-        """Values found by their own readers, anywhere in the sentence (when no template read it): a
-        name from a device list or a shared list, a name after "called"/"named", a file-shaped word."""
-        vals, used = {}, set()
-        for k, spec in skill["values"].items():
-            hit = best_in(toks, self.list_of(spec["kind"]) or [], fuzzy=True)
-            if hit:
-                vals[k] = {"value": hit["o"]["value"], "label": hit["o"]["label"], "fuzzy": hit["fuzzy"]}
-                used.update(range(hit["i"], hit["i"] + hit["len"]))
-        leads = {ph[0] for ph in self.words("before a name") if len(ph) == 1}  # called, named, titled
-        for k, spec in skill["values"].items():
-            if self.list_of(spec["kind"]) or k in vals:
-                continue
-            after = next((i for i, t in enumerate(toks) if t["word"] in leads), -1)
-            end = after + 1
-            while 0 <= after and end < len(toks) and toks[end]["word"] not in self.name_ends and end not in used:
-                end += 1
-            if after >= 0 and end > after + 1:
-                vals[k] = {"text": self.original(text, toks, after + 1, end)}
-                used.update(range(after, end))
-                continue
-            f = next((i for i, t in enumerate(toks) if i not in used and re.search(r"\.[a-z0-9]{1,5}$", t["word"], re.I)), -1)
-            if f >= 0:
-                vals[k] = {"text": self.original(text, toks, f, f + 1)}
-                used.add(f)
-        return vals, used
+    def objects_said(self, toks, tags):
+        """the objects a sentence names in so many words: a phrase of one object only, its words tagged as the object"""
+        refs, out = self.lists["refs"], set()
+        for o in self.lists["objects"]:
+            for ph in refs.get(o, []):
+                if any(all(tags[i + j] == "O" for j in range(len(ph))) for i in where(toks, ph)) \
+                        and sum(1 for b in self.lists["objects"] if ph in refs.get(b, [])) == 1:
+                    out.add(o)
+        return out
 
     def correct(self, toks):
         """A word TermNL doesn't know, one letter away from exactly one word it knows ("chek" → "check"),
@@ -916,6 +1021,16 @@ class Agent:
         """the question waiting asks for a password: the next sentence is one, never logged nor searched"""
         p = self.pending
         return bool(p and p["waiting"] == "value" and p["skill"]["values"][p["slot"]]["kind"] == "secret")
+
+
+def words_of(lines):
+    """every word and pair of words in these lines, as phrases"""
+    out = set()
+    for line in lines:
+        ws = words(line)
+        out.update(ws)
+        out.update(" ".join(ws[i:i + 2]) for i in range(len(ws) - 1))
+    return out
 
 
 def _template_words(nodes):

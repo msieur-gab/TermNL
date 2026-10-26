@@ -18,10 +18,13 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(lang["errors"], [])
 
     def test_every_weight_of_the_model_fits_in_one_byte(self):
-        for k in ("action", "object"):
-            m = lang["model"][k]
-            self.assertGreater(m["scale"], 0)
-            self.assertTrue(all(isinstance(x, int) and -127 <= x <= 127 for row in m["weights"].values() for x in row[1:]), k)
+        """the skill classifier's weights are bytes times one scale (model.py); the tagger's are two-decimal numbers"""
+        m = lang["model"]["skill"]
+        self.assertGreater(m["scale"], 0)
+        self.assertIn("none", m["labels"])
+        self.assertTrue(all(isinstance(x, int) and -127 <= x <= 127 for row in m["weights"].values() for x in row[1::2]))
+        self.assertTrue(all(0 <= k < len(m["labels"]) for row in m["weights"].values() for k in row[::2]))
+        self.assertIn("A", lang["model"]["tagger"]["tags"])
 
     def test_a_template_request_acts_with_values_quoted(self):
         r = agent().hear("create a file named sprout.md in the ideas folder")
@@ -496,13 +499,17 @@ class Dialogue(unittest.TestCase):
         self.assertIn("turn Wi-Fi on", a.hear("turn on")["chips"])
         self.assertEqual(a.hear("turn Wi-Fi on")["skill"], "turn-on-wifi")
 
-    def test_a_template_the_model_doubts_asks_which_of_two(self):
-        """24 Oct: both silent wrong actions found by the probes came from templates, never from the model."""
-        for said, labels in [("rename the folder photos to pictures", {"rename a file", "rename a folder"}),
-                             ("is bluetooth running", {"check a service", "check Bluetooth"})]:
-            r = agent().hear(said)
-            self.assertEqual(r["outcome"], "ask", said)
-            self.assertEqual(set(r["chips"]), labels, said)
+    def test_a_template_read_two_ways_asks_which_of_two(self):
+        """24 Oct: both silent wrong actions found by the probes came from templates. Since 26 Oct (feat/tagger) a
+        name never holds an object word, so "rename the folder photos to pictures" is read as a folder, exactly,
+        and asks which folder (there is none called photos); and a listed value that is a word for an object
+        another skill checks ("bluetooth", a service on a laptop, the board's Bluetooth) asks which of the two."""
+        r = agent().hear("rename the folder photos to pictures")
+        self.assertEqual((r["outcome"], r["skill"]), ("ask", "rename-folder"))
+        self.assertIn("ideas", r["chips"])
+        r = agent().hear("is bluetooth running")
+        self.assertEqual(r["outcome"], "ask")
+        self.assertEqual(set(r["chips"]), {"check a service", "check Bluetooth"})
         a = agent()
         a.hear("is bluetooth running")
         self.assertEqual(a.hear("check Bluetooth")["skill"], "check-bluetooth")

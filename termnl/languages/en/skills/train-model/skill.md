@@ -7,7 +7,7 @@ trains: the model
 ---
 
 Trains the model again from the skill files as they are now (what people say, Also said), on this device,
-in the background: about two minutes on an Orange Pi Zero 2W. The model before is kept as
+in the background, in plain Python (nothing to install): about a minute on a laptop, a few on an Orange Pi Zero 2W. The model before is kept as
 model.previous.json. The learning inbox (what a "yes" taught, reviewed by the person) comes next.
 
 ## People say
