@@ -5,7 +5,7 @@ import re
 # A word: letters of any alphabet or digits, with . _ - ' inside (seed.md, wi-fi, what's).
 WORD_RE = re.compile(r"\w(?:[\w.\-']*\w)?|\.\.")  # and "..", the folder above (cd ..)
 QUOTES = str.maketrans({"’": "'", "‘": "'", "`": "'"})
-BREAK_RE = re.compile(r"[,;:!?]")
+BREAK_RE = re.compile(r"[,;:!?]\s")  # a break is followed by a space: "https://" and "10:30" are not breaks
 
 
 def tokenize(text):

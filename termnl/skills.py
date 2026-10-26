@@ -252,7 +252,7 @@ def check(skill, lists):
             say(str(e))
     for name, v in skill["values"].items():
         k = v["kind"]
-        known = k in ("text", "secret", "filetype") or (k.startswith("@sys.") and k[5:] in DEVICE_KINDS)
+        known = k in ("text", "secret", "filetype", "link") or (k.startswith("@sys.") and k[5:] in DEVICE_KINDS)
         if not known:
             say('value %s: unknown kind "%s"' % (name, k))
         if v["required"] and not v.get("default") and ("ask " + name) not in skill["replies"]:

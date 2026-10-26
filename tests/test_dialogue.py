@@ -504,15 +504,16 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(a.hear("turn Wi-Fi on")["skill"], "turn-on-wifi")
 
     def test_a_template_the_model_doubts_asks_which_of_two(self):
-        """24 Oct: both silent wrong actions found by the probes came from templates, never from the model."""
-        for said, labels in [("rename the folder photos to pictures", {"rename a file", "rename a folder"}),
-                             ("is bluetooth running", {"check a service", "check Bluetooth"})]:
-            r = agent().hear(said)
-            self.assertEqual(r["outcome"], "ask", said)
-            self.assertEqual(set(r["chips"]), labels, said)
-        a = agent()
-        a.hear("is bluetooth running")
-        self.assertEqual(a.hear("check Bluetooth")["skill"], "check-bluetooth")
+        """24 Oct: both silent wrong actions found by the probes came from templates, never from the model. Since
+        26 Oct the sentence says which: "the folder photos" is a folder, and the device has none of that name, so
+        it is said (Gab: "it should indeed say I don't see a folder called photos"); "is bluetooth running" is the
+        board's Bluetooth (Gab, 22 Oct)."""
+        r = agent().hear("rename the folder photos to pictures")
+        self.assertEqual((r["outcome"], r["skill"]), ("ask", "rename-folder"))
+        self.assertEqual(r["say"], "I don't see a folder called “photos”. Which one?")
+        self.assertIn("Documents", r["chips"])
+        r = agent().hear("is bluetooth running")
+        self.assertEqual((r["outcome"], r["skill"]), ("act", "check-bluetooth"))
 
 
     def test_the_board_is_never_offered_the_opposite_of_what_was_said(self):
@@ -762,6 +763,41 @@ class WholeHome(unittest.TestCase):
         finally:
             import shutil
             shutil.rmtree(home)
+
+
+class FolderNames(unittest.TestCase):
+    """Gab, 26 Oct: "for renaming the folder or moving something to a folder, if the name does not exist then it
+    needs to say, if the name is close hence doc for documents then it should propose"."""
+
+    def test_a_folder_said_by_its_beginning_is_proposed(self):
+        a = agent()
+        r = a.hear("move note.md to doc")
+        self.assertEqual((r["say"], r["chips"]), ("Did you mean Documents?", ["Documents", "no"]))
+        self.assertEqual(a.hear("yes")["command"], "mv $HOME'/note.md' $HOME'/Documents/'")
+        a = agent()
+        a.hear("move note.md")
+        self.assertEqual(a.hear("doc")["say"], "Did you mean Documents?")
+
+    def test_a_folder_the_device_does_not_have_is_said(self):
+        r = agent().hear("create dir named seed.md inside the photos")
+        self.assertEqual((r["outcome"], r["skill"], r["say"]), ("ask", "create-folder", "I don't see a folder called “photos”. Which one?"))
+
+
+class SaidWrong(unittest.TestCase):
+    """Three sentences that did something else than said, found by the 20,817 readings (26 Oct)."""
+
+    def test_an_archive_of_a_folder_compresses_it(self):
+        r = agent().hear("can you make an archive of my projects folder")
+        self.assertEqual((r["outcome"], r["skill"]), ("act", "compress-folder"))
+        self.assertEqual(agent().hear("new folder archive")["command"], "mkdir -p $HOME'/archive'")
+
+    def test_a_web_address_is_one(self):
+        r = agent().hear("fetch report.pdf from the laptop")
+        self.assertEqual(r["skill"], "get-file")
+        for said, link in (("download https://example.com/map.pdf", "https://example.com/map.pdf"),
+                           ("grab the file at example.org/guide.txt", "example.org/guide.txt")):
+            r = agent().hear(said)
+            self.assertEqual(r["command"], "wget -P $HOME'/Downloads' '%s'" % link, said)
 
 
 if __name__ == "__main__":

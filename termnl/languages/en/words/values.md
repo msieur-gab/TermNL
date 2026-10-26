@@ -25,7 +25,7 @@ against what the device really has, and offered as choices.
 - a network around: @sys.network
 - a computer on the network: @sys.host
 - a program name: text
-- a web address: text
+- a web address: link
 
 ## When it's missing
 

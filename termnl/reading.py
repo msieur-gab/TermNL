@@ -19,6 +19,9 @@ from .template import best, parses
 from .text import close, tokenize, words
 
 FILE_RE = re.compile(r"\.[a-z0-9]{1,5}$", re.I)
+# a web address: with its scheme or www, or a domain and a path ("example.com/pack.zip"); "report.pdf from the laptop"
+# is not one (Gab, 26 Oct: it ran wget on it)
+WEB_RE = re.compile(r"(?:https?://|www\.)\S+|[\w-]+(?:\.[\w-]+)+/\S*", re.I)
 SURE, MAYBE = 0.5, 0.15  # how sure the model must be of its action and object: to go ahead, and to ask at all
 NEAR = 0.1  # readings the model holds this close to its best count as one: the funnel decides among their skills
 UNSURE = 0.6  # how sure a template is of a reading with a value not on its list
@@ -182,6 +185,9 @@ class Reader:
             for nodes in skill["compiled"]:
                 every += parses(nodes, toks, self.lists["refs"], {k: self.list_of(v["kind"]) for k, v in skill["values"].items()},
                                 self.stops, self.name_words, self.places, self.named)
+            links = [k for k, v in skill["values"].items() if v["kind"] == "link"]
+            every = [p for p in every if all(k not in p["caps"] or WEB_RE.fullmatch(original(text, toks, p["caps"][k]["start"], p["caps"][k]["end"]))
+                                             for k in links)]
             if every:
                 found.append((skill, best(every)))
         top = max((p["score"] for _, p in found), default=0)
@@ -314,6 +320,13 @@ class Reader:
         for k, spec in skill["values"].items():
             if self.list_of(spec["kind"]) or k in vals:
                 continue
+            if spec["kind"] == "link":
+                m = next(WEB_RE.finditer(text), None)
+                at = [i for i, t in enumerate(toks) if m and m.start() <= t["start"] and t["end"] <= m.end()]
+                if at and not used & set(at):
+                    vals[k] = {"text": m.group(0)}
+                    used.update(at)
+                continue
             after = next((i for i, t in enumerate(toks) if t["word"] in before), -1)
             end = after + 1
             while 0 <= after and end < len(toks) and toks[end]["word"] not in self.name_ends and end not in used:
@@ -353,8 +366,12 @@ class Reader:
         if u and u["how"] != "choose" and self.opposed(u["skill"], toks):
             u = None
         v = (self.bare(toks, shape) or self.by_model(text, toks, shape)) if not u or u["p"] < 1 else None
-        if v and u and u["how"] == "template" and v["how"] == "model" and v["p"] >= SURE and v["skill"]["id"] != u["skill"]["id"]:
-            u = v  # a template that read a value not on its list ("what's" as a file type) yields to a model sure of another skill
+        if v and u and u["how"] == "template" and v["how"] == "model" and v["p"] >= SURE and v["skill"]["id"] != u["skill"]["id"] \
+                and any(x["unknown"] and not u["skill"]["values"][k].get("default") for k, x in u["vals"].items()):
+            # a template that read a value not on its list ("what's" as a file type) yields to a model sure of another
+            # skill; not when that value is only where it happens: "create dir named seed.md inside the photos" is
+            # still a folder, and photos is asked about (Gab, 26 Oct: it made a file in home)
+            u = v
         elif v and (not u or v["p"] > u["p"] and (u["how"] == "choose" or v["how"] != "model" or v["skill"]["id"] != u["skill"]["id"])):
             u = v  # the model's reading of the same skill adds nothing: the template read its values exactly
         if u:
