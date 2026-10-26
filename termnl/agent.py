@@ -56,13 +56,13 @@ def where(toks, phrase):
     return [i for i in range(len(toks)) if at(toks, phrase, i)]
 
 
-def best_in(toks, found, fuzzy=False):
-    """the longest phrase of a list said in the sentence (a typo of one too, when fuzzy, exact first)
-    → {o, i, len, fuzzy} or None"""
+def best_in(toks, found, fuzzy=False, start=None):
+    """the longest phrase of a list said in the sentence (a typo of one too, when fuzzy, exact first), or
+    only one that starts at word `start` → {o, i, len, fuzzy} or None"""
     hit = None
     for o in found:
         for ph in o["phrases"]:
-            for i in range(len(toks) - len(ph) + 1):
+            for i in range(len(toks) - len(ph) + 1) if start is None else [start] if start + len(ph) <= len(toks) else []:
                 exact = at(toks, ph, i)
                 near = fuzzy and not exact and all(close(toks[i + j]["word"], w) for j, w in enumerate(ph))
                 if (exact or near) and (not hit or len(ph) > hit["len"] or (exact and hit["fuzzy"])):
@@ -94,6 +94,8 @@ class Agent:
         self.vocab = {w for phs in list(lists["refs"].values()) + list(said.values()) for ph in phs for w in ph}
         self.vocab |= {w for t in lists["filetypes"] for ph in t["phrases"] for w in ph}
         self.vocab |= {w for s in skills for nodes in s.get("compiled", []) for w in _template_words(nodes)}
+        # the words each value follows in its skill's own sentences: "from" {place}, "to"/"into" {to} (values_in)
+        self.leads = {s["id"]: _leads(s.get("compiled", []), self.stops) for s in skills}
 
     # ---- the device, the settings, the lists
 
@@ -190,7 +192,10 @@ class Agent:
             says_action = any(where(toks, ph) for a in self.lists["actions"] for ph in self.lists["refs"].get(a, []))
             other = u and u["sure"] and u["skill"]["id"] != p["skill"]["id"] and (u["how"] == "template" or says_action)
             if not other:
-                return self.fill_value(text, typed, u)  # the words as typed: a name is never cut from words re-ordered for reading
+                r = self.fill_value(text, typed, u, says_action)  # the words as typed: a name is never cut from words re-ordered for reading
+                if r:
+                    return r
+                self.pending = None  # not one of the values asked for, but a request: read as said alone
 
         # 3, still: a sentence that says only part of a request, completed by the last one done ("now delete it")
         f = self.follow_up(text, toks, u) if self.frame else None
@@ -309,22 +314,25 @@ class Agent:
         own = skill["replies"].get("unknown " + slot)
         return self.reply(own, {slot: self.quoted(said)}) if own and found else self.reply("unknown value", {"value": self.quoted(said)})
 
-    def fill_value(self, text, toks, u):
+    def fill_value(self, text, toks, u, says_action=False):
         """An answer to "Which one?" or "What should I call it?". The same request said again adds its
         values; "no" stops; "yes" asks again; "call it bikes" gives the name after its lead-in words
-        (conversation.md, "before a name"); a value on the list, or free text for a name."""
+        (conversation.md, "before a name"); a value on the list, or free text for a name. None when the
+        sentence is none of the listed values but a request that says its action: it is read as said alone
+        ("create note_02 inside document" isn't a file type; Gab, 26 Oct). A name is free text: never None."""
         p = self.pending
         skill, vals, slot, approved = p["skill"], p["vals"], p["slot"], p["approved"]
         if u and u["sure"] and u["skill"]["id"] == skill["id"]:
-            spec = skill["values"][slot]
-            if slot not in u["vals"] and spec.get("default") and (vals.get(slot) or {}).get("unknown"):
-                del vals[slot]  # "list my files" after "Which one?": said without it, its default applies
-                self.pending = None
-                return self.next_step(skill, vals, approved)
+            doubt = lambda v: v.get("unknown") or v.get("fuzzy")  # not on the list, or a typo not yet confirmed
+            # a value in doubt the request said again doesn't repeat goes ("list my files" after "Which one?":
+            # its default applies; "noe" read as a note, Gab, 26 Oct); what was settled stays
+            dropped = [k for k, v in vals.items() if doubt(v) and k not in u["vals"]]
+            for k in dropped:
+                del vals[k]
             for k, v in u["vals"].items():
-                if not vals.get(k) or vals[k].get("unknown"):
+                if not vals.get(k) or doubt(vals[k]):
                     vals[k] = v
-            if vals.get(slot):
+            if slot in dropped or vals.get(slot):
                 self.pending = None
                 return self.next_step(skill, vals, approved)
         if self.is_(toks, "no"):
@@ -343,6 +351,8 @@ class Agent:
             vals[slot] = {"text": self.original(text, toks, start, len(toks))}
             return self.next_step(skill, vals, approved)
         hit = best_in(toks, found)
+        if not hit and u and says_action:
+            return None
         if not hit:
             return {"outcome": "ask", "skill": skill["id"], "say": self.not_there(skill, slot, text.strip(), found), "chips": self.chips(found)}
         vals[slot] = {"value": hit["o"]["value"], "label": hit["o"]["label"]}
@@ -623,11 +633,25 @@ class Agent:
         """Values found by their own readers, anywhere in the sentence (when no template read it): a
         name from a device list or a shared list, a name after "called"/"named", a file-shaped word."""
         vals, used = {}, set()
-        for k, spec in skill["values"].items():
-            hit = best_in(toks, self.list_of(spec["kind"]) or [], fuzzy=True)
-            if hit:
-                vals[k] = {"value": hit["o"]["value"], "label": hit["o"]["label"], "fuzzy": hit["fuzzy"]}
-                used.update(range(hit["i"], hit["i"] + hit["len"]))
+        leads = self.leads.get(skill["id"], {})
+        listed = [(k, self.list_of(spec["kind"]) or []) for k, spec in skill["values"].items()]
+        # first, every value after the word its skill's sentences put before it ("from ideas into home": the
+        # place is ideas, where it goes is home); then the rest anywhere, never words another value already took
+        def after_lead(k, found):
+            for i, t in enumerate(toks):
+                if t["word"] in leads.get(k, ()):
+                    j = i + 1
+                    while j < len(toks) and toks[j]["word"] in self.small and toks[j]["word"] not in self.stops:
+                        j += 1  # the, my
+                    hit = best_in(toks, found, fuzzy=True, start=j)
+                    if hit:
+                        return hit
+        for find in (after_lead, lambda k, found: best_in(toks, found, fuzzy=True)):
+            for k, found in listed:
+                hit = None if k in vals else find(k, found)
+                if hit and not used & set(range(hit["i"], hit["i"] + hit["len"])):
+                    vals[k] = {"value": hit["o"]["value"], "label": hit["o"]["label"], "fuzzy": hit["fuzzy"]}
+                    used.update(range(hit["i"], hit["i"] + hit["len"]))
         leads = {ph[0] for ph in self.words("before a name") if len(ph) == 1}  # called, named, titled
         for k, spec in skill["values"].items():
             if self.list_of(spec["kind"]) or k in vals:
@@ -917,6 +941,32 @@ class Agent:
         """the question waiting asks for a password: the next sentence is one, never logged nor searched"""
         p = self.pending
         return bool(p and p["waiting"] == "value" and p["skill"]["values"][p["slot"]]["kind"] == "secret")
+
+
+def _leads(compiled, preps):
+    """value → the prepositions said right before it in the skill's sentences (an article between them, or any
+    word of an optional part, doesn't count): copy {name} (from (the) {place}) to/into (the/my) {to}"""
+    out = {}
+
+    def walk(seq, prev, inside):
+        for n in seq:
+            if n["t"] == "w":
+                prev = {n["w"]} if n["w"] in preps else prev if inside else set()
+            elif n["t"] == "ref":
+                prev = set()
+            elif n["t"] == "slot":
+                out.setdefault(n["name"], set()).update(prev)
+                prev = set()
+            elif n["t"] == "alt":
+                after = set(prev) if n["opt"] else set()
+                for a in n["alts"]:
+                    after |= walk(a, set(prev), True)
+                prev = after
+        return prev
+
+    for nodes in compiled:
+        walk(nodes, set(), False)
+    return out
 
 
 def _template_words(nodes):
