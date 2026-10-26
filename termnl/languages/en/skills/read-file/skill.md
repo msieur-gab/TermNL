@@ -20,6 +20,12 @@ approve: no
 - can you print the beginning of website.html for me
 - read todo.txt
 - I want to see what my grocery list says
+- can you read out the note.md in ideas
+- i'd like to hear what's in seed.md
+- tell me what's written in note.md from Documents
+- i forgot what i planned, read me todo.txt
+- before i run it, what does setup.sh say
+- read scraper.py
 
 ## What it needs
 

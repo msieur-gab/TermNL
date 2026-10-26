@@ -27,6 +27,14 @@ What delete file and delete folder put in the trash (~/.local/share/Trash) is go
 - permanently delete what's in the bin
 - the trash is full, clear it
 - clean out the recycle bin
+- clear the trash
+- can you empty the bin for me
+- dump the trash
+- I'd like the trash emptied
+- is there a way to wipe everything in the bin
+- purge the trash
+- I'm low on space, empty the trash
+- empty the bin, I don't need any of it back
 
 ## Command
 

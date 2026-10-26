@@ -20,6 +20,12 @@ approve: no
 - i need bluetooth
 - activate bluetooth please
 - can you put bluetooth on
+- switch on bluetooth
+- can you enable bluetooth
+- turn bluetooth on, I want to use my headphones
+- I'd like bluetooth turned on
+- power up bluetooth
+- is there a way to switch bluetooth on? my speaker needs it
 
 ## Command
 

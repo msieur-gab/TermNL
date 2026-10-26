@@ -22,6 +22,13 @@ approve: no
 - open the file seed.md
 - can you open my todo file
 - view report.pdf
+- can you pull up report.pdf
+- bring up todo.txt for me
+- i'd like to open groceries.md from Documents
+- open scraper.py in the projects folder
+- i need to check the layout, open website.html in projects
+- i want to edit my list, open todo.txt
+- open seed.md
 
 ## What it needs
 

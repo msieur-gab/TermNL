@@ -27,6 +27,14 @@ still going, or when it last ended.
 - did you finish training
 - is the retraining finished
 - how long until you're done learning
+- is the learning still running
+- are you still busy training
+- has the training wrapped up yet
+- is your model still being trained? I want to ask you something
+- can you tell me if the training has ended
+- still learning?
+- I taught you some new phrases earlier, is that training over now
+- learning status
 
 ## When it's learning
 

@@ -25,6 +25,13 @@ programs (Gab, 24 Oct, on "kill pipewire": apps only, and say why).
 - the terminal is not responding
 - end that stuck program
 - force a program to stop
+- firefox has hung, end it
+- can you force the terminal to quit
+- the browser froze, kill it please
+- terminal is unresponsive
+- kill the stuck program
+- is there a way to force stop firefox, it's locked up and won't respond
+- force kill terminal
 
 ## What it needs
 

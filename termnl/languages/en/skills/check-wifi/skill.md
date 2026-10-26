@@ -29,6 +29,13 @@ approve: no
 - what is the name of the wifi i am on
 - is the wifi still connected
 - tell me about my wifi connection
+- is my wifi working right now
+- which wifi network is this board using
+- can you tell me if the wifi is up
+- wifi ok?
+- is the wifi down? pages aren't loading
+- how's the wifi
+- am I still on home-5g, the connection feels slow
 
 ## Command
 

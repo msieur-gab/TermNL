@@ -20,6 +20,12 @@ approve: no
 - mute the speakers
 - make it quiet
 - mute everything
+- can you mute the audio
+- cut the sound
+- no sound please
+- I'm on a call, mute everything
+- someone is sleeping, please mute the sound
+- I'd like the sound muted
 
 ## Command
 

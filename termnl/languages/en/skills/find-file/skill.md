@@ -22,6 +22,14 @@ approve: no
 - which folder is report.pdf in
 - can you track down my todo file
 - find a file
+- locate scraper.py
+- where did I put setup.sh
+- can you find the file called website.html
+- where's backup.tar.gz
+- help me find movie.mkv
+- I lost photos.tar.gz somewhere, can you look for it
+- find seed.md, I need it for my meeting
+- search for the file report.pdf
 
 ## What it needs
 

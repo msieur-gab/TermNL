@@ -21,6 +21,14 @@ approve: no
 - i want seed.md in ideas instead of here
 - relocate todo.txt to projects
 - send note.md into the ideas folder
+- move report.pdf from Downloads into Documents
+- can you put setup.sh into the projects folder
+- transfer seed.md from ideas to Documents
+- i'd like groceries.md moved to home
+- take movie.mkv out of Downloads and put it in home
+- Downloads is a mess, so move photos.tar.gz into Documents
+- this note belongs with my ideas, move note.md into the ideas folder
+- move scraper.py to ideas
 
 ## What it needs
 

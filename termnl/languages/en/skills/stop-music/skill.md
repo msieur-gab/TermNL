@@ -24,6 +24,12 @@ approve: no
 - end the music
 - music off
 - stop the song please
+- can you stop playing that song
+- cut the music please
+- i'd like the music to stop now
+- i'm going to bed, stop the music
+- i have a call coming in, stop playing music
+- enough music
 
 ## Command
 

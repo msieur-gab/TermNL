@@ -19,6 +19,14 @@ approve: yes
 - add the gimp program
 - install a program
 - set up git for me
+- can you install vlc
+- put gimp on here
+- install git
+- I'd like to get git on this board
+- is there a way to add vlc to the system
+- grab gimp from the repos and install it
+- I want to edit photos, can you install gimp
+- I need a media player, install vlc please
 
 ## What it needs
 

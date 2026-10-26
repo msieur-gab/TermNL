@@ -22,6 +22,14 @@ Goes to the trash (~/.local/share/Trash, as a desktop's trash), so it can be bro
 - erase the file note.md
 - can you trash todo.txt for me
 - delete a file
+- bin todo.txt
+- throw out movie.mkv from Downloads
+- remove scraper.py from the projects folder
+- can you delete setup.sh in Downloads
+- I'd like to put photos.tar.gz in the trash
+- delete backup.tar.gz, it's taking too much space
+- trash website.html
+- I'm done with the shopping list, delete groceries.md from Documents
 
 ## What it needs
 

@@ -21,6 +21,14 @@ approve: no
 - turn note.md into a compressed file
 - archive just the report
 - I need movie.mkv squeezed into a single archive beside the original
+- zip todo.txt
+- can you compress report.pdf in documents
+- squash scraper.py into an archive
+- I'd like groceries.md packed into a zip
+- compress movie.mkv so it takes up less room
+- zip seed.md in ideas, I want to keep it as a backup
+- is there a way to zip up website.html in projects
+- tar setup.sh
 
 ## What it needs
 

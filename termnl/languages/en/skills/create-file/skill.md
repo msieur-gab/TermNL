@@ -21,6 +21,14 @@ approve: no
 - make an empty file named seed.md
 - i need a new text file
 - add a file called note.md in documents
+- make me a new markdown file called plan.md
+- can you create a text file named shopping.txt in documents
+- start a fresh note called journal.md
+- I'd like a blank file in projects called index.html
+- new file please
+- touch draft.md
+- create a file called meeting.md in ideas, I want to jot down notes from today
+- is there a way to make an empty python file named test.py in projects so I can start coding
 
 ## What it needs
 

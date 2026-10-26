@@ -13,6 +13,16 @@ changes: name to {name}
 - my name's {name}
 - set/change my name to {name}
 
+## Also said
+
+- my name is Sam
+- from now on, please call me Alex
+- i'd like you to call me Lea
+- can you remember my name is Tom
+- you can call me Max
+- i go by Nina, so use that name
+- i want you to know me as Gab
+
 ## What it needs
 
 - {name}: a name. If it's missing, ask: What should I call you? | What's your name?

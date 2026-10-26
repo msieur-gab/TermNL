@@ -27,6 +27,14 @@ approve: no
 - memory
 - tell me about the ram usage right now
 - do i have enough memory free
+- how much ram have i got left
+- can you tell me how much memory is in use
+- is there any ram to spare
+- i'd like to know how much free memory there is
+- how's the memory looking
+- the board feels sluggish, is the ram maxed out
+- before i open firefox, how much memory is free
+- ram left?
 
 ## When it's fine
 

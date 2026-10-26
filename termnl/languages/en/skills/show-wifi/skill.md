@@ -31,6 +31,14 @@ approve: no
 - any wifi around here
 - look for wireless networks
 - find wifi nearby
+- which wifi networks are in range
+- can you list the wifi networks nearby
+- networks nearby?
+- I'd like to see the available wireless networks
+- is there a way to see which wifi is around
+- search for wireless networks
+- I'm at a cafe, what wifi networks are there
+- I want to know if home-5g is in range, show me the networks
 
 ## Command
 

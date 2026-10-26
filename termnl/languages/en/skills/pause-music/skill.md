@@ -16,6 +16,11 @@ approve: no
 - hold on, pause the track
 - put the music on pause
 - pause for a second
+- can you pause this for a moment
+- pause the music, I'm on a call
+- pause playback
+- I'd like to pause the music
+- hang on, pause it, someone's at the door
 
 ## Command
 

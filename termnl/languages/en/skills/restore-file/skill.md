@@ -28,6 +28,14 @@ or into the folder said. A file of the same name already there is never replaced
 - undelete report.pdf
 - can you bring back the file I deleted
 - restore a file
+- bring back report.pdf from the trash
+- can you recover groceries.md
+- undo deleting scraper.py
+- I binned note.md by accident, restore it to documents
+- fish todo.txt out of the trash
+- restore website.html into projects, I still need it
+- is there a way to get back a file I threw away
+- rescue setup.sh from the bin
 
 ## What it needs
 

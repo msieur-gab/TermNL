@@ -33,6 +33,14 @@ approve: no
 - how is the system holding up
 - run a health check on the board
 - is my device in good shape
+- is the board ok
+- how are things looking on the pi
+- give the system a once-over
+- it feels slow today, can you check the board is healthy
+- all good with the board?
+- can you run a quick diagnostic
+- I'd like a status report on the device
+- I'm leaving it on overnight, is everything fine with the pi
 
 ## When it's fine
 

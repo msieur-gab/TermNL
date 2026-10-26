@@ -22,6 +22,14 @@ approve: no
 - has the device been on all day
 - how long have you been awake
 - since when is the board up
+- how long have you been running
+- when was the board last started up
+- can you tell me how long the pi has been up
+- time since boot
+- how many days has the board been on without a reboot
+- it's been acting odd, how long has it been running
+- is there a way to see when the board was switched on
+- been up long?
 
 ## Command
 

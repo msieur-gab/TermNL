@@ -22,6 +22,13 @@ Gab, 22 Oct: "cd ..", "go back".
 - up one level
 - back out of here
 - go up
+- back up a level
+- take me to the folder above
+- get out of this folder
+- one folder up
+- can you go back to the parent directory
+- up
+- I'm done in here, go back up a folder
 
 ## What it needs
 

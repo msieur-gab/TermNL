@@ -32,6 +32,14 @@ approve: no
 - is there room for more files
 - how much free space do i have
 - can i still save stuff on the card
+- how much space is left on the sd card
+- can you tell me how full the disk is
+- is there enough room on the card for a big download
+- i'd like to know how much storage i have free
+- is the card nearly full
+- before i download movie.mkv, do i have enough space left
+- i keep saving photos, how much room is left on the disk
+- space left?
 
 ## When it's fine
 

@@ -21,6 +21,14 @@ approve: no
 - let me read the end of the nginx log to see what went wrong
 - mpd log please
 - what errors did ssh write in its log recently
+- what's in the mpd log
+- show me the ssh log
+- nginx log
+- can I see the bluetooth log
+- why did nginx crash
+- let me look at the music server's log
+- the web server won't start, show me what its log says
+- why does ssh keep failing? show me the log
 
 ## What it needs
 

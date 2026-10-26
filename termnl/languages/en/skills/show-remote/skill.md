@@ -20,6 +20,14 @@ approve: no
 - what can you see on the laptop over the network
 - what files are on my laptop right now
 - I'd like to look at what's stored on the studio pi
+- browse the files on my laptop
+- can you show me what's on the studio pi
+- laptop files
+- I'd like to see what the studio pi has on it
+- is there a way to look at my laptop's files from here
+- list the files over on the studio pi
+- I left something on the laptop, show me what's there
+- show me the studio pi's files, I can't remember what I put there
 
 ## What it needs
 

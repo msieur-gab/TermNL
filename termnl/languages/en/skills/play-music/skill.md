@@ -36,6 +36,13 @@ player shuffles everything when nothing is loaded, and carries on when something
 - i'd like to hear some songs
 - give me some tunes
 - surprise me with a song
+- can you play some music
+- throw on some random songs
+- I'm cooking, play something in the background
+- tunes please
+- let's have some music
+- is there a way to just shuffle everything
+- I'm working late, put on some music to keep me company
 
 ## Command
 

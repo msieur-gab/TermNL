@@ -21,6 +21,14 @@ approve: no
 - is Downloads getting huge? how many gigabytes is it
 - what does the projects folder weigh
 - I wonder how much space my Documents folder is using on its own
+- how much space does Downloads take
+- what's the size of the ideas folder
+- can you tell me how big projects is
+- size of Documents
+- I want to know the total size of my home folder
+- is the Downloads folder big? I might need to clean it up
+- how many megabytes is the ideas folder
+- before I back it up, how large is the projects folder
 
 ## What it needs
 
