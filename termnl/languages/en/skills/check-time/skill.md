@@ -25,6 +25,12 @@ about the machine: without a clock battery, it can be wrong after a power cut.
 - time please
 - tell me the time
 - check the time
+- do you know what time it is
+- what's today
+- can you tell me the date
+- what day of the week is it
+- what's the date, I need it for a form
+- is it morning or afternoon right now
 
 ## When it's fine
 

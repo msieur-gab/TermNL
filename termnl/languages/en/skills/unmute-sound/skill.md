@@ -21,6 +21,13 @@ approve: no
 - bring the sound back
 - i can't hear anything, unmute
 - give me the sound back
+- unmute the music
+- can you unmute
+- take it off mute
+- turn the sound back on, I'm back
+- I muted it earlier, unmute it now please
+- I'd like the sound back on
+- cancel the mute
 
 ## Command
 

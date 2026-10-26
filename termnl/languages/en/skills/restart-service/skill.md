@@ -23,6 +23,13 @@ approve: no
 - the music server needs restarting
 - turn ssh off and on again
 - can you restart the music server
+- bounce nginx
+- can you restart the bluetooth service
+- nginx is stuck, restart it
+- kick the music server
+- I'd like mpd restarted
+- please restart the web server, it stopped answering
+- relaunch ssh
 
 ## What it needs
 

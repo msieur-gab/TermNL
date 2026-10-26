@@ -26,6 +26,13 @@ approve: no
 - tell me if bluetooth is running
 - is the bluetooth active
 - bluetooth
+- can you tell me whether bluetooth is switched on
+- is bluetooth up right now
+- what's the state of bluetooth
+- my headphones won't pair, is bluetooth even running
+- is there a way to see if bluetooth is enabled
+- I want to use my speaker, can you check if bluetooth is active
+- has bluetooth been switched off
 
 ## Command
 

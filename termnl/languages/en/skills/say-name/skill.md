@@ -23,6 +23,13 @@ Gab, 24 Oct: "what is my name" was read as setting it. This reads it back; call 
 - say my name
 - what name do you have for me
 - remind me what my name is
+- do you know who I am
+- can you tell me what my name is
+- I'd like to hear what you call me
+- is there a way to check what name you have for me
+- what have you got saved as my name
+- I forgot what I told you, what's my name again
+- just checking, do you still know my name
 
 ## When it's known
 

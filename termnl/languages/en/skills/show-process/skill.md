@@ -45,6 +45,13 @@ Gab, 22 Oct: "what is taking my memory", "what is consuming my ram", "is there a
 - show the processes
 - what's using the cpu
 - list everything that's running
+- what's hogging the ram
+- can you show me what programs are running
+- which processes are eating up the memory
+- i'd like to see everything that's running right now
+- is anything running in the background
+- the board is slow, what's running on it
+- firefox feels heavy, which app is using the most memory
 
 ## When it's fine
 

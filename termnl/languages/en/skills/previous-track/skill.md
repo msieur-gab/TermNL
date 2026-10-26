@@ -19,6 +19,13 @@ approve: no
 - back one track
 - replay the previous track
 - i want the song before this one
+- go back one song
+- skip back
+- can you play the previous song
+- back to the song before
+- I missed that one, go back a track
+- previous song please
+- take me back to the track before this, I liked it
 
 ## Command
 

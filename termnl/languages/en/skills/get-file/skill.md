@@ -20,6 +20,14 @@ approve: no
 - pull todo.txt from the studio pi to the board
 - I left setup.sh on my laptop, can you bring it here
 - take website.html from the laptop
+- fetch report.pdf from the laptop
+- can you copy groceries.md over from the studio pi
+- I need scraper.py from my laptop, bring it into projects
+- transfer note.md from the studio pi to here
+- grab movie.mkv off the laptop so I can watch it on the board
+- could you pull website.html from the studio pi into projects
+- get seed.md from the laptop
+- is there a way to bring todo.txt across from the studio pi, I forgot it there
 
 ## What it needs
 

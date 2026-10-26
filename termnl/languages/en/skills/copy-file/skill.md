@@ -22,6 +22,14 @@ approve: no
 - put a copy of report.pdf in downloads but keep the original
 - can you back up note.md to the ideas folder
 - copy a file
+- copy todo.txt into the Documents folder
+- can you duplicate report.pdf into projects
+- i'd like a copy of seed.md in Documents too
+- put a copy of scraper.py in the ideas folder
+- is there a way to copy note.md from ideas into home
+- i want to keep a backup, so copy website.html into Documents
+- i'm going to edit groceries.md, make a copy of it in home first
+- copy setup.sh to projects
 
 ## What it needs
 

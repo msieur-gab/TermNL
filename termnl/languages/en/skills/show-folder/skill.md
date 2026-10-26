@@ -45,6 +45,14 @@ approve: no
 - what files are in ideas
 - show the contents of home
 - let me see this folder
+- what's inside downloads
+- can you list the files in documents
+- show me everything in projects
+- what have I got in ideas
+- I forgot what I saved in home, show me what's there
+- ls downloads
+- I'd like to see the contents of projects before I start working
+- contents of ideas
 
 ## What it needs
 

@@ -24,6 +24,14 @@ Gab, 23 Oct: "say play daft punk or play a thousand leaves". The names are the M
 - play the song the tune
 - something by wax tailor please
 - play hope & sorrow by wax tailor
+- put on hope & sorrow
+- can you play the tune
+- wax tailor
+- I'd love to hear something by wax tailor
+- is there a way to play the album hope & sorrow
+- throw on the tune by wax tailor
+- I'm in the mood for wax tailor, put some on
+- play the tune, it's my favourite song
 
 ## What it needs
 

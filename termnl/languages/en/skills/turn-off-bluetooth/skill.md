@@ -21,6 +21,12 @@ approve: no
 - no more bluetooth
 - i don't need bluetooth anymore
 - can you shut bluetooth off
+- can you switch bluetooth off
+- deactivate bluetooth please
+- i'd like bluetooth turned off
+- is there a way to shut off bluetooth
+- i'm done with my headphones, turn bluetooth off
+- to save power, switch the bluetooth off
 
 ## Command
 

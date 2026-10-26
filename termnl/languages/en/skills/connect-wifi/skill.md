@@ -22,6 +22,14 @@ waits: 60
 - I'm at the café, please hook me up to cafe-guest
 - connect wifi home-5g with password
 - use the cafe-guest network, here's the password
+- connect me to cafe-guest
+- can you join the home-5g wifi
+- I'd like to get online through cafe-guest
+- hop on home-5g
+- join the wifi
+- log me onto home-5g, I know the password
+- please connect to the cafe-guest network so I can work from here
+- is there a way to get onto cafe-guest
 
 ## What it needs
 

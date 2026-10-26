@@ -23,6 +23,14 @@ approve: no
 - check whether Downloads has any pictures in it, subfolders too
 - any PDFs in home at all?
 - I just want to know if there's a video file somewhere in here or below
+- are there any pdfs in Documents
+- can you tell me if Downloads has any videos
+- do i have any notes in the ideas folder
+- is there any image at all in projects
+- i'd like to know whether there's a pdf in home
+- i'm looking for a picture i saved, is there any image in Downloads
+- before i clean up, are there any videos left in Documents
+- any notes in ideas?
 
 ## What it needs
 

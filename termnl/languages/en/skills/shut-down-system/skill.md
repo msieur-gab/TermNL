@@ -21,6 +21,12 @@ approve: yes
 - switch off the device
 - i am done, power down the board
 - shut everything down for tonight
+- can you shut down
+- power the board off, I'm unplugging it
+- switch everything off
+- I'd like to shut down the device
+- shut it down
+- good night, turn the system off for the day
 
 ## Command
 

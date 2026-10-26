@@ -29,6 +29,14 @@ none is said, that mentions the words, whatever their capitals.
 - anything about wifi in my notes
 - what's in my notes about bluetooth
 - which files say hello
+- which files mention nginx
+- can you search my notes for the word garden
+- find every file that talks about bluetooth in Documents
+- is there a way to see which notes mention Wax Tailor
+- look inside the files in projects for the word scraper
+- i wrote something about the router once, which note was it in
+- i need my shopping thoughts, which files mention milk in Documents
+- notes mentioning wifi
 
 ## What it needs
 

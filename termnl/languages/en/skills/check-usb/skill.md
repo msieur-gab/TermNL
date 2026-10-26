@@ -20,6 +20,13 @@ approve: no
 - what sticks are in right now
 - USB drives?
 - I just put a memory card in, is it showing up
+- is anything plugged into the usb ports
+- can you check if my flash drive is connected
+- did my thumb drive show up
+- I'd like to see what's plugged into the board
+- is there a way to tell if the card reader is detected
+- I just plugged in a stick, can you see it
+- the drive isn't showing, is it even connected
 
 ## Command
 

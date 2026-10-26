@@ -21,6 +21,14 @@ approve: yes
 - can you give the laptop a copy of todo.txt
 - send setup.sh to studio pi
 - I want website.html on my laptop, send it over the network
+- send groceries.md to the laptop
+- can you send movie.mkv from Downloads to the studio pi
+- ship seed.md over to the studio pi
+- beam website.html to my laptop
+- I'd like to send report.pdf from Documents to my laptop
+- send note.md to the laptop so I can edit it there
+- send photos.tar.gz to studio-pi, I need it on the other board
+- to the laptop, send todo.txt
 
 ## What it needs
 

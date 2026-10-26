@@ -23,6 +23,14 @@ approve: no
 - anything new or edited today?
 - what have I been working on since yesterday, file-wise
 - show the latest changed files in projects
+- which files changed recently
+- what did I edit today
+- show me the latest changes in documents
+- can you list what I modified today in projects
+- I lost track of what I was doing, what files did I change today
+- recently changed files in ideas
+- is there a way to see what got edited lately
+- what's new in downloads today
 
 ## What it needs
 

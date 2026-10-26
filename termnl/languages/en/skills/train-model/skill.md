@@ -20,6 +20,17 @@ model.previous.json. The learning inbox (what a "yes" taught, reviewed by the pe
 - retrain yourself
 - update your model
 
+## Also said
+
+- learn the new sentences
+- can you retrain on what I added
+- retrain
+- I'd like you to learn the new phrases
+- is there a way to make you learn what I taught you
+- relearn from your skill files
+- I added some new sentences, learn them now
+- train yourself again so you pick up my changes
+
 ## Replies
 
 - approve: Learn again from my skills? It takes a couple of minutes, and you can keep talking to me meanwhile.

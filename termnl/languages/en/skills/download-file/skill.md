@@ -21,6 +21,13 @@ approve: no
 - fetch https://example.org/file.pdf for me
 - i need the pdf from https://example.org/file.pdf
 - pull down https://example.org/music.zip
+- could you grab https://example.com/report.pdf and put it in documents
+- save the file from https://example.com/photos.zip
+- I'd like to download https://example.com/setup.sh into projects
+- fetch https://example.com/music.zip into downloads, I need it for tonight
+- can you get https://example.com/data.csv from the internet for me
+- is there a way to download https://example.com/file.zip to home
+- download https://example.com/notes.zip
 
 ## What it needs
 

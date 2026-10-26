@@ -43,6 +43,13 @@ Gab, 22 Oct: "what is this device configuration": what the machine is, not how i
 - what kind of computer is this
 - show me the device details
 - what model is this board
+- what kind of board am i using
+- can you tell me what this machine is
+- what's inside this device
+- i'd like to see the hardware details
+- which processor does this board have
+- i'm writing it down for a friend, what are the specs of this device
+- i need to order a part, which model is this computer
 
 ## When it's fine
 

@@ -19,6 +19,12 @@ Gab's log, 22 Oct: "close expressvpn". Approved first: anything not saved in the
 - shut the browser
 - i am done with the terminal, close it
 - get out of firefox
+- can you close the terminal for me
+- close the browser window
+- i'd like to close firefox now
+- please exit the terminal app
+- i'm finished browsing, close firefox
+- my work is saved, you can close the terminal
 
 ## What it needs
 

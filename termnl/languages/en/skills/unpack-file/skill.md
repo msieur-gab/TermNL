@@ -17,6 +17,13 @@ approve: no
 - can you decompress photos.tar.gz for me
 - untar photos.tar.gz
 - I downloaded backup.tar.gz, please unpack it in place
+- can you extract backup.tar.gz in home
+- unpack the archive photos.tar.gz in Downloads
+- i'd like to unzip photos.tar.gz
+- is there a way to decompress backup.tar.gz here
+- i need the pictures inside, so extract photos.tar.gz
+- i want my old files back, unpack backup.tar.gz
+- untar backup.tar.gz
 
 ## What it needs
 

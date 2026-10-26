@@ -22,6 +22,14 @@ approve: no
 - create a directory
 - i need a new folder in downloads
 - mkdir ideas
+- make a directory called notes
+- can you set up a new folder named drafts in projects
+- new folder in ideas
+- I'd like a folder called sketches inside documents
+- is there a way to add a folder named archive in downloads
+- start a new folder called recipes
+- I need somewhere to keep my drafts, make a folder called drafts
+- make a folder named photos in home so I can sort my pictures
 
 ## What it needs
 

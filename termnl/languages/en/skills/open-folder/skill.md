@@ -30,6 +30,14 @@ approve: no
 - take me to ideas
 - i want to be in the projects folder
 - jump into documents
+- head into the ideas folder
+- can you take me to downloads
+- switch to projects
+- cd home
+- I'd like to work in the documents folder
+- I'm working on the website today, take me into projects
+- let's go to my projects folder
+- cd projects
 
 ## What it needs
 

@@ -19,6 +19,13 @@ approve: no
 - open a terminal
 - start firefox please
 - run the browser
+- fire up firefox
+- can you start the terminal
+- bring up the browser
+- I'd like to open firefox
+- terminal please
+- open the browser, I want to check something online
+- get me a terminal, I need to run something
 
 ## What it needs
 

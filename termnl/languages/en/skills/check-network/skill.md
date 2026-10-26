@@ -27,6 +27,13 @@ approve: no
 - can i reach the internet
 - network check
 - is the connection up
+- do I have internet right now
+- can you tell me my ip
+- pages won't load, am I even connected
+- internet ok?
+- I need my ip address to reach the board from elsewhere, what is it
+- are we connected to the internet
+- is there a way to check whether the board is online
 
 ## Command
 

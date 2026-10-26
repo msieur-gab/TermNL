@@ -24,6 +24,14 @@ the disk's). Where you are, if no folder is said.
 - show me what's huge in home
 - what is filling up the projects folder
 - list the largest files here
+- what's hogging space in Downloads
+- show the biggest things in projects
+- which files are the largest in Documents
+- can you list what takes the most room in home
+- biggest files in ideas
+- what's using up all the space in Downloads? I need to free some
+- I'd like to see the largest folders in home
+- what's the heaviest thing here
 
 ## What it needs
 

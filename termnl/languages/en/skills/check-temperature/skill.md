@@ -35,6 +35,14 @@ approve: no
 - is the processor running hot
 - tell me how warm the board is
 - is it getting too warm in there
+- how hot is the processor right now
+- can you tell me the cpu temperature
+- temp?
+- is the board running warm
+- I'd like to know how hot the chip is
+- is there a way to check if the pi is overheating
+- the fan is loud, how hot is it in there
+- it's sunny on the desk, is the board getting too hot
 
 ## When it's fine
 

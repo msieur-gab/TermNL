@@ -22,6 +22,14 @@ A new name never replaces a folder or a file that is already there.
 - rename folder documents
 - call the ideas folder projects instead
 - i want to rename a directory
+- rename the downloads folder to inbox
+- can you change the ideas folder's name to sketches
+- rename projects
+- I'd like the documents folder to be called papers
+- is there a way to rename my ideas folder
+- relabel the projects folder as work
+- the name downloads is confusing, rename that folder to incoming
+- I'm reorganising, call the ideas folder drafts from now on
 
 ## What it needs
 

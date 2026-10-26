@@ -19,6 +19,14 @@ approve: no
 - turn the board off and on again
 - give the board a fresh start
 - can you reboot the device
+- reboot the board
+- can you restart the whole thing
+- please do a reboot now
+- i'd like to restart the device
+- power cycle the board
+- everything feels stuck, reboot the system
+- i just installed updates, so restart the board
+- reboot please
 
 ## Command
 

@@ -19,6 +19,13 @@ approve: yes
 - get the latest updates
 - can you bring the system up to date
 - my pi needs updating
+- can you check for updates and install them
+- upgrade all the packages
+- I'd like the pi fully updated
+- run the updates
+- updates please
+- it's been a while, can you update all the software
+- upgrade the system, I want the latest security fixes
 
 ## Command
 

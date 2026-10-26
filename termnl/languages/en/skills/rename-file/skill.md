@@ -24,6 +24,12 @@ that is already there; a new name without an extension keeps the old one's (note
 - i want to rename seed.md
 - todo.txt needs a new name
 - rename this file
+- can you change the name of report.pdf to final.pdf
+- I'd like to rename note.md in ideas to draft.md
+- retitle groceries.md as shopping.md
+- rename seed.md in ideas to garden.md, the old name doesn't make sense anymore
+- is there a way to rename website.html to index.html so it becomes the home page
+- rename setup.sh
 
 ## What it needs
 

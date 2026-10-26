@@ -18,6 +18,17 @@ Lists every skill, grouped by the topics in words/objects.md.
 - what do you do
 - what are you able to do
 
+## Also said
+
+- what are your skills
+- can you tell me what you're able to do
+- commands?
+- I'd like a list of everything you can do
+- is there a way to see all the things I can ask
+- what kind of things do you understand
+- I'm new here, what can you help me with
+- I'm not sure what to type, show me what you can do
+
 ## Replies
 
 - done: Here's what I can do. Tap a topic to see all of it, or just ask in your own words. | Hi {user}, here's what I can do. Tap a topic to see all of it, or just ask in your own words.

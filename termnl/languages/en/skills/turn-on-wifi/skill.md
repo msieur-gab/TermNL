@@ -23,6 +23,13 @@ approve: no
 - start the wifi
 - i need wifi again
 - put the wifi back on please
+- can you enable the wireless
+- power up the wifi
+- I'd like the wifi back on
+- wifi back on
+- switch the wireless on, I need to get online
+- is there a way to turn the wifi back on
+- activate wifi
 
 ## Command
 

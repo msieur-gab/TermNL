@@ -23,6 +23,13 @@ Born as a test of dropping a skill in (FRAMES.md): "ping" is in no list of words
 - is the studio pi reachable
 - can the board reach my laptop
 - does the laptop answer
+- ping the studio pi
+- can you check if the laptop is answering
+- is the studio pi up on the network
+- i'd like to know if the board can reach the studio pi
+- is the laptop responding
+- the laptop seems offline, can you ping it
+- before i send anything, check the studio pi answers
 
 ## What it needs
 

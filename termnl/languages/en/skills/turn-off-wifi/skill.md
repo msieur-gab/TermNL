@@ -27,6 +27,14 @@ approve: yes
 - disconnect the wifi
 - i don't want wifi right now
 - the wifi can go off now
+- switch off the wifi
+- can you turn the wifi off
+- wifi off please
+- I'd like the wireless switched off
+- is there a way to shut the wifi down
+- power down the wifi
+- I'm on ethernet now, turn off the wifi
+- turn off the wireless to save power
 
 ## Command
 
