@@ -69,3 +69,32 @@ request, asked about first since the rest was left aside. No new word list.
 8 answers changed, 7 fixed, none broken. A looser version (any one part understood, not only by a
 template) fixed 2 more but offered 2 wrong skills where it used to say "I can't": not kept. Only sentences
 both unsure and cut by punctuation pay the extra reading, hence the slower tail.
+
+## Every rule re-measured with the new wordings
+
+Do the 565 new wordings make some of the agent's rules unnecessary? Each rule switched off alone (the
+switches of research/less, 02d3582, put back for the measure and taken out again), on 1,127 sentences, 567
+typos and the 129 unit tests. Numbers are what turning the rule OFF changes: minus means it saves requests.
+
+| Rule | Old sets | Skills' tests | Typos | Wrong actions | Wrong offers | Unit tests failing |
+|---|---|---|---|---|---|---|
+| typos read as known words | −2 | −1 | −27 | −1 | +5 | 3 |
+| object words never end a name | −7 | −1 | −4 | +1 | +11 | 1 |
+| a template the model doubts asks which | −1 | −4 | −1 | +5 | +1 | 1 |
+| a request said with its reason (today) | −2 | −4 | −1 | 0 | +6 | 0 |
+| meaning with an object | −2 | 0 | −4 | 0 | +4 | 2 |
+| an object word is the object, not a name | −2 | −1 | 0 | 0 | +3 | 1 |
+| a name stops before a place | 0 | −2 | 0 | +2 | 0 | 2 |
+| a typo in a change asks first | 0 | 0 | 0 | +2 | −1 | 2 (162 answers act instead of asking) |
+| a name never starts with a place word | 0 | −1 | 0 | 0 | +1 | 1 |
+| split verbs joined | −1 | +1 | 0 | 0 | −2 | 5 (follow-ups, "turn it back off") |
+| opposites | 0 | +1 | 0 | 0 | 0 | 1 ("turn the board on" never offers shut down) |
+| an action said alone asks which | 0 | 0 | 0 | 0 | 0 | 2 |
+| said again without the value, its default | 0 | 0 | 0 | 0 | 0 | 1 |
+| an unknown name is the missing device value | 0 | 0 | 0 | 0 | 0 | 1 |
+| a typo never hides a place in a name | 0 | 0 | 0 | 0 | 0 | 1 |
+| a name ending in a file type is a file | 0 | 0 | 0 | 0 | 0 | 0 → **removed** (9 lines; 0 of 1,694 answers change) |
+
+The wordings did not make the rules obsolete: every rule but one still saves sentences, prevents a wrong
+action, or holds a behaviour a unit test asks for. The last four rows save no sentence; what they keep is
+dialogue (a question instead of a guess) and values, which only the unit tests see.
