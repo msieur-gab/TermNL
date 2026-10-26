@@ -37,8 +37,9 @@ approve: no
 
 ## Command
 
-tar -czf {name}.tar.gz {name}
+bash -c 'd=$1; a=$d.tar.gz; x=; [ "$d" = "$HOME" ] && mkdir -p "$HOME/Downloads" && a=$HOME/Downloads/home.tar.gz && x=$(basename "$d")/Downloads/home.tar.gz; tar -czf "$a" --exclude="$x" -C "$(dirname "$d")" "$(basename "$d")" && echo "$a" | sed "s|^$HOME|~|"' _ {name}
 
 ## Replies
 
-- done: {name} is compressed, beside it. | Done: a compressed copy of {name} is next to it.
+- approve: Compress {name} and everything in it?
+- done: {name} is compressed, in {output}. | Done: a compressed copy of {name} is in {output}.
