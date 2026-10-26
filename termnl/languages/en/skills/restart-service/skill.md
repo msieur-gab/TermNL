@@ -42,4 +42,4 @@ systemctl restart {name}
 ## Replies
 
 - approve: Restart {name}?
-- done: {name} restarted. | Done, {name} is restarting.
+- done: Done {user}, {name} is restarting; give it a few seconds.
