@@ -634,7 +634,9 @@ class Agent:
         name from a device list or a shared list, a name after "called"/"named", a file-shaped word."""
         vals, used = {}, set()
         leads = self.leads.get(skill["id"], {})
-        listed = [(k, self.list_of(spec["kind"]) or []) for k, spec in skill["values"].items()]
+        # a value with no default first: "put todo.txt in the projects folder" says where it goes; where it is
+        # can be where you are
+        listed = [(k, self.list_of(spec["kind"]) or []) for k, spec in sorted(skill["values"].items(), key=lambda x: bool(x[1].get("default")))]
         # first, every value after the word its skill's sentences put before it ("from ideas into home": the
         # place is ideas, where it goes is home); then the rest anywhere, never words another value already took
         def after_lead(k, found):
