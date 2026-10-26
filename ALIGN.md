@@ -24,9 +24,10 @@ sentences twice, with two readers that couldn't talk to each other.**
 
 About ten rules, around 500 of agent.py's 948 lines, whose only job was to glue two readers together.
 Methods A, B, F, G, H, "less" and frames all stayed inside that shape, re-ordering the same evidence,
-which is why none moved the needle. And the second reader is what cost the training step: numpy, 3½
-minutes on the board, a model.json, a "learn what I taught you" that waits. That step was the real enemy
-of drop-in.
+which is why none moved the needle. Training is not the enemy: a local retrain (numpy, a model.json, a
+"learn what I taught you" that takes a few minutes on the board) is fine, and it never needs a larger or
+external NLU. The problem is the glue rules between the two readers. And whatever is chosen must stay
+quick on modest hardware (the Orange Pi Zero 2W): speed is a requirement, not a nice-to-have.
 
 ## The proposal
 
