@@ -257,7 +257,21 @@ class Agent:
         its own words, before the list as chips (stop process, "unknown name": "pipewire isn't an app I can
         stop. Running now:"); with nothing on the list, the plain reply."""
         own = skill["replies"].get("unknown " + slot)
-        return self.reply(own, {slot: self.quoted(said)}) if own and found else self.reply("unknown value", {"value": self.quoted(said)})
+        if own and found:
+            return self.reply(own, {slot: self.quoted(said)})
+        folder = skill["values"][slot]["kind"] == "@sys.folder"  # "I don't see a folder called photos" (Gab, 26 Oct)
+        return self.reply("unknown folder" if folder else "unknown value", {"value": self.quoted(said)})
+
+    def begins(self, skill, slot, said):
+        """A folder said by its beginning ("doc" for Documents): the one folder whose name starts so, to propose
+        as a typo is (Gab, 26 Oct: "if the name is close hence doc for documents then it should propose"). → it, or None."""
+        if skill["values"][slot]["kind"] != "@sys.folder":
+            return None
+        w = " ".join(words(said))
+        w = re.sub(r"^(?:the|my) ", "", w)
+        fits = [o for o in self.list_of("@sys.folder") or [] if len(w) >= 3 and " " not in w
+                and any(ph and ph[0].startswith(w) and ph[0] != w for ph in o["phrases"])]
+        return fits[0] if len(fits) == 1 else None
 
     def fill_value(self, text, toks, u, says_action=False):
         """An answer to "Which one?" or "What should I call it?". The same request said again adds its
@@ -298,6 +312,10 @@ class Agent:
         hit = best_in(toks, found)
         if not hit and u and says_action:
             return None
+        near = None if hit else self.begins(skill, slot, text.strip())
+        if near:  # "doc": Documents, proposed
+            vals[slot] = {"value": near["value"], "label": near["label"], "text": text.strip(), "fuzzy": True}
+            return self.next_step(skill, vals, approved)
         if not hit:
             return {"outcome": "ask", "skill": skill["id"], "say": self.not_there(skill, slot, text.strip(), found), "chips": self.chips(found)}
         vals[slot] = {"value": hit["o"]["value"], "label": hit["o"]["label"]}
@@ -431,6 +449,10 @@ class Agent:
             return self.confirm_typo(skill, vals, gap[1], approved)
         if gap and gap[0] == "unknown":  # said, but not on the device's list: which one, with the list as chips
             k = gap[1]
+            near = self.begins(skill, k, vals[k]["text"])
+            if near:  # "doc" for Documents: proposed, as a typo is
+                vals[k] = {"value": near["value"], "label": near["label"], "text": vals[k]["text"], "fuzzy": True}
+                return self.confirm_typo(skill, vals, k, approved)
             found = self.list_of(skill["values"][k]["kind"])
             return self.ask_value(skill, vals, k, approved, self.not_there(skill, k, vals[k]["text"], found), self.chips(found))
         for k, spec in skill["values"].items():

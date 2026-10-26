@@ -34,6 +34,7 @@ Words for the conversation itself, outside any skill.
 - cancelled: OK, cancelled. | Cancelled.
 - choose: Do you mean {options}?
 - unknown value: I don't see {value}. Which one?
+- unknown folder: I don't see a folder called {value}. Which one?
 - already: There's already a {file} in {folder}. | {folder} already has a {file}.
 - elsewhere: {file} isn't in {here}, but there's one in {folder}. That one?
 - several: There are {count} files called {file}, in {folders}. Which one?
