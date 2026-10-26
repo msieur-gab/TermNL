@@ -1,10 +1,10 @@
-"""Loads a language (its words, skills and model) and the device's settings, from disk.
+"""Loads a language (its words and skills) and the device's settings, from disk. Nothing is trained: a skill
+folder dropped in is read the next time the language is loaded ("learn what I taught you").
 
     termnl/languages/<lang>/words/      actions, objects, filetypes, conversation, samples, readings (.md)
-    termnl/languages/<lang>/skills/     one folder per skill, a skill.md in each
-    termnl/languages/<lang>/model.json  trained from the above (python3 -m termnl.train)"""
-import json
+    termnl/languages/<lang>/skills/     one folder per skill, a skill.md in each"""
 import os
+import time
 
 from .skills import load
 from .text import read_pairs
@@ -34,9 +34,7 @@ def load_language(lang="en", languages=LANGUAGES):
         if os.path.exists(f):
             skills[id] = read(f)
     out = load(lists, skills)
-    m = os.path.join(d, "model.json")
-    if os.path.exists(m):
-        out["model"] = json.loads(read(m))
+    out["read"] = int(time.time())  # when the skill files were last read ("are you learning?", readers.py)
     return out
 
 
