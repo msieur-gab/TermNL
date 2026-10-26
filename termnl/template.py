@@ -130,6 +130,8 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places
                     continue  # "the ideas folder" is a folder, not a name
                 if found is None and any(toks[j]["word"] in places for j in range(pos + 1, end - 1)):
                     break  # "seeds in garden": the name stops before the place
+                if found is not None and toks[end - 1]["word"] in places:
+                    break  # a value not on its list never holds a place word: not a file type "noe inside" (Gab, 26 Oct)
                 cap = {"start": pos, "end": end}
                 if found is not None:
                     cap["unknown"] = True
