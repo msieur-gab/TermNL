@@ -21,7 +21,7 @@ from .text import close, tokenize, words
 FILE_RE = re.compile(r"\.[a-z0-9]{1,5}$", re.I)
 SURE, MAYBE = 0.5, 0.15  # how sure the model must be of its action and object: to go ahead, and to ask at all
 NEAR = 0.1  # readings the model holds this close to its best count as one: the funnel decides among their skills
-UNSURE = 0.75  # how sure a template is of a reading with a value not on its list
+UNSURE = 0.6  # how sure a template is of a reading with a value not on its list
 CHOICES = 8  # as many readings as the chips can show
 
 
@@ -214,9 +214,10 @@ class Reader:
     def bare(self, toks, shape):
         """An action said without its object ("turn off", "switch it off"): the person chooses among the skills
         that do it, and those the action means with an object (a skill's ## Words: "turn off" also stops the
-        music). Only when the sentence names an action and nothing else, and two to CHOICES skills fit."""
+        music). Only when the sentence says one action word and nothing else, and two to CHOICES skills fit."""
         acts, objs = self.names(shape)
-        if not acts or objs or any(x not in acts for x in shape):
+        said = [ph for ph in self.phrases if where(self.joined(toks), list(ph)) and self.means[ph] & acts]
+        if len(said) != 1 or objs or any(x not in acts for x in shape):
             return None
         pairs = {(a, s["object"]) for a in acts for s in self.skills if s["action"] == a}
         for rule in self.lists.get("in_context", []):
@@ -351,9 +352,7 @@ class Reader:
             u = None
         v = (self.bare(toks, shape) or self.by_model(text, toks, shape)) if not u or u["p"] < 1 else None
         if v and u and u["how"] == "template" and v["how"] == "model" and v["p"] >= SURE and v["skill"]["id"] != u["skill"]["id"]:
-            # a template's reading with a value not on its list is a strong vote, not a verdict: when the model is sure
-            # of another skill, the person chooses (24 Oct: "rename the folder photos to pictures" renamed a file)
-            u = {"how": "choose", "options": [{k: u[k] for k in ("skill", "vals")}, {k: v[k] for k in ("skill", "vals")}], "p": u["p"], "toks": toks}
+            u = v  # a template that read a value not on its list ("what's" as a file type) yields to a model sure of another skill
         elif v and (not u or v["p"] > u["p"] and (u["how"] == "choose" or v["how"] != "model" or v["skill"]["id"] != u["skill"]["id"])):
             u = v  # the model's reading of the same skill adds nothing: the template read its values exactly
         if u:

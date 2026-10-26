@@ -49,18 +49,31 @@ instead of seven passes in the agent. Speed is the same: 9.0 ms a sentence here 
 `python3 -m tools.why "sentence"` shows every look: the shape, what is named, the templates that read it,
 the model's three best actions and objects. `tools/same_reading.py` is back as it was.
 
+## The overlap check (tools/overlap.py)
+
+`python3 -m tools.overlap [skill-id…]` runs every sentence a skill owns (its `## Also said` and its tests.md)
+through the reader and prints each one read as another skill, or left to the person to choose. It changes
+nothing in how TermNL answers; it tells the author where the skill files clash, before a person hits it.
+With skill ids, only those skills and what is read as them: the check to run after dropping a skill in.
+
+Its first run found 92 clashes, most of one kind: show-type's template reading any word as a file type not
+on its list ("what's" in "show me what's in downloads"), then tying with the model's reading as a choice.
+Two rules changed for it: a template that guessed a value yields outright to a model sure of another skill
+(no choice), and an action said alone ("turn off") is only a choice when the sentence has one action word
+("run the updates" has two). Now 59 clashes; skill-first's own sentences, through its own agent: 71.
+
 ## Measured, same scale (tests/measure.py), against feat/skill-first eaf56e8 in brackets
 
 | set | sentences | acted | asked first | wrong skill, asked | wrong skill, acted | not understood |
 |---|---|---|---|---|---|---|
 | phrasings | 59 | 38 (39) | 18 (16) | 1 (2) | 0 (0) | 2 (2) |
 | probes | 89 | 82 (80) | 2 (1) | 4 (7) | 0 (0) | 1 (1) |
-| heldout | 122 | 115 (117) | 3 (3) | 3 (1) | 1 (1) | 0 (0) |
-| blind | 116 | 68 (71) | 43 (39) | 3 (4) | 1 (1) | 1 (1) |
+| heldout | 122 | 116 (117) | 3 (3) | 2 (1) | 1 (1) | 0 (0) |
+| blind | 116 | 69 (71) | 43 (39) | 2 (4) | 1 (1) | 1 (1) |
 | scale-blind | 92 | 42 (45) | 39 (37) | 7 (4) | 0 (0) | 4 (6) |
 | edge-blind | 117 | 65 (63) | 45 (49) | 6 (4) | 0 (0) | 1 (1) |
-| skills (each skill's tests.md) | 462 | 284 (284) | 131 (129) | 28 (26) | 1 (0) | 18 (23) |
-| **all** | **1,057** | **694 (699)** | **281 (274)** | **52 (48)** | **3 (2)** | **27 (34)** |
+| skills (each skill's tests.md) | 462 | 290 (284) | 134 (129) | 19 (26) | 1 (0) | 18 (23) |
+| **all** | **1,057** | **702 (699)** | **284 (274)** | **41 (48)** | **3 (2)** | **27 (34)** |
 
 Out of scope (the `none:` lines): the reboot acted on none; skill-first acted on 1.
 
@@ -81,8 +94,15 @@ others are decisions, not bugs, and are listed so you can judge them:
 
 ## Where it stands
 
-Level with skill-first on 1,057 sentences — 5 fewer handled, 7 more understood, the same mistakes — with
-the model's purpose kept and the cascade gone. What it still doesn't have from skill-first: the five
-correction passes, each of which fixed real sentences of Gab's; the measure says the funnel and the
-template rules cover them. What to watch on the board: nothing new, the model and its training are the
-same files as before.
+A little ahead of skill-first on 1,057 sentences — 3 more handled, 7 fewer wrong questions, 7 more
+understood, one more wrong action (a search) — with the model's purpose kept, the cascade gone, and a check
+that shows where the skill files clash. What it still doesn't have from skill-first: the five correction
+passes, each of which fixed real sentences of Gab's; the measure says the funnel and the template rules
+cover them. Nothing new for the board: the model and its training are the same files as before.
+
+Not done, on purpose: a "not me" section in skill files (phrases that veto a skill). The three clashes it
+was proposed for ("the music server is stuck, restart it", "install the latest updates", "copy movie.mkv over
+to the studio pi") are already read right here, by a value matched at its longest, a word added to
+words/actions.md ("updates"), and the model. A veto is a patch where a word or a line is the fix; the
+overlap check says where. Nor a fourth look without training: that was this branch's first version
+(5c9b83a), measured and beaten by the model.
