@@ -532,6 +532,8 @@ class Agent:
             vals[k] = {"value": typo, "label": typo, "text": name, "fuzzy": True}
             return self.next_step(skill, vals, approved)
         elsewhere = [r for r in self.device.find(same) if r["folder"] != place["value"]]
+        named = not elsewhere and self.device.find(lambda f: lower in f.lower())  # none by that name: the files it is part of, as find file finds them
+        elsewhere = elsewhere or named
 
         def there(r):
             vals[k], vals[place_key] = {"value": r["file"], "label": r["file"]}, {"value": r["folder"], "label": r["label"]}
@@ -540,11 +542,12 @@ class Agent:
         if len(elsewhere) == 1:
             r = elsewhere[0]
             self.question("elsewhere", yes=lambda: there(r)(), no=lambda: self.declined(skill))
-            return {"outcome": "ask", "skill": skill["id"], "say": self.reply("elsewhere", {"file": r["file"], "here": place["label"], "folder": r["label"]}), "chips": self.yes_no}
+            say = self.reply("did you mean", {"value": r["file"]}) if named else self.reply("elsewhere", {"file": r["file"], "here": place["label"], "folder": r["label"]})
+            return {"outcome": "ask", "skill": skill["id"], "say": say, "chips": self.yes_no}
         if elsewhere:
-            labels = [r["label"] for r in elsewhere]
-            self.question("where", no=lambda: self.declined(skill), options=[(r["label"], lambda r=r: there(r)()) for r in elsewhere])
-            return {"outcome": "ask", "skill": skill["id"], "say": self.reply("several", {"count": len(elsewhere), "file": elsewhere[0]["file"], "folders": ", ".join(labels)}), "chips": labels}
+            labels = [r["file"] if named else r["label"] for r in elsewhere]
+            self.question("where", no=lambda: self.declined(skill), options=[(l, lambda r=r: there(r)()) for l, r in zip(labels, elsewhere)])
+            return {"outcome": "ask", "skill": skill["id"], "say": self.reply("several named" if named else "several", {"count": len(elsewhere), "file": name if named else elsewhere[0]["file"], "folders": ", ".join(labels)}), "chips": labels}
         self.pending = None
         return {"outcome": "abstain", "skill": skill["id"], "say": self.reply("not found", {"file": name, "here": place["label"]}), "reason": "not found"}
 

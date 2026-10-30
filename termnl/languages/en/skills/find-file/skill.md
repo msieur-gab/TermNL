@@ -43,7 +43,7 @@ approve: no
 
 ## What it needs
 
-- {name}: a name. If it's missing, ask: What should I look for? | Which file are you looking for?
+- {name}: a file on the device. If it's missing, ask: What should I look for? | Which file are you looking for?
 
 ## Command
 
