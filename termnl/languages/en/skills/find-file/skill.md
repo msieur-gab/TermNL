@@ -11,6 +11,8 @@ approve: no
 - where is (the/my) (file) {name}
 - where's (the/my) (file) {name}
 - find (a) file
+- find/search (for) (the/my) {name} file/files
+- where are (the/my) {name} files
 
 ## Also said
 
@@ -30,6 +32,14 @@ approve: no
 - I lost photos.tar.gz somewhere, can you look for it
 - find seed.md, I need it for my meeting
 - search for the file report.pdf
+- search for proton files
+- find my invoice files
+- where are my seed files
+- find the files called report
+- search files called notes
+- look for files with invoice in the name
+- show me every file named backup
+- any files named todo in my home
 
 ## What it needs
 
