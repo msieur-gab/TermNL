@@ -23,6 +23,7 @@ FILE_RE = re.compile(r"\.[a-z0-9]{1,5}$", re.I)
 # is not one (Gab, 26 Oct: it ran wget on it)
 WEB_RE = re.compile(r"(?:https?://|www\.)\S+|[\w-]+(?:\.[\w-]+)+/\S*", re.I)
 SURE, MAYBE = 0.5, 0.15  # how sure the model must be of its action and object: to go ahead, and to ask at all
+CLEAR = 0.8  # how sure it must be for a word another skill uses not to count as new
 NEAR = 0.1  # readings the model holds this close to its best count as one: the funnel decides among their skills
 UNSURE = 0.6  # how sure a template is of a reading with a value not on its list
 CHOICES = 8  # as many readings as the chips can show
@@ -266,6 +267,9 @@ class Reader:
         taken = {w for v in vals.values() for w in words(v.get("text") or v.get("label") or "")}
         unknown = [t["word"] for t in toks if t["word"] not in self.small | taught | taken and not FILE_RE.search(t["word"])
                    and not self.on_device(t["word"])]
+        everywhere = set().union(*self.model["taught"].values())  # the words any skill's sentences use
+        if top >= CLEAR:  # "how much ram am I using": "ram" is check memory's word, not new (31 Oct)
+            unknown = [w for w in unknown if w not in everywhere]
         # the new words, side by side, are the value the skill still lacks from the device's list ("kill pipewire":
         # no app of that name): kept as said, so it is answered as not there, never asked for again (Gab, 24 Oct)
         missing = [k for k, spec in skill["values"].items() if k not in vals and spec["required"] and not spec.get("default")]
@@ -275,7 +279,8 @@ class Reader:
             vals[missing[0]] = {"text": original(text, toks, new[0], new[-1] + 1), "unknown": True}
             if top >= SURE:
                 unknown = []
-        return {"how": "model", **readings[0], "p": top, "unknown": unknown, "toks": toks}
+        return {"how": "model", **readings[0], "p": top, "unknown": unknown,
+                "strange": [w for w in unknown if w not in everywhere], "toks": toks}  # the words no skill uses: those are named when it asks
 
     def on_device(self, word):
         return any(word in ph for kind in ("folder", "service", "app", "network", "music", "host") for d in self.sys(kind) for ph in d["phrases"])
