@@ -160,7 +160,9 @@ class TermNL:
             return {"user": self.settings.get("name") or ""}
         return {}
 
-    def say(self, text, session):
+    def say(self, text, session, screen=None):
+        """screen: what the asking client's own screen does, for this sentence (a client that has one, the desk, says
+        so with each request; the termnl command has none, so everything runs here)"""
         with self.lock:
             self.learnt()
             done = self.told.pop(session, None)
@@ -184,7 +186,7 @@ class TermNL:
                     r["ran"] = "simulated"
                     r["say"] = a.reply("simulated", {"label": label})
                     r["show"] = command  # what would have run, always shown when nothing ran
-                elif self.screen(command):
+                elif (screen or self.screen)(command):
                     r["ran"], r["screen"] = "screen", command  # the host's screen does it
                 else:
                     out = self.execute(a, r, command, given)
@@ -312,7 +314,11 @@ def handler(app):
             path, b = self.path.split("?")[0], self.body()
             if path == "/api/say":
                 text = str(b.get("text") or "")[:500]
-                return self.send(app.say(text, str(b.get("session") or "default")))
+                # "screen": the beginnings of the commands the client's screen does itself (open a file in its
+                # window, its player's volume): handed back to it as "screen" instead of run here
+                begins = [p for p in b.get("screen") or [] if isinstance(p, str) and p.strip()]
+                screen = (lambda command: command.startswith(tuple(begins))) if begins else None
+                return self.send(app.say(text, str(b.get("session") or "default"), screen))
             if path == "/api/reset":
                 with app.lock:
                     app.sessions.pop(str(b.get("session") or "default"), None)
@@ -358,14 +364,27 @@ def lent(path=os.path.join(DATA, "commands.json")):
         return json.load(f)
 
 
+def documents(url):
+    """doc(question) for TermNL(doc=…), asked over HTTP; when the service isn't there, TermNL's own reply stands"""
+    from urllib.parse import quote
+    from urllib.request import urlopen
+
+    def doc(question):
+        with urlopen("%s?q=%s" % (url, quote(question[:300])), timeout=5) as r:
+            return json.loads(r.read())
+    return doc
+
+
 def main():
     p = argparse.ArgumentParser(description="TermNL: talk to this machine in plain words.")
     p.add_argument("--host", default="127.0.0.1", help="address to answer on (default: this machine only)")
     p.add_argument("--port", type=int, default=8810)
     p.add_argument("--socket", help="answer on this local socket instead, with no network port (SymbiOS)")
     p.add_argument("--home", help="the folder home means, instead of settings.md's (for trying things out)")
+    p.add_argument("--docs", help="the person's documents, asked when TermNL doesn't understand: a service answering "
+                   "GET <url>?q=… with {best, results} (SymbiOS: the Ask service, http://127.0.0.1:8801/ask)")
     a = p.parse_args()
-    app = TermNL(home=a.home, commands=lent())
+    app = TermNL(home=a.home, commands=lent(), doc=documents(a.docs) if a.docs else None)
     if a.socket:
         print("TermNL on %s — home: %s, data: %s" % (a.socket, app.device.home, DATA), flush=True)
         LocalServer(a.socket, handler(app)).serve_forever()
