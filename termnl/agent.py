@@ -308,7 +308,16 @@ class Agent:
         if found is None:
             start, end = max((len(ph) for ph in self.words("before a name") if len(ph) < len(toks) and at(toks, ph, 0)), default=0), len(toks)
             if skill["values"][slot]["kind"] == "@sys.file":  # a file to find, said as people say it (Gab, 30 Oct)
-                around = {w for ph in self.words("around a file") for w in ph}
+                around, inside = ({w for ph in self.words(k) for w in ph} for k in ("around a file", "where a file is"))
+                place = skill.get("where")
+                hit = place and best_in(toks, self.list_of("@sys.folder") or [], fuzzy=True)
+                rest = toks[:hit["i"]] + toks[hit["i"] + hit["len"]:] if hit else []
+                if rest and all(t["word"] in around for t in rest) and any(t["word"] in inside for t in rest):
+                    # "inside Documents" while "Which file?" waits: where it is; asked again, that folder's files as chips.
+                    # "documents" alone still means the folder (22 Oct)
+                    vals[place] = {"value": hit["o"]["value"], "label": hit["o"]["label"]}
+                    files = self.device.files(hit["o"]["value"]) if self.device and hasattr(self.device, "files") else []
+                    return self.ask_value(skill, vals, slot, approved, self.reply(skill["replies"]["ask " + slot]), files[:8])
                 while end - start > 1 and toks[start]["word"] in around:  # "the proton file": proton
                     start += 1
                 while end - start > 1 and toks[end - 1]["word"] in around:
@@ -323,6 +332,8 @@ class Agent:
             vals[slot] = {"value": near["value"], "label": near["label"], "text": text.strip(), "fuzzy": True}
             return self.next_step(skill, vals, approved)
         if not hit:
+            if u and u.get("skill") and u["sure"] and u["skill"]["id"] != skill["id"]:
+                return None  # "Documents" while "Which kind of files?" waits: none of them, a request of its own (Gab, 30 Oct)
             return {"outcome": "ask", "skill": skill["id"], "say": self.not_there(skill, slot, text.strip(), found), "chips": self.chips(found)}
         vals[slot] = {"value": hit["o"]["value"], "label": hit["o"]["label"]}
         return self.next_step(skill, vals, approved)

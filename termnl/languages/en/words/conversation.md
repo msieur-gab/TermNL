@@ -15,6 +15,7 @@ Words for the conversation itself, outside any skill.
 - reading actions: check, show, find
 - before a name: call it, name it, let's call it, called, named, titled, it's called, the name is
 - around a file: the, my, a, this, file, files, document, in, inside, from, folder
+- where a file is: in, inside, from
 - pointing words: this, that, it, them, these, those, here, there, one, other, same
 - pointing at several: them, these, those, all
 - follow-up words: and, now, also, too, then, same for, same with, instead, back, again, what about, how about
