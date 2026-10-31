@@ -811,6 +811,21 @@ class SaidWrong(unittest.TestCase):
         a.hear("make a new folder")
         self.assertEqual(a.hear("the bike photos")["command"], "mkdir -p $HOME'/the bike photos'")
 
+    def test_a_folder_said_while_a_file_is_asked_for_is_where_it_is(self):
+        """Gab, 30 Oct: "inside ocuments" while "Which file?" waited"""
+        a = agent()
+        a.hear("open a file")
+        r = a.hear("inside ocuments")
+        self.assertEqual((r["outcome"], r["chips"]), ("ask", ["note.md", "report.pdf", "groceries.md"]))
+        self.assertEqual(a.hear("report.pdf")["command"], "xdg-open $HOME'/Documents/report.pdf'")
+
+    def test_a_request_said_while_a_list_waits_is_read_as_said(self):
+        '''Gab, 30 Oct: "list all memo", then "Memos" was answered "I don't see Memos. Which one?"'''
+        a = agent()
+        a.hear("list all memo")
+        r = a.hear("Documents")
+        self.assertNotEqual(r.get("skill"), "show-type")
+
 
 if __name__ == "__main__":
     unittest.main()
