@@ -6,7 +6,7 @@ import sys
 import time
 
 from .examples import examples, taught_words
-from .load import LANGUAGES, language_dir, load_language, read
+from .load import LANGUAGES, language_dir, load_language, model_dir, read
 from .model import train_classifier
 
 
@@ -30,10 +30,12 @@ if __name__ == "__main__":
     model, n, seconds = train_language(lang)
     out = json.dumps(model, separators=(",", ":"))
     # the model in use is replaced only once the new one is whole; the one before is kept beside it
-    path = os.path.join(language_dir(lang), "model.json")
+    # in the data folder when TermNL has one (TERMNL_DATA): the program itself may be read-only
+    os.makedirs(model_dir(lang), exist_ok=True)
+    path = os.path.join(model_dir(lang), "model.json")
     with open(path + ".new", "w", encoding="utf-8") as f:
         f.write(out)
     if os.path.exists(path):
-        os.replace(path, os.path.join(language_dir(lang), "model.previous.json"))
+        os.replace(path, os.path.join(model_dir(lang), "model.previous.json"))
     os.replace(path + ".new", path)
-    print("%d sentences, trained in %.1fs, %d KB → termnl/languages/%s/model.json" % (n, seconds, round(len(out) / 1024), lang))
+    print("%d sentences, trained in %.1fs, %d KB → %s" % (n, seconds, round(len(out) / 1024), path))

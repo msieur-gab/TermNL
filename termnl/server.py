@@ -10,7 +10,8 @@
 
 The API takes sentences and gives replies: never a command. The commands are the skills' own,
 filled in by the agent and run here (runner.py), or simulated (settings.md, "simulate:").
-No sign-in yet: by default it answers this machine only (--host)."""
+No sign-in yet: by default it answers this machine only (--host), or, with --socket, only programs that may
+open that file (SymbiOS: the desk, the termnl command): no network port at all, so no web page can reach it."""
 import argparse
 import datetime
 import json
@@ -28,12 +29,12 @@ from urllib.parse import parse_qs, urlsplit
 from . import readers
 from .agent import Agent
 from .device import Device
-from .load import HERE, ROOT, load_language, load_settings
+from .load import DATA, HERE, ROOT, load_language, load_settings
 from .runner import run
 from .text import fill, pick
 
 WEB = os.path.join(ROOT, "web")
-LOGS = os.path.join(ROOT, "logs")
+LOGS = os.path.join(DATA, "logs")  # the person's own, beside settings.md
 SWITCHES = ("show commands", "admin mode")
 WORDS = ("name",)  # settings that hold words, set in the settings panel or by "call me Gab"
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml"}
@@ -45,7 +46,7 @@ class TermNL:
     # the desk's MiniLM, Gab's 85 sentences and the 35 Ask test questions: 24 of 24 questions, none of his commands.
     NOTES = {"no skill": 0.40, "guess": 0.45}
 
-    def __init__(self, root=ROOT, home=None, agent="agent", simulate=(), screen=None, doc=None, commands=None):
+    def __init__(self, root=DATA, home=None, agent="agent", simulate=(), screen=None, doc=None, commands=None):
         """simulate, screen, doc and commands are for a host that holds TermNL (Symbiot): the skills (by their
         `does:`) it simulates on top of settings.md's, never fewer; which commands its own screen does (open a
         file in its window), not run here but handed over as "screen"; its documents, doc(question) → {best,
@@ -328,13 +329,46 @@ def handler(app):
     return Handler
 
 
+class LocalServer(ThreadingHTTPServer):
+    """The same API on a local (Unix) socket: only who may open the file reaches it, and no web page can"""
+    address_family = socket.AF_UNIX
+
+    def server_bind(self):
+        if os.path.exists(self.server_address):
+            os.unlink(self.server_address)  # left by a TermNL before this one
+        old = os.umask(0o117)  # the socket is rw for its owner and group, nothing for others
+        try:
+            super(ThreadingHTTPServer, self).server_bind()  # socketserver's own: HTTPServer's wants a host name
+        finally:
+            os.umask(old)
+        self.server_name, self.server_port = "termnl", 0
+
+    def get_request(self):
+        request, _ = self.socket.accept()
+        return request, ("local", 0)
+
+
+def lent(path=os.path.join(DATA, "commands.json")):
+    """the commands the device lends in place of the skills' own, by `does:`, as a host does (TermNL(commands=…)):
+    {"shut down system": "sudo -n /usr/bin/systemctl poweroff", "connect wifi": {"command": …, "replies": …}}.
+    SymbiOS's installer writes it: the board knows how it may scan, join, restart."""
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def main():
     p = argparse.ArgumentParser(description="TermNL: talk to this machine in plain words.")
     p.add_argument("--host", default="127.0.0.1", help="address to answer on (default: this machine only)")
     p.add_argument("--port", type=int, default=8810)
+    p.add_argument("--socket", help="answer on this local socket instead, with no network port (SymbiOS)")
     p.add_argument("--home", help="the folder home means, instead of settings.md's (for trying things out)")
     a = p.parse_args()
-    app = TermNL(home=a.home)
+    app = TermNL(home=a.home, commands=lent())
+    if a.socket:
+        print("TermNL on %s — home: %s, data: %s" % (a.socket, app.device.home, DATA), flush=True)
+        LocalServer(a.socket, handler(app)).serve_forever()
     print("TermNL on http://%s:%d — home: %s" % (a.host, a.port, app.device.home))
     ThreadingHTTPServer((a.host, a.port), handler(app)).serve_forever()
 
