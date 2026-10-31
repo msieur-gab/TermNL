@@ -33,10 +33,14 @@ GAP = 10 * 60  # a pause this long starts a new conversation
 
 
 class Replay(TermNL):
-    """TermNL in a throwaway home: nothing logged, the same reply every time, only harmless commands run"""
+    """TermNL in a throwaway home: nothing logged or written, the same reply every time, only harmless commands run"""
     def __init__(self, home):
         super().__init__(home=home)
         self.settings = {"admin mode": "on", "show commands": "on"}
+        self.trainer = ["true"]  # "learn what I taught you" in a log never retrains this copy's model
+
+    def set(self, key, value):
+        self.settings[key] = value  # "call me Gab" in a log is kept in memory, never written to settings.md
 
     def agent(self, session):
         if session not in self.sessions:
@@ -140,8 +144,9 @@ def summary(tally):
 
 
 def is_person(session):
-    """the chat page names a conversation with a random id; tests name theirs by hand (claude-…, check-…)"""
-    return re.match(r"^[0-9a-f]{8}$", session) is not None
+    """the chat page names a conversation with a random id, the desk's Assistant with "s" and random letters and
+    digits (both cut to 8 in the log); tests name theirs by hand (claude-…, check-…)"""
+    return re.match(r"^([0-9a-f]{8}|s[0-9a-z]{7})$", session) is not None
 
 
 def add():
