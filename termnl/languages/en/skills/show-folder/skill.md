@@ -53,6 +53,11 @@ approve: no
 - ls downloads
 - I'd like to see the contents of projects before I start working
 - contents of ideas
+- list all memos
+- list all my memos
+- list all downloads
+- list all of documents
+- list everything in memos
 
 ## What it needs
 
