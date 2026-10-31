@@ -188,13 +188,14 @@ class Agent:
         # understood, but not surely: ask, naming the words it doesn't know. A skill that needs approval
         # asks its own question, so the person approves once, knowingly, but only when every value is
         # known; otherwise this yes only confirms the skill, and the approval comes later.
-        named = ", ".join(self.quoted(w) for w in u["unknown"])
+        strange = u.get("strange", u["unknown"])
+        named = ", ".join(self.quoted(w) for w in strange)
         approves = (skill["admin"] or skill["approve"]) and self.complete(skill, vals)
         self.ask_first(skill, vals, text, approves)
         out = {"outcome": "ask", "skill": skill["id"], "chips": self.yes_no, "unknown": u["unknown"], "p": round(u["p"] * 100) / 100,
-               "say": self.reply("not sure", {"words": named, "label": skill["label"]}) if u["unknown"] else self.reply("confirm", {"label": skill["label"]})}
+               "say": self.reply("not sure", {"words": named, "label": skill["label"]}) if strange else self.reply("confirm", {"label": skill["label"]})}
         if approves:
-            out["say"] = (self.reply("new words", {"words": named}) + " " if u["unknown"] else "") + self.reply(skill["replies"]["approve"], self.display(skill, vals))
+            out["say"] = (self.reply("new words", {"words": named}) + " " if strange else "") + self.reply(skill["replies"]["approve"], self.display(skill, vals))
             self.with_show(out, skill, vals)
         return told(noted(out, u["fixes"], self), u)
 
