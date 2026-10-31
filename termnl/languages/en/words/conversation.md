@@ -21,7 +21,7 @@ Words for the conversation itself, outside any skill.
 - follow-up words: and, now, also, too, then, same for, same with, instead, back, again, what about, how about
 - split verbs: turn, switch, shut, power, bring
 - verb ends: on, off, up, down
-- small words: the, a, an, my, me, i, i'm, it, it's, is, are, am, be, to, of, in, on, at, for, with, from, and, or, please, can, could, would, you, do, does, what, what's, whats, which, how, how's, there, this, that, some, any, up, now, right, still, just, all, so, again, back, get, got, have, has, need, want, let, let's, us, we, will, should, much, very, really, bit, little, too
+- small words: the, a, an, my, me, i, i'm, it, it's, is, are, am, be, to, of, in, on, at, for, with, from, and, or, please, can, could, would, you, do, does, what, what's, whats, which, how, how's, there, this, that, some, any, up, now, right, still, just, all, so, again, back, get, got, have, has, need, want, let, let's, us, we, will, should, much, very, really, bit, little, too, thing, things, stuff, whether, if, its, sec, moment, overall, actually, currently, completely, exactly, basically, honestly, maybe, kindly, u, pls, plz, buddy, think, wonder, guess
 
 ## Replies
 
