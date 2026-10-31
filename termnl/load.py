@@ -12,6 +12,9 @@ from .text import read_pairs
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)  # the project: settings.md, web/, logs/, tests/
 LANGUAGES = os.path.join(HERE, "languages")
+# what is the person's own (settings.md, logs/, a model trained again on the device): the project itself unless
+# TERMNL_DATA names a folder of its own, so the program can be installed read-only (SymbiOS: ~/.config/termnl)
+DATA = os.path.abspath(os.path.expanduser(os.environ.get("TERMNL_DATA") or ROOT))
 
 
 def read(path):
@@ -34,11 +37,28 @@ def load_language(lang="en", languages=LANGUAGES):
         if os.path.exists(f):
             skills[id] = read(f)
     out = load(lists, skills)
-    m = os.path.join(d, "model.json")
+    m = model_path(lang, languages)
     if os.path.exists(m):
         out["model"] = json.loads(read(m))
     return out
 
 
-def load_settings(root=ROOT):
-    return read_pairs(read(os.path.join(root, "settings.md")))
+def model_dir(lang="en", languages=LANGUAGES):
+    """where the model trained on this device is kept: beside the skills, or in the data folder when it has its own"""
+    return language_dir(lang, languages) if DATA == ROOT or languages != LANGUAGES else os.path.join(DATA, "languages", lang)
+
+
+def model_path(lang="en", languages=LANGUAGES):
+    """the model trained on this device if there is one, else the one that came with the program"""
+    m = os.path.join(model_dir(lang, languages), "model.json")
+    return m if os.path.exists(m) else os.path.join(language_dir(lang, languages), "model.json")
+
+
+def load_settings(root=DATA):
+    """settings.md from the data folder; a new data folder starts from the program's own"""
+    path = os.path.join(root, "settings.md")
+    if not os.path.exists(path) and root != ROOT:
+        os.makedirs(root, exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(read(os.path.join(ROOT, "settings.md")))
+    return read_pairs(read(path))
