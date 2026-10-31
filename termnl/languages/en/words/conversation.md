@@ -14,6 +14,7 @@ Words for the conversation itself, outside any skill.
 - negation: not, don't, dont, never, doesn't, won't, shouldn't
 - reading actions: check, show, find
 - before a name: call it, name it, let's call it, called, named, titled, it's called, the name is
+- around a file: the, my, a, this, file, files, document, in, inside, from, folder
 - pointing words: this, that, it, them, these, those, here, there, one, other, same
 - pointing at several: them, these, those, all
 - follow-up words: and, now, also, too, then, same for, same with, instead, back, again, what about, how about
