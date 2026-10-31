@@ -41,6 +41,10 @@ approve: no
 - can you run a quick diagnostic
 - I'd like a status report on the device
 - I'm leaving it on overnight, is everything fine with the pi
+- how's it going with the board
+- how is the board going
+- how's the device doing today
+- how are things with the board
 
 ## When it's fine
 

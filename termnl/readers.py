@@ -199,8 +199,13 @@ def health(w):
             [w("main disk row"), w("disk free", free=d["values"]["free"], total=d["values"]["total"])], [w("running for"), since(_uptime(), w)]]
     rows = [row + [w("level " + lv) if lv else ""] for row, lv in zip(rows, levels)]
     return {"level": worst, "values": {"temperature": t["values"][""], "memory": m["values"]["percent"], "disk": d["values"]["percent"],
-                                       "uptime": since(_uptime(), w)},
+                                       "free": d["values"]["free"], "uptime": since(_uptime(), w)},
             "table": {"columns": ["", w("now"), ""], "rows": rows, "levels": levels}}
+
+
+def feeling(w):
+    """how the device is doing, said in a sentence ("how are you"): the health check without its table"""
+    return {k: v for k, v in health(w).items() if k != "table"}
 
 
 def folder(w, place):
@@ -500,7 +505,8 @@ READERS = {
     "has": (has, ["yes", "no"], ["count", "first"]),
     "recent": (recent, ["fine", "none"], ["count"]),
     "size": (size, ["fine"], ["", "count"]),
-    "health": (health, ["fine", "busy", "struggling"], ["temperature", "memory", "disk", "uptime"]),
+    "health": (health, ["fine", "busy", "struggling"], ["temperature", "memory", "disk", "free", "uptime"]),
+    "feeling": (feeling, ["fine", "busy", "struggling"], ["temperature", "memory", "disk", "free", "uptime"]),
     "clock": (clock, ["fine", "unsure", "wrong"], ["", "day", "date"]),
     "learning": (learning, ["learning", "fine", "unknown"], [""]),
     "name": (name, ["known", "unknown"], [""]),

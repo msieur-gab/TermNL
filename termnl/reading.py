@@ -352,7 +352,8 @@ class Reader:
             parts = [p for p in re.split(r"[,;:!?]", text) if p.strip()]
             for part in parts if len(parts) > 1 else []:
                 v = self.read_one(part, self.clean(part))
-                if v and v["how"] != "choose" and (not u or v["p"] > u["p"]) and v["shape"] - v["names"][0]:  # "restart it" names no thing: no request
+                if v and v["how"] != "choose" and (not u or v["p"] > u["p"]) and v["shape"] - v["names"][0] and any(v["names"]):
+                    # "restart it" names no thing, "hi" or "thanks" no action or object: no request
                     u = {**v, "how": "part"}  # a part is never acted on unasked, however it was read
         return u
 
