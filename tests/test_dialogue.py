@@ -799,6 +799,18 @@ class SaidWrong(unittest.TestCase):
             r = agent().hear(said)
             self.assertEqual(r["command"], "wget -P $HOME'/Downloads' '%s'" % link, said)
 
+    def test_a_file_answered_as_people_say_it_loses_the_and_file(self):
+        '''Gab, 30 Oct: "Which file?", "the proton file" was looked for as "the proton file"'''
+        a = agent()
+        a.hear("open a file")
+        self.assertEqual(a.hear("the groceries file")["say"], "groceries.md isn't in home, but there's one in Documents. That one?")
+        self.assertEqual(a.hear("yes")["command"], "xdg-open $HOME'/Documents/groceries.md'")
+
+    def test_a_new_name_keeps_its_the(self):
+        a = agent()
+        a.hear("make a new folder")
+        self.assertEqual(a.hear("the bike photos")["command"], "mkdir -p $HOME'/the bike photos'")
+
 
 if __name__ == "__main__":
     unittest.main()

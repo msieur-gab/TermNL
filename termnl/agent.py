@@ -306,8 +306,14 @@ class Agent:
             vals[slot] = {"text": text.strip()}
             return self.next_step(skill, vals, approved)
         if found is None:
-            start = max((len(ph) for ph in self.words("before a name") if len(ph) < len(toks) and at(toks, ph, 0)), default=0)
-            vals[slot] = {"text": self.original(text, toks, start, len(toks))}
+            start, end = max((len(ph) for ph in self.words("before a name") if len(ph) < len(toks) and at(toks, ph, 0)), default=0), len(toks)
+            if skill["values"][slot]["kind"] == "@sys.file":  # a file to find, said as people say it (Gab, 30 Oct)
+                around = {w for ph in self.words("around a file") for w in ph}
+                while end - start > 1 and toks[start]["word"] in around:  # "the proton file": proton
+                    start += 1
+                while end - start > 1 and toks[end - 1]["word"] in around:
+                    end -= 1
+            vals[slot] = {"text": self.original(text, toks, start, end)}
             return self.next_step(skill, vals, approved)
         hit = best_in(toks, found)
         if not hit and u and says_action:
