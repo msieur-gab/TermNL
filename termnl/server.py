@@ -4,7 +4,10 @@
     GET  /api/hello        "TermNL is here", for a client looking for it on the network
     GET  /api/settings     the settings panel: show commands, admin mode (switches), name
     POST /api/settings     {"show commands": "on"}, {"name": "Gab"} — written back to settings.md
-    POST /api/say          {"text": "...", "session": "..."} → the reply
+    POST /api/say          {"text": "...", "session": "..."} → the reply; a client with a screen adds "screen" (the
+                           beginnings of the commands it does itself, handed back to it), and "apps" and "running"
+                           (its own apps and those open, [{"value": "slides", "names": ["Slides", "slide"]}], known
+                           for that sentence: "open slides" on the desk)
     GET  /api/learning     ?session=…: learning still? and "Done learning…" for the conversation that asked
     POST /api/reset        {"session": "..."} — a new conversation
 
@@ -160,46 +163,54 @@ class TermNL:
             return {"user": self.settings.get("name") or ""}
         return {}
 
-    def say(self, text, session, screen=None):
+    def say(self, text, session, screen=None, own=None):
         """screen: what the asking client's own screen does, for this sentence (a client that has one, the desk, says
-        so with each request; the termnl command has none, so everything runs here)"""
+        so with each request; the termnl command has none, so everything runs here). own: what that screen holds,
+        {"app": its apps, "running": the ones open}, each [{"value", "names"}], known for this sentence only"""
         with self.lock:
-            self.learnt()
-            done = self.told.pop(session, None)
-            a = self.agent(session)
-            secret = a.waits_for_secret()  # a password: never searched in the documents, never logged
-            r = a.hear(text)
-            r = (None if secret else self.notes(a, r, text)) or r
-            if r.pop("trains", None):
-                if not self.train(session):
-                    r["say"] = a.reply("still learning")
-                r["learning"] = True  # the page asks until it is done (GET /api/learning)
-            command = r.pop("command", None)
-            given = r.pop("given", None)
-            for key, value in (r.get("changes") or {}).items():  # "call me Gab", "turn admin mode on"
-                self.set(key, value)
-            if r["outcome"] == "act" and r.get("reads"):
-                self.read(a, r, command)
-            elif r["outcome"] == "act" and command:
-                label = next(s["label"] for s in self.lang["skills"] if s["id"] == r["skill"])
-                if self.simulated(r["skill"]):
-                    r["ran"] = "simulated"
-                    r["say"] = a.reply("simulated", {"label": label})
-                    r["show"] = command  # what would have run, always shown when nothing ran
-                elif (screen or self.screen)(command):
-                    r["ran"], r["screen"] = "screen", command  # the host's screen does it
-                else:
-                    out = self.execute(a, r, command, given)
-                    if out is not None:
-                        r["ran"] = "ran"
-                        r["say"] = r["say"].replace("{output}", out.strip())
-            r["here"] = a.here["label"]
-            if done:  # training ended since this conversation last spoke, and its page didn't ask: said before the reply
-                r["say"] = done + " " + r["say"]
-            self.log(session, "•••" if secret else text, {k: v for k, v in r.items() if not (secret and k in ("teach", "inbox"))}, command)
-            r.pop("teach", None)  # the learning inbox comes next; nothing is learned yet
-            r.pop("inbox", None)
-            return r
+            self.device.own = own or {}
+            try:
+                return self._say(text, session, screen)
+            finally:
+                self.device.own = {}
+
+    def _say(self, text, session, screen):
+        self.learnt()
+        done = self.told.pop(session, None)
+        a = self.agent(session)
+        secret = a.waits_for_secret()  # a password: never searched in the documents, never logged
+        r = a.hear(text)
+        r = (None if secret else self.notes(a, r, text)) or r
+        if r.pop("trains", None):
+            if not self.train(session):
+                r["say"] = a.reply("still learning")
+            r["learning"] = True  # the page asks until it is done (GET /api/learning)
+        command = r.pop("command", None)
+        given = r.pop("given", None)
+        for key, value in (r.get("changes") or {}).items():  # "call me Gab", "turn admin mode on"
+            self.set(key, value)
+        if r["outcome"] == "act" and r.get("reads"):
+            self.read(a, r, command)
+        elif r["outcome"] == "act" and command:
+            label = next(s["label"] for s in self.lang["skills"] if s["id"] == r["skill"])
+            if self.simulated(r["skill"]):
+                r["ran"] = "simulated"
+                r["say"] = a.reply("simulated", {"label": label})
+                r["show"] = command  # what would have run, always shown when nothing ran
+            elif (screen or self.screen)(command):
+                r["ran"], r["screen"] = "screen", command  # the host's screen does it
+            else:
+                out = self.execute(a, r, command, given)
+                if out is not None:
+                    r["ran"] = "ran"
+                    r["say"] = r["say"].replace("{output}", out.strip())
+        r["here"] = a.here["label"]
+        if done:  # training ended since this conversation last spoke, and its page didn't ask: said before the reply
+            r["say"] = done + " " + r["say"]
+        self.log(session, "•••" if secret else text, {k: v for k, v in r.items() if not (secret and k in ("teach", "inbox"))}, command)
+        r.pop("teach", None)  # the learning inbox comes next; nothing is learned yet
+        r.pop("inbox", None)
+        return r
 
     def notes(self, a, r, text):
         """the host's documents answer instead, when TermNL doesn't understand or only guesses, and they match;
@@ -318,7 +329,7 @@ def handler(app):
                 # window, its player's volume): handed back to it as "screen" instead of run here
                 begins = [p for p in b.get("screen") or [] if isinstance(p, str) and p.strip()]
                 screen = (lambda command: command.startswith(tuple(begins))) if begins else None
-                return self.send(app.say(text, str(b.get("session") or "default"), screen))
+                return self.send(app.say(text, str(b.get("session") or "default"), screen, own(b)))
             if path == "/api/reset":
                 with app.lock:
                     app.sessions.pop(str(b.get("session") or "default"), None)
@@ -352,6 +363,21 @@ class LocalServer(ThreadingHTTPServer):
     def get_request(self):
         request, _ = self.socket.accept()
         return request, ("local", 0)
+
+
+def own(body):
+    """what a client's screen holds, from its request: "apps" (its own apps) and "running" (those open on it), each
+    [{"value": "slides", "names": ["Slides", "slide"]}…]; anything else in them is left out"""
+    out = {}
+    for key, kind in (("apps", "app"), ("running", "running")):
+        given = body.get(key) if isinstance(body.get(key), list) else []
+        found = [{"value": d["value"][:40], "names": [n[:40] for n in d["names"] if isinstance(n, str) and n.strip()][:8]}
+                 for d in given[:60] if isinstance(d, dict) and isinstance(d.get("value"), str) and d["value"].strip()
+                 and isinstance(d.get("names"), list)]
+        found = [d for d in found if d["names"] and re.fullmatch(r"[\w.-]+", d["value"])]  # a value goes into a command
+        if found:
+            out[kind] = found
+    return out
 
 
 def lent(path=os.path.join(DATA, "commands.json")):

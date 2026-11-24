@@ -1,5 +1,6 @@
 """The device as the agent sees it: the values it can list itself (@sys.folder, @sys.service,
 @sys.app, @sys.network, @sys.music from ~/Music, @sys.host from ~/.ssh/config) and the files in a folder, all read from this machine.
+A client with a screen of its own (the desk) adds its own apps, and the ones open on it, for one sentence (own).
 
 Folders and files are those under TermNL's home (settings.md, "home:"), the folder that $HOME means
 in every command. Hidden folders are skipped. Lists are read again after a few seconds, so a folder
@@ -32,6 +33,8 @@ class Device:
         self.wifi = "termnl-wifi scan"  # how the networks around are heard: show wifi's command, or the one a host lends
         self._heard = (0, [])  # the networks around as last heard, and when
         self._hearing = None
+        self.own = {}  # the asking client's own, for this sentence: {"app": [{"value", "names"}…], "running": […]}
+        self._merged = {}
 
     def path(self, value):
         """$HOME/Documents → the real path"""
@@ -176,7 +179,21 @@ class Device:
         if found is None or time.time() - at > self.fresh:
             found = read()
             self._cache[kind] = (time.time(), found)
-        return found
+        return self._with_own(kind, found)
+
+    def _with_own(self, kind, found):
+        """the client's own first (the desk's Player is what "music" means there), then the device's not named the
+        same; the same list object while neither changes, so the agent cuts its names into words only once"""
+        own = self.own.get(kind) or []
+        if not own:
+            return found
+        before = self._merged.get(kind)
+        if before and before[0] is found and before[1] == own:
+            return before[2]
+        names = {n.lower() for d in own for n in d["names"]}
+        merged = [{**d, "own": True} for d in own] + [d for d in found if not any(n.lower() in names for n in d["names"])]
+        self._merged[kind] = (found, own, merged)
+        return merged
 
     def exists(self, value):
         return os.path.lexists(self.path(value))

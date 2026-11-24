@@ -199,6 +199,9 @@ class Reader:
             return None
         if len(tops) > 1:  # a name never holds a word for an object ("folder photos" is the folder photos)
             tops = [t for t in tops if not any(set(words(v["text"])) & self.object_words for v in t["vals"].values() if v.get("value") is None)] or tops
+        if len(tops) > 1:  # the asking screen's own app over a folder or a file of its name ("open music", "open files" on
+            # the desk: its Player, its Files), before the funnel would take the word for its object
+            tops = [t for t in tops if any(self.own(t["skill"], k, v) for k, v in t["vals"].items())] or tops
         tops = self.funnel(tops, shape)
         if not tops:
             return None
@@ -207,6 +210,12 @@ class Reader:
         if len(tops) > 1:
             return {"how": "choose", "options": tops, "p": p, "toks": toks}
         return {"how": "template", **tops[0], "p": p, "unknown": [], "toks": toks}
+
+    def own(self, skill, key, val):
+        """is this value one the asking client's screen holds itself (Device.own)"""
+        kind = (skill["values"].get(key) or {}).get("kind")
+        found = self.list_of(kind) if kind else None
+        return bool(found) and any(d.get("own") and d["value"] == val.get("value") for d in found)
 
     def funnel(self, readings, shape):
         """among readings alike, those of a skill whose action and object the sentence names; failing that, whose

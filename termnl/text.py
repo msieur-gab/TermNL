@@ -61,11 +61,20 @@ def read_pairs(md):
 
 def pick(variants, random=_random.random, user=None):
     """One of several written variants ("A | B | C", or a list), picked at random so the agent doesn't repeat
-    itself. A variant that says the person's name ({user}) is only picked when a name is set (settings.md)."""
+    itself. A variant that says the person's name ({user}) is picked only when a name is set (settings.md); when
+    every variant says it, the name and the comma or space before it are left out ("Busy but fine, {user}." →
+    "Busy but fine.", "{user}, you have…" → "You have…")."""
     found = [v.strip() for v in (variants.split("|") if isinstance(variants, str) else variants) if v.strip()]
     if not user:
-        found = [v for v in found if "{user}" not in v] or found
+        found = [v for v in found if "{user}" not in v] or [unnamed(v) for v in found]
     return found[int(random() * len(found))] if found else ""
+
+
+def unnamed(variant):
+    """a reply that says the person's name, said without it"""
+    out = re.sub(r"^\{user\}[,:]?\s*", "", variant)
+    out = re.sub(r",?\s*\{user\}", "", out)
+    return out[:1].upper() + out[1:] if out and variant.startswith("{user}") else out
 
 
 def fill(text, values):

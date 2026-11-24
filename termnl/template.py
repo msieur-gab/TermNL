@@ -125,8 +125,9 @@ def parses(nodes, toks, refs, slots, stops=frozenset(), ends=frozenset(), places
             if found:
                 for v in found:
                     for ph in v["phrases"]:
-                        if len(ph) == 1 and ph[0] in ends:
-                            continue  # a word for an object is that object, not a thing named like it ("is bluetooth on")
+                        if len(ph) == 1 and ph[0] in ends and not v.get("own"):
+                            continue  # a word for an object is that object, not a thing named like it ("is bluetooth on");
+                            # unless the asking screen gives that name to its own app ("music", the desk's Player)
                         if at(ph, pos):
                             nxt(pos + len(ph), {**caps, name: {"start": pos, "end": pos + len(ph), "value": v["value"], "label": v["label"]}}, score + len(ph))
                         elif near(ph, pos):

@@ -592,6 +592,13 @@ class Dialogue(unittest.TestCase):
         self.assertEqual(Agent(**lang, settings={"name": "Gab"}, device=device, random=lambda: 0.99).hear("what can you do")["say"][:7], "Hi Gab,")
         self.assertNotIn("{user}", agent().hear("what can you do")["say"])
 
+    def test_a_reply_that_always_says_the_name_leaves_it_out_cleanly_when_there_is_none(self):
+        """say-how's "When it's busy" all say {user}: without a name it said "Busy but fine, . 74 °C" (seen 24 Nov)"""
+        from termnl.text import pick
+        self.assertEqual(pick(["Busy but fine, {user}. 74 °C"], lambda: 0, ""), "Busy but fine. 74 °C")
+        self.assertEqual(pick(["Fine, thanks {user}!"], lambda: 0, ""), "Fine, thanks!")
+        self.assertEqual(pick(["{user}, you have 3 files"], lambda: 0, ""), "You have 3 files")
+
     def test_a_program_that_isnt_a_running_app_is_said_so_with_the_apps_running(self):
         """Gab, 24 Oct, on the board: "kill pipewire", yes → "Which one should I stop?", the name lost. Only apps
         are stopped, and TermNL says why (his choice: "apps only, say why")."""

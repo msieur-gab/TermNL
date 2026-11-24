@@ -81,7 +81,8 @@ class Agent:
         found = self.device.list(kind) if self.device else []
         read, values = self._sys.get(kind, (None, None))
         if read is not found:
-            values = [{"value": d["value"], "label": d["names"][0], "phrases": [words(n) for n in d["names"]]} for d in found]
+            values = [{"value": d["value"], "label": d["names"][0], "phrases": [words(n) for n in d["names"]], "own": bool(d.get("own"))}
+                      for d in found]
             self._sys[kind] = (found, values)
         return values
 

@@ -48,6 +48,33 @@ class Host(unittest.TestCase):
         self.assertEqual(r["ran"], "ran")
         self.assertTrue(os.path.isdir(os.path.join(home, "bikes")))
 
+    DESK = [{"value": "player", "names": ["Player", "music", "music player"]},
+            {"value": "files", "names": ["Files", "file system"]},
+            {"value": "slides", "names": ["Slides", "slide", "presentation"]}]
+
+    def test_the_screen_s_own_apps_are_known_for_its_sentence_and_come_back_to_it(self):
+        """the desk's windows aren't Linux apps: it names them with each sentence (Gab, 24 Nov: "open slide, open
+        music, open file system… and actually control the desk")"""
+        app, home = self.app(screen=lambda command: command.startswith(("setsid ", "pkill -x ")))
+        for d in ("Music", "Slides"):
+            os.makedirs(os.path.join(home, d))
+        own = {"app": self.DESK, "running": self.DESK[2:]}
+        for said, value in (("open slides", "slides"), ("open slide", "slides"), ("open music", "player"),
+                            ("open the music player", "player"), ("open file system", "files"), ("open files", "files")):
+            r = app.say(said, "d-" + said, None, own)
+            self.assertEqual((r["skill"], r.get("screen")), ("open-app", "setsid '%s'" % value), said)
+        self.assertEqual(app.say("open the music folder", "d1", None, own)["skill"], "open-folder")  # the folder, said so
+        self.assertEqual(app.say("close slides", "d2", None, own)["outcome"], "approve")
+        self.assertEqual(app.say("yes", "d2", None, own)["screen"], "pkill -x 'slides'")
+        self.assertNotEqual(app.say("open slide", "d3").get("skill"), "open-app")  # another client never named them
+        self.assertEqual(app.device.own, {})  # known for that sentence only
+
+    def test_what_a_client_names_is_checked_before_it_reaches_a_command(self):
+        from termnl.server import own
+        got = own({"apps": [{"value": "slides", "names": ["Slides"]}, {"value": "x; rm -rf ~", "names": ["bad"]},
+                            {"value": "y", "names": "not a list"}, "nothing"], "running": "nope"})
+        self.assertEqual(got, {"app": [{"value": "slides", "names": ["Slides"]}]})
+
     def notes(self, best):
         asked = []
         def doc(question):
