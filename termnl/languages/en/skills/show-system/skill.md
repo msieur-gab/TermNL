@@ -29,6 +29,7 @@ Gab, 22 Oct: "what is this device configuration": what the machine is, not how i
 
 ## Also said
 
+- system
 - what is this device configuration
 - what device is this
 - which board is this

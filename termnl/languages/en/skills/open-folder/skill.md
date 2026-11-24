@@ -16,6 +16,8 @@ approve: no
 
 ## Also said
 
+- back to home
+- go back home
 - go to documents
 - documents
 - cd documents

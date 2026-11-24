@@ -10,6 +10,7 @@ approve: no
 
 - is (the) wifi on/off/working
 - which/what wifi ("network") am i on
+- on which/what wifi ("network") am i (on)
 - which/what wifi ("network") am i connected to
 - which/what "network" am i on
 - which/what "network" am i connected to
@@ -17,6 +18,7 @@ approve: no
 
 ## Also said
 
+- on which wifi am i
 - am i on wifi
 - which wifi am i on
 - is the wireless connected

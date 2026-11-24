@@ -15,6 +15,8 @@ waits: 60
 
 ## Also said
 
+- add a new wifi network
+- add a wifi network
 - join cafe-guest
 - get me on the home-5g network, I have the password
 - log into the cafe-guest Wi-Fi with the password they gave me

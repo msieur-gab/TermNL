@@ -22,6 +22,9 @@ with the person's name.
 
 ## Also said
 
+- awesome
+- perfect
+- no worries
 - thanks
 - thank you
 - thanks mate

@@ -21,6 +21,8 @@ about the machine: without a clock battery, it can be wrong after a power cut.
 
 ## Also said
 
+- which day are we
+- what day are we today
 - the time
 - time please
 - tell me the time

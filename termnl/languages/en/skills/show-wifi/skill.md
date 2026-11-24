@@ -18,6 +18,8 @@ approve: no
 
 ## Also said
 
+- find a wifi
+- find all networks
 - list all access points
 - show me accessible wifi
 - what wifi can i join
