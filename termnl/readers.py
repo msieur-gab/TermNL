@@ -11,6 +11,7 @@ The words shown with a reading (table headings, "3 days and 2 hours"…) are the
 import ctypes
 import ctypes.util
 import datetime
+import glob
 import json
 import os
 import platform
@@ -493,6 +494,76 @@ def bluetooth(w, output=""):
     return {"level": "on" if pairs.get("Powered") == "yes" else "off", "values": {"name": pairs.get("Alias") or pairs.get("Name", "")}}
 
 
+# The makers of the boards Meshtastic runs on, by their USB number, and the USB-to-serial chips many radios wear instead
+# (the desk's Mesh finds its radio by the same lists: desk mesh/link.py, VENDORS and SERIAL_CHIPS)
+RADIO_MAKERS = {0x239A, 0x2886, 0x303A, 0x2E8A, 0x1915}  # Adafruit, Seeed, Espressif, Raspberry Pi, Nordic
+SERIAL_CHIPS = {0x10C4, 0x1A86, 0x0403}  # Silicon Labs CP210x, WCH CH340/CH9102, FTDI
+
+
+def _sysfs(path, name):
+    try:
+        with open(os.path.join(path, name), encoding="utf-8", errors="replace") as f:
+            return f.read().strip()
+    except OSError:
+        return ""
+
+
+def _usb_kind(dev, vendor):
+    """what a USB device is, from its interfaces' classes and what the kernel made of them (a tty, a network…)"""
+    parts = [os.path.join(dev, p) for p in os.listdir(dev) if ":" in p]
+    classes = {_sysfs(p, "bInterfaceClass").lower() for p in parts}
+    parts.append(dev)  # some drivers hang what they made on the device itself (the Lyra's Wi-Fi: 1-1.1/net/wlan0)
+    has = lambda name: any(os.path.exists(os.path.join(p, name)) for p in parts)
+    wireless = any(os.path.exists(os.path.join(n, "wireless")) or os.path.exists(os.path.join(n, "phy80211"))
+                   for p in parts for n in glob.glob(os.path.join(p, "net", "*")))
+    if "08" in classes:
+        return "drive"
+    if "01" in classes or has("sound"):
+        return "sound"
+    if has("net"):
+        return ("wifi bluetooth" if "e0" in classes or has("bluetooth") else "wifi") if wireless else "network"
+    if "e0" in classes or has("bluetooth"):
+        return "bluetooth"
+    if "0e" in classes or has("video4linux"):
+        return "camera"
+    if classes & {"02", "0a"} or has("tty"):
+        return "radio" if vendor in RADIO_MAKERS else "serial chip" if vendor in SERIAL_CHIPS else "serial"
+    if "03" in classes:
+        return "input"
+    return "other"
+
+
+def usb(w, root="/sys/bus/usb/devices"):
+    """what is plugged into the USB ports, each by its maker's and its own name and what kind of thing it is: a drive (and
+    its size), sound, a Meshtastic radio… Hubs are left out, and what the device itself says is built in (a laptop's
+    camera); a board's own chips on USB (the Lyra's Wi-Fi) it can't tell apart, so they show (Gab, 24 Nov: "if that's a
+    mesh network or a node, a headset, a speaker… Or a hard drive or a USB stick, you know, it makes a difference")"""
+    found = []
+    for dev in sorted(glob.glob(os.path.join(root, "*"))):
+        name = os.path.basename(dev)
+        if name.startswith("usb") or ":" in name or not os.path.exists(os.path.join(dev, "idVendor")):
+            continue  # the controllers' own root hubs, and the interfaces
+        if _sysfs(dev, "bDeviceClass") == "09" or _sysfs(dev, "removable") == "fixed" or \
+                _sysfs(os.path.join(dev, "port"), "connect_type") == "hardwired":
+            continue
+        try:
+            vendor = int(_sysfs(dev, "idVendor"), 16)
+        except ValueError:
+            vendor = None
+        maker, product = _sysfs(dev, "manufacturer"), _sysfs(dev, "product")
+        called = product if maker and product.lower().startswith(maker.lower()) else " ".join(x for x in (maker, product) if x)
+        called = called or "%s:%s" % (_sysfs(dev, "idVendor"), _sysfs(dev, "idProduct"))
+        kind = _usb_kind(dev, vendor)
+        sectors = [_sysfs(os.path.dirname(f), "size") for f in glob.glob(os.path.join(dev, "*:*", "host*", "target*", "*", "block", "*", "size"))]
+        size = _size(int(sectors[0]) // 2, w) if sectors and sectors[0].isdigit() and int(sectors[0]) else ""
+        found.append((called, kind, size))
+    if not found:
+        return {"level": "none", "values": {"count": "0", "list": "", "first": ""}}
+    said = [w("usb item", kind=w("usb " + k), name=c + (", " + z if z else "")) for c, k, z in found]
+    return {"level": "fine", "values": {"count": str(len(found)), "list": "; ".join(said), "first": said[0]},
+            "table": {"columns": [w("usb device"), w("usb kind"), w("size")], "rows": [[c, w("usb " + k), z] for c, k, z in found]}}
+
+
 # name → (reader, its levels, its values; "" is the main one: {@sys.temperature})
 READERS = {
     "memory": (memory, ["fine", "high", "full"], ["used", "total", "free", "percent"]),
@@ -514,6 +585,7 @@ READERS = {
     "networks": (networks, ["fine", "none"], ["count", "best"]),
     "network": (network, ["connected", "not connected"], ["address", "through"]),
     "bluetooth": (bluetooth, ["on", "off", "none"], ["name"]),
+    "usb": (usb, ["fine", "none"], ["count", "list", "first"]),
 }
 
 

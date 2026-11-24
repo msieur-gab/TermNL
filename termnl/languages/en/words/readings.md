@@ -90,3 +90,21 @@ follows it. `{n}`, `{used}`… are filled in with the numbers.
 - file: file
 - file of a type: {ext} file
 - more: … and {count} more
+
+## What is plugged in (USB)
+
+- usb device: Device
+- usb kind: What it is
+- usb item: {kind} ({name})
+- usb drive: a drive
+- usb sound: sound (headset, speaker)
+- usb radio: a Meshtastic radio
+- usb serial chip: a serial adapter (often a radio)
+- usb serial: a serial device
+- usb wifi: Wi-Fi
+- usb wifi bluetooth: Wi-Fi and Bluetooth
+- usb bluetooth: Bluetooth
+- usb network: a network adapter
+- usb camera: a camera
+- usb input: a keyboard or a mouse
+- usb other: a device

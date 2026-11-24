@@ -21,7 +21,47 @@ ADDRESSES = "lo               UNKNOWN        127.0.0.1/8 \nwlp1s0           UP  
 BLUETOOTH = "Controller 02:00:5e:10:00:aa (public)\n\tName: my-laptop\n\tAlias: my-laptop\n\tPowered: no\n"
 
 
+def usb_tree():
+    """a /sys/bus/usb/devices of its own: the Orange Pi's root hub and Prometheus (seen 24 Nov), a hub, a USB stick
+    of 32 GB behind it, USB-C earphones, and a laptop's camera that says it is built in"""
+    import os
+    root = tempfile.mkdtemp()
+    def dev(name, vendor, maker, product, cls, interfaces, **files):
+        d = os.path.join(root, name)
+        os.makedirs(d)
+        for k, v in dict(idVendor=vendor, idProduct="0001", manufacturer=maker, product=product, bDeviceClass=cls, **files).items():
+            if "/" in k:
+                os.makedirs(os.path.join(d, os.path.dirname(k)), exist_ok=True)
+            with open(os.path.join(d, k), "w") as f:
+                f.write(v + "\n")
+        for i, (c, inside) in enumerate(interfaces):
+            p = os.path.join(d, "%s:1.%d" % (name, i))
+            os.makedirs(os.path.join(p, inside) if inside else p)
+            with open(os.path.join(p, "bInterfaceClass"), "w") as f:
+                f.write(c + "\n")
+        return d
+    dev("usb4", "1d6b", "Linux", "OHCI", "09", [("09", "")])
+    dev("4-1", "239a", "Seeed Studio", "XIAO-BOOT", "ef", [("02", "tty/ttyACM0"), ("0a", "")])
+    dev("1-1", "1a86", "", "USB HUB", "09", [("09", "")])
+    d = dev("1-1.2", "0781", "SanDisk", "Ultra", "00", [("08", "host0/target0:0:0/0:0:0:0/block/sda")])
+    with open(os.path.join(d, "1-1.2:1.0/host0/target0:0:0/0:0:0:0/block/sda/size"), "w") as f:
+        f.write("62521344\n")
+    dev("1-1.3", "05ac", "Apple", "USB-C to 3.5mm Headphone Jack Adapter", "00", [("01", ""), ("01", ""), ("03", "")])
+    dev("1-2", "0bda", "Generic", "WebCamera", "ef", [("0e", "video4linux")], **{"port/connect_type": "hardwired"})
+    return root
+
+
 class Readers(unittest.TestCase):
+    def test_what_is_plugged_in_is_said_by_its_name_and_its_kind(self):
+        """Gab, 24 Nov: "if that's a mesh network or a node, a headset, a speaker… Or a hard drive or a USB stick" """
+        r = readers.usb(readers.Words(load_language("en")["lists"]["readings"]), root=usb_tree())
+        self.assertEqual(r["level"], "fine")
+        self.assertEqual(r["table"]["rows"], [["SanDisk Ultra", "a drive", "29.8 GB"],
+                                              ["Apple USB-C to 3.5mm Headphone Jack Adapter", "sound (headset, speaker)", ""],
+                                              ["Seeed Studio XIAO-BOOT", "a Meshtastic radio", ""]])  # no hub, no built-in camera
+        self.assertIn("a Meshtastic radio (Seeed Studio XIAO-BOOT)", r["values"]["list"])
+        self.assertEqual(readers.usb(readers.Words({}), root=tempfile.mkdtemp())["level"], "none")
+
     def test_every_reader_gives_a_level_it_declares_and_its_values(self):
         args = {"folder": {"place": tempfile.gettempdir()}, "files": {"place": tempfile.gettempdir(), "type": "md,txt"},
                 "has": {"place": tempfile.gettempdir(), "type": "md"}, "recent": {"place": tempfile.gettempdir()}, "size": {"place": tempfile.gettempdir()}, "wifi": {"output": WIFI}, "networks": {"output": WIFI},
