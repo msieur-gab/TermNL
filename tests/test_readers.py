@@ -1,3 +1,5 @@
+import os
+import pathlib
 """The device's readers on this machine, and the reply chosen for what they find."""
 import tempfile
 import unittest
@@ -62,10 +64,31 @@ class Readers(unittest.TestCase):
         self.assertIn("a Meshtastic radio (Seeed Studio XIAO-BOOT)", r["values"]["list"])
         self.assertEqual(readers.usb(readers.Words({}), root=tempfile.mkdtemp())["level"], "none")
 
+    def test_what_is_in_the_trash_is_shown_the_last_deleted_first(self):
+        """Gab, 24 Nov: "what is in the trash, or show me the trash, or show me the deleted files" """
+        home = tempfile.mkdtemp()
+        app = TermNL(home=home)
+        r = app.say("what is in the trash", "t1")
+        self.assertEqual((r["skill"], r.get("level")), ("show-trash", "empty"))
+        files = os.path.join(home, ".local", "share", "Trash", "files")
+        os.makedirs(os.path.join(files, "old-notes"))
+        for n in ("todo.txt", "report.pdf"):
+            pathlib.Path(files, n).write_text("x")
+        info = os.path.join(home, ".local", "share", "Trash", "info")
+        os.makedirs(info)
+        pathlib.Path(info, "old-notes.trashinfo").write_text("[Trash Info]\nPath=/x\nDeletionDate=2020-01-02T10:00:00\n")
+        r = readers.trash(readers.Words(load_language("en")["lists"]["readings"]), home=home)
+        self.assertEqual(r["level"], "fine")
+        self.assertEqual(r["values"]["count"], "3")
+        self.assertEqual([row[0] for row in r["table"]["rows"]][-1], "old-notes")  # deleted longest ago, last
+        self.assertEqual(r["table"]["rows"][-1][1], "folder")
+        for said in ("show me the trash", "show me the deleted files", "do i have files in the trash"):
+            self.assertEqual(app.say(said, said)["skill"], "show-trash", said)
+
     def test_every_reader_gives_a_level_it_declares_and_its_values(self):
         args = {"folder": {"place": tempfile.gettempdir()}, "files": {"place": tempfile.gettempdir(), "type": "md,txt"},
                 "has": {"place": tempfile.gettempdir(), "type": "md"}, "recent": {"place": tempfile.gettempdir()}, "size": {"place": tempfile.gettempdir()}, "wifi": {"output": WIFI}, "networks": {"output": WIFI},
-                "network": {"output": ADDRESSES}, "bluetooth": {"output": BLUETOOTH}}
+                "network": {"output": ADDRESSES}, "bluetooth": {"output": BLUETOOTH}, "trash": {"home": tempfile.mkdtemp()}}
         for name, (_, levels, names) in readers.READERS.items():
             r = readers.read(name, words=load_language("en")["lists"]["readings"], **args.get(name, {}))
             self.assertIn(r["level"], levels, name)

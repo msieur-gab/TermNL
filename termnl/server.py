@@ -156,11 +156,13 @@ class TermNL:
             return {"learning": self.training is not None, "say": self.told.pop(session, None)}
 
     def state(self, reads):
-        """what only the server knows, for the readers of TermNL itself (readers.py: learning, name)"""
+        """what only the server knows, for the readers of TermNL itself (readers.py: learning, name) and of its home (trash)"""
         if reads == "learning":
             return {"started": (self.training or {}).get("started"), "trained": self.lang["model"].get("trained")}
         if reads == "name":
             return {"user": self.settings.get("name") or ""}
+        if reads == "trash":
+            return {"home": self.device.home}
         return {}
 
     def say(self, text, session, screen=None, own=None):

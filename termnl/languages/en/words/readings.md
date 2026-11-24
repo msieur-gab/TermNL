@@ -86,6 +86,7 @@ follows it. `{n}`, `{used}`… are filled in with the numbers.
 - name: Name
 - kind: Kind
 - changed: Changed
+- deleted: Deleted
 - folder: folder
 - file: file
 - file of a type: {ext} file

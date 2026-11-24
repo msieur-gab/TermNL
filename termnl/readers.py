@@ -565,6 +565,42 @@ def usb(w, root="/sys/bus/usb/devices"):
 
 
 # name → (reader, its levels, its values; "" is the main one: {@sys.temperature})
+def trash(w, home):
+    """what is in the trash (~/.local/share/Trash/files, where delete file and delete folder put things), the last
+    deleted first: when, from its .trashinfo if it has one, else when it was moved there (mv changes only its ctime)"""
+    root = os.path.join(home, ".local", "share", "Trash")
+    try:
+        names = os.listdir(os.path.join(root, "files"))
+    except OSError:
+        names = []
+    found = []
+    for n in names:
+        p = os.path.join(root, "files", n)
+        try:
+            st = os.lstat(p)
+        except OSError:
+            continue
+        when = datetime.datetime.fromtimestamp(st.st_ctime)
+        try:
+            with open(os.path.join(root, "info", n + ".trashinfo"), encoding="utf-8") as f:
+                m = re.search(r"^DeletionDate=(\S+)", f.read(), re.M)
+            when = datetime.datetime.fromisoformat(m.group(1)) if m else when
+        except (OSError, ValueError):
+            pass
+        found.append((when, n, os.path.isdir(p), st.st_size))
+    found.sort(key=lambda f: f[0], reverse=True)
+    today = datetime.date.today()
+    rows = [[n, w("folder") if d else w("file"), "" if d else _size(size // 1024 or (1 if size else 0), w), _changed(w, when, today)]
+            for when, n, d, size in found[:30]]
+    if len(found) > 30:
+        rows.append([w("more", count=len(found) - 30), "", "", ""])
+    names = [n for _, n, _, _ in found]
+    return {"level": "fine" if found else "empty",
+            "values": {"count": str(len(found)), "list": ", ".join(names[:5]) + (" " + w("more", count=len(names) - 5) if len(names) > 5 else ""),
+                       "first": names[0] if names else ""},
+            "table": {"columns": [w("name"), w("kind"), w("size"), w("deleted")], "rows": rows} if found else None}
+
+
 READERS = {
     "memory": (memory, ["fine", "high", "full"], ["used", "total", "free", "percent"]),
     "temperature": (temperature, ["fine", "warm", "hot", "unknown"], ["", "max"]),
@@ -585,6 +621,7 @@ READERS = {
     "networks": (networks, ["fine", "none"], ["count", "best"]),
     "network": (network, ["connected", "not connected"], ["address", "through"]),
     "bluetooth": (bluetooth, ["on", "off", "none"], ["name"]),
+    "trash": (trash, ["fine", "empty"], ["count", "list", "first"]),
     "usb": (usb, ["fine", "none"], ["count", "list", "first"]),
 }
 

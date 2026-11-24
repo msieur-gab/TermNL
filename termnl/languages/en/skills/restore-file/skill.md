@@ -6,7 +6,7 @@ approve: no
 topic: Files and folders
 ---
 
-The other half of delete file: a file moved to the trash (~/.local/share/Trash) comes back where you are,
+Gab, 24 Nov: "I want also to recover from the trash, so move from the trash to another place". The other half of delete file: a file moved to the trash (~/.local/share/Trash) comes back where you are,
 or into the folder said. A file of the same name already there is never replaced.
 
 ## Words
@@ -19,9 +19,18 @@ or into the folder said. A file of the same name already there is never replaced
 - bring {name} back (to/in/into (the/my) {place} (folder))
 - get {name} back (from (the/my) "trash")
 - restore (a/the) file (from (the/my) "trash")
+- move {name} out of (the/my) "trash" (to/in/into (the/my) {place} (folder))
+- move {name} out of (the/my) bin (to/in/into (the/my) {place} (folder))
+- move {name} from (the/my) "trash" (to/in/into (the/my) {place} (folder))
+- move {name} from (the/my) bin (to/in/into (the/my) {place} (folder))
+- take {name} out of (the/my) "trash" (to/in/into (the/my) {place} (folder))
+- take {name} out of (the/my) bin (to/in/into (the/my) {place} (folder))
 
 ## Also said
 
+- move notes.md from the trash to documents
+- take todo.txt out of the trash
+- move report.pdf out of the bin into projects
 - I deleted notes.md by mistake, get it back
 - recover todo.txt from the trash
 - put seed.md back
