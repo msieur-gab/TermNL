@@ -1,4 +1,4 @@
-"""python3 -m unittest tests.test_trash_and_space — the four skills dropped in on 25 Oct 2026 (FRAMES.md, E):
+"""python3 -m unittest tests.test_trash_and_space — the four skills dropped in on 25 Oct 2026 (docs/notes/FRAMES.md, E):
 empty-trash, restore-file, find-text, show-size."""
 import unittest
 

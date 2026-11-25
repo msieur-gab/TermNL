@@ -1,5 +1,5 @@
-"""python3 -m tools.distance — RESEARCH.md, method A: is a sentence the model guesses at far from every taught
-sentence when it is out of scope, and near when it is a real request? Tested 25 Oct 2026: no (RESEARCH.md).
+"""python3 -m tools.distance — docs/notes/RESEARCH.md, method A: is a sentence the model guesses at far from every taught
+sentence when it is out of scope, and near when it is a real request? Tested 25 Oct 2026: no (docs/notes/RESEARCH.md).
 
 For every test sentence read by the model (not by a template), the words it was read with (typos corrected,
 values left out) are compared with every sentence TermNL trains on, with the model's own clues and weights:

@@ -1,6 +1,6 @@
 # Test of 22 Oct 2026: does a word embedding find the right taught word for words the model never saw?
 # Usage: put glove-wiki-gigaword-50.gz in <dir>/glove/glove50.gz and <dir>/taught.json (model.taught +
-# small words), then: python3 tools/neighbours.py <dir>. Result on 22 Oct: 3 useful of 26 (see HANDOFF.md).
+# small words), then: python3 tools/neighbours.py <dir>. Result on 22 Oct: 3 useful of 26 (HANDOFF.md, in git history).
 import gzip, json, re, sys, numpy as np
 D = sys.argv[1]
 t = json.load(open(f"{D}/taught.json"))

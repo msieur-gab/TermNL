@@ -1,5 +1,5 @@
 """python3 -m unittest tests.test_frames — follow-ups: a sentence that says part of a request, completed by the
-last request done (FRAMES.md, 25 Oct 2026)."""
+last request done (docs/notes/FRAMES.md, 25 Oct 2026)."""
 import os
 import unittest
 

@@ -1,4 +1,4 @@
-"""python3 -m unittest tests.test_drop_in — a skill folder dropped in works alone (FRAMES.md, 25 Oct 2026).
+"""python3 -m unittest tests.test_drop_in — a skill folder dropped in works alone (docs/notes/FRAMES.md, 25 Oct 2026).
 
 check-kernel brings an object ("kernel") and ping-remote an action ("ping") that no list of words/ has. Born
 as test-only skills, shipped since 25 Oct 2026: here they are taken out of the language, then dropped back in

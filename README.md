@@ -9,6 +9,34 @@ files. It runs offline, on the device, with no large model and no generated comm
 
 Every request ends in one of four outcomes: **act**, **ask**, **approve**, **abstain**.
 
+## Why it asks before it acts
+
+A command on a real device can't always be undone. So TermNL doesn't act on a guess: when a word is new
+it says so, when something is missing it asks, and before anything risky (deleting, restarting, turning
+off the Wi-Fi) it waits for a yes.
+
+## You teach it with text files
+
+Each thing TermNL can do is one skill: a folder holding a `skill.md` written in plain sentences, with what
+people say, what it needs, the command it runs and what it replies. Drop a folder in, say "learn what I
+taught you", and it knows. Part of `skills/delete-file/skill.md`:
+
+    approve: yes
+
+    ## People say
+
+    - delete {name} (from/in (the) {place} (folder))
+
+    ## What it needs
+
+    - {name}: a file on the device. If it's missing, ask: Which file? | Which file should I delete?
+    - {place}: a folder on the device. If it's not said: where you are.
+
+    ## Replies
+
+    - approve: Move {name} from {place} to the trash?
+    - done: {name} is in the trash. | Done, {name} went to the trash.
+
 ## Try it on this machine
 
     python3 -m termnl.server            # http://127.0.0.1:8810
@@ -49,10 +77,10 @@ with `{user}` is only used once a name is set.
         skills/<action>-<object>/skill.md
                                 one skill per action + object, written in plain sentences: what people
                                 say, what it needs, its command or reader, and replies (plain.py;
-                                IMPROVEMENTS.md says how to write one). Under ## Words, what it brings:
+                                docs/notes/IMPROVEMENTS.md says how to write one). Under ## Words, what it brings:
                                 an action or object words/ lacks, and what words mean with its object
                                 ("turn on the music" plays it, said by play-music): a folder dropped in
-                                works alone (FRAMES.md; tests/drop-in)
+                                works alone (docs/notes/FRAMES.md; tests/drop-in)
         out-of-scope.md         what TermNL should not try to do
         model.json              trained from the above: python3 -m termnl.train
       agent.py                  the dialogue: one turn in five steps (templates, model, questions, approval)
@@ -66,10 +94,12 @@ with `{user}` is only used once a name is set.
                                 kept out of git), replayed against today's TermNL
     tools/neighbours.py         a test of word embeddings for unknown words (22 Oct: not worth it yet)
     tools/distance.py           a test of out of scope by distance to taught sentences (25 Oct: not
-                                kept; RESEARCH.md, method A)
+                                kept; docs/notes/RESEARCH.md, method A)
     tools/to_plain.py           rewrites a skill from the older template form to plain sentences;
     tools/same_reading.py       and proves it reads every sentence the same
     settings.md                 this device's settings
+    docs/notes/                 the working notes: each branch's report, what was tried and measured, and the
+                                briefs and data behind the test sets
     logs/                       every turn the server hears, one line of JSON (kept out of git)
 
 ## Checks
