@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TermNL demo</title>
+<meta name="description" content="Talk to a Linux board in plain words. TermNL runs here, in your browser, on a pretend board.">
+<style>
+  /* the chat page's colours (index.html) */
+  :root {
+    --bg: #f6f5f1; --surface: #ffffff; --code: #ecebe6; --text: #1d1d1b; --muted: #6b6a65; --line: #dcdad3;
+    --accent: #2f6f5e; --on-accent: #ffffff; --warn: #9a6400; --bad: #b3261e;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151614; --surface: #20221f; --code: #191b18; --text: #e9e8e3; --muted: #9a9a93; --line: #34362f;
+      --accent: #7cc4ad; --on-accent: #0e1a16; --warn: #e0b04f; --bad: #f08a80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, sans-serif; }
+  .page { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: grid; gap: 0 32px;
+          grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto auto minmax(0, 1fr);
+          grid-template-areas: "head head" "chat intro" "chat more"; height: 100dvh; }
+  header { grid-area: head; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 14px 0 10px;
+           border-bottom: 1px solid var(--line); }
+  h1 { font-size: 18px; margin: 0; }
+  .where { color: var(--muted); font-size: 14px; flex: 1; }
+  a { color: var(--accent); }
+  button.ghost { font: inherit; font-size: 14px; background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; }
+  .chat { grid-area: chat; min-height: 0; display: flex; flex-direction: column; padding-bottom: 16px; position: relative; }
+  termnl-chat { flex: 1; min-height: 0; }
+  .waking { position: absolute; inset: 0 0 70px; display: grid; place-content: center; text-align: center; color: var(--muted);
+            font-size: 15px; pointer-events: none; }
+  .waking b { display: block; color: var(--text); font-size: 17px; margin-bottom: 4px; }
+  .waking[hidden] { display: none; }
+  aside { padding: 16px 0 0; display: flex; flex-direction: column; gap: 22px; }
+  .intro { grid-area: intro; }
+  .more { grid-area: more; overflow-y: auto; padding-bottom: 16px; }
+  section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+  section p { margin: 0 0 8px; font-size: 15px; }
+  .small { font-size: 13px; color: var(--muted); }
+  .tries { display: flex; flex-direction: column; gap: 10px; }
+  .try { display: flex; flex-direction: column; gap: 4px; }
+  .try span { font-size: 13px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font: inherit; font-size: 14px; cursor: pointer; border: 1px solid var(--accent); background: none; color: var(--accent);
+          border-radius: 999px; padding: 3px 11px; text-align: left; }
+  .chip:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); }
+  .chip:disabled { opacity: .4; cursor: default; }
+  .board { font-size: 14px; display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; }
+  .board b { font-weight: 600; }
+  .board span { color: var(--muted); overflow-wrap: anywhere; }
+  textarea { width: 100%; min-height: 260px; resize: vertical; font: 13px/1.45 ui-monospace, "Departure Mono", monospace;
+             padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+  .teach { margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .teach button.do { font: inherit; border: 0; background: var(--accent); color: var(--on-accent); border-radius: 10px;
+                     padding: 7px 14px; cursor: pointer; }
+  .teach button.do:disabled { opacity: .5; cursor: default; }
+  .said { font-size: 14px; }
+  .said.bad { color: var(--bad); }
+  @media (max-width: 880px) {
+    .page { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "head" "intro" "chat" "more"; height: auto; }
+    .chat { height: min(80dvh, 680px); }
+    .more { overflow: visible; border-top: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>TermNL</h1>
+    <span class="where">You're in <b id="here">home</b> · a demo, running in your browser</span>
+    <button class="ghost" id="reset" type="button">New conversation</button>
+  </header>
+
+  <div class="chat">
+    <termnl-chat api=""></termnl-chat>
+    <div class="waking" id="waking"><div><b>Waking TermNL up…</b><span id="waking-what">loading it into this page</span></div></div>
+  </div>
+
+  <aside class="intro">
+    <section>
+      <h2>What this is</h2>
+      <p>TermNL lets you talk to a Linux board in plain words. This is TermNL itself, running in this page, on a pretend
+        board with a few folders. Commands are shown, never run: nothing on your computer is touched.</p>
+      <p class="small">Every request ends in one of four outcomes: act, ask, approve, abstain.
+        <a href="https://github.com/msieur-gab/TermNL">The code and how it works</a></p>
+    </section>
+
+    <section>
+      <h2>Try</h2>
+      <div class="tries">
+        <div class="try"><span>It asks for approval before anything risky</span>
+          <div class="chips"><button class="chip" data-say>delete groceries.md from documents</button></div></div>
+        <div class="try"><span>It asks when it isn't sure</span>
+          <div class="chips"><button class="chip" data-say>my disk feels full</button></div></div>
+        <div class="try"><span>It says when it doesn't know</span>
+          <div class="chips"><button class="chip" data-say>what's the weather tomorrow</button></div></div>
+        <div class="try"><span>And it acts, or reads the board</span>
+          <div class="chips"><button class="chip" data-say>make a folder called bikes in documents</button>
+            <button class="chip" data-say>how hot is the board?</button>
+            <button class="chip" data-say>what's in documents</button>
+            <button class="chip" data-say>help</button></div></div>
+      </div>
+    </section>
+  </aside>
+
+  <aside class="more">
+    <section>
+      <h2>The pretend board</h2>
+      <div class="board" id="board"><span>loading…</span></div>
+    </section>
+
+    <section>
+      <h2>Teach it a skill</h2>
+      <p>A skill is a text file. Change this one, or write your own, then teach it.</p>
+      <textarea id="skill" spellcheck="false" aria-label="A skill file">---
+does: water plants
+label: water the plants
+admin: no
+approve: no
+topic: You and me
+---
+
+A reminder to water the plants.
+
+## Words
+
+- water: water
+- plants: plants, plant, garden
+
+## People say
+
+- water (the) plants
+- remind me to water (the) plants
+
+## Also said
+
+- did i water the plants
+- the plants need water
+
+## Replies
+
+- done: Watering the plants: they will thank you.
+</textarea>
+      <div class="teach"><button class="do" id="teach" type="button" disabled>Teach it</button>
+        <span class="said" id="taught"></span></div>
+      <p class="small">TermNL knows the sentences under <b>## People say</b> at once. The <b>## Also said</b> lines teach
+        its small model other ways of saying them: on the board, "learn what I taught you" trains it. This page doesn't.</p>
+    </section>
+  </aside>
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script type="module">
+// TermNL runs here: Pyodide (Python in the browser) loads its files from this repo, and demo.py answers what the
+// chat asks the server (/api/…), as server.py would on the board. Nothing leaves the page but those file requests.
+const realFetch = window.fetch.bind(window);
+const waking = document.getElementById("waking"), wakingWhat = document.getElementById("waking-what");
+let api;
+
+const ready = (async () => {
+  // the files: listed by GitHub (the repo's main), fetched from beside this page
+  const onPages = location.hostname.endsWith(".github.io");
+  const owner = onPages ? location.hostname.split(".")[0] : "msieur-gab";
+  const repo = onPages ? location.pathname.split("/")[1] : "TermNL";
+  const [py, tree] = await Promise.all([
+    loadPyodide(),
+    realFetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`).then(r => {
+      if (!r.ok) throw new Error("GitHub didn't list the files (" + r.status + "). Try again in a few minutes.");
+      return r.json();
+    }),
+  ]);
+  wakingWhat.textContent = "reading its skill files";
+  const files = tree.tree.filter(t => t.type === "blob" && /^termnl\/.*\.(py|md|json)$/.test(t.path) && !t.path.startsWith("termnl/bin/"))
+    .map(t => t.path).concat(["tests/__init__.py", "tests/device.py", "web/demo.py"]);
+  await Promise.all(files.map(async f => {
+    const r = await realFetch("../" + f);
+    if (!r.ok) throw new Error("couldn't read " + f);
+    const where = "/home/pyodide/" + f;
+    py.FS.mkdirTree(where.slice(0, where.lastIndexOf("/")));
+    py.FS.writeFile(where, await r.text());
+  }));
+  py.runPython("import sys; sys.path.insert(0, '/home/pyodide/web')");
+  api = py.pyimport("demo").api;
+  return py;
+})();
+
+// the chat asks the server; here, demo.py answers
+window.fetch = async (url, options = {}) => {
+  const u = url instanceof Request ? url.url : String(url);
+  if (!u.startsWith("/api/")) return realFetch(url, options);
+  await ready;
+  return new Response(api(options.method || "GET", u, options.body || ""), { headers: { "Content-Type": "application/json" } });
+};
+
+await import("./termnl-chat.js");
+const chat = document.querySelector("termnl-chat");
+const quiet = () => waking.hidden = true;  // the hint goes once the conversation starts
+const narrow = matchMedia("(max-width: 880px)");  // a phone: the chat is below the sentences, so it comes into view
+const ask = text => { quiet(); chat.say(text); if (narrow.matches) document.querySelector(".chat").scrollIntoView({ behavior: "smooth" }); };
+chat.addEventListener("reply", quiet);
+document.querySelectorAll("[data-say]").forEach(b => { b.type = "button"; b.onclick = () => ask(b.textContent); });
+chat.addEventListener("reply", e => { if (e.detail.here) document.getElementById("here").textContent = e.detail.here; });
+document.getElementById("reset").onclick = () => { chat.reset(); document.getElementById("here").textContent = "home"; };
+
+const el = (tag, text) => { const e = document.createElement(tag); e.textContent = text; return e; };
+try {
+  await ready;
+  waking.querySelector("b").textContent = "TermNL is ready";
+  wakingWhat.textContent = "Type a request, or tap a sentence under Try.";
+  chat.shadowRoot.querySelector("form").addEventListener("submit", quiet);
+  const board = document.getElementById("board");
+  board.replaceChildren(...(await (await fetch("/api/board")).json()).flatMap(f => [el("b", f.folder), el("span", f.files.join(", "))]));
+  document.getElementById("teach").disabled = false;
+} catch (e) {
+  wakingWhat.textContent = String(e.message || e);
+  waking.querySelector("b").textContent = "TermNL couldn't wake up";
+}
+
+// teaching: the file goes into TermNL's skills folder, in this page only, and the skill files are read again
+const taught = document.getElementById("taught");
+document.getElementById("teach").onclick = async () => {
+  const text = document.getElementById("skill").value;
+  const does = (text.match(/^does:\s*(.+)$/m) || [])[1];
+  taught.className = "said";
+  if (!does) { taught.className = "said bad"; taught.textContent = "A skill needs a does: line (an action and an object)."; return; }
+  const id = does.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const r = await (await fetch("/api/teach", { method: "POST", body: JSON.stringify({ id, text }) })).json();
+  if (r.errors?.length) { taught.className = "said bad"; taught.textContent = r.errors.join(" "); return; }
+  const first = (text.split(/^## People say$/m)[1] || "").match(/^- (.+)$/m);
+  taught.replaceChildren(el("span", "Learnt. Try: "));
+  if (first) {
+    const sentence = first[1].replace(/\(([^)|/]*)\)/g, "$1").replace(/\{[^}]+\}/g, "").replace(/\s+/g, " ").trim();
+    const b = el("button", sentence); b.className = "chip"; b.type = "button"; b.onclick = () => ask(sentence);
+    taught.append(b);
+  }
+};
+</script>
+</body>
+</html>
