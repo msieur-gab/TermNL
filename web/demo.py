@@ -7,6 +7,7 @@ taught in the page is read at once, and "learn what I taught you" trains the mod
 of the page (demo.html), whose model replaces this one when it is whole."""
 import json
 import os
+import random
 import re
 import socket
 import sys
@@ -75,6 +76,8 @@ FILES = {
     "$HOME/Videos": ["holiday.mp4", "birthday.mov"],
 }
 TRASH = ["old-notes.md", "draft.txt"]
+# the Music folder as the desk's Player knows it: title, artist, album
+TRACKS = [("Kong", "Bonobo", "Black Sands"), ("Kerala", "Bonobo", "Migration"), ("Cirrus", "Bonobo", "The North Borders")]
 LISTS = {**TEST_LISTS, "folder": FOLDERS, "music": [  # artists, albums and titles, as read from ~/Music
     {"value": "Bonobo", "names": ["Bonobo"]},
     {"value": "Migration", "names": ["Migration"]},
@@ -168,6 +171,49 @@ class Device(PretendDevice):
         pass
 
 
+class Player:
+    """the music, as the desk's Player answers TermNL's mpc commands (desk, web/js/apps/core/termnl/commands.js):
+    what it really did, the track by its artist"""
+
+    def __init__(self):
+        self.queue, self.at, self.paused = [], 0, False
+
+    def label(self, t):
+        return "%s, by %s" % (t[0], t[1])
+
+    def __call__(self, command):
+        verb, _, rest = command[4:].partition(" ")
+        t = self.queue[self.at] if self.queue else None
+        if verb == "searchplay":
+            name = rest.replace("any", "", 1).strip().strip("'").lower()
+            found = [x for x in TRACKS if any(name in part.lower() for part in x)]
+            if not found:
+                return "I found nothing called “%s” in Music." % name
+            self.queue, self.at, self.paused = found, 0, False
+            return "playing " + self.label(found[0]) + (", and %d more." % (len(found) - 1) if len(found) > 1 else ".")
+        if verb == "play":
+            if t and self.paused:
+                self.paused = False
+                return "carrying on with " + self.label(t) + "."
+            self.queue, self.at, self.paused = random.sample(TRACKS, len(TRACKS)), 0, False
+            return "playing %s, then %d more in any order." % (self.label(self.queue[0]), len(TRACKS) - 1)
+        if verb == "current":
+            return ("paused on " if self.paused else "this is ") + self.label(t) + ", from " + t[2] + "." if t else "nothing is playing."
+        if not t:
+            return "nothing is playing."
+        if verb == "next":
+            if self.at >= len(self.queue) - 1:
+                return "that was the last track."
+            self.at += 1
+            return "next: " + self.label(self.queue[self.at]) + "."
+        if verb == "prev":
+            self.at = max(0, self.at - 1)
+            return "back to " + self.label(self.queue[self.at]) + "."
+        if verb in ("pause", "stop"):
+            self.paused = True
+        return None  # the skill's own reply
+
+
 class Demo(TermNL):
     """the server's turn, with nothing run: every command is shown as what it would have done"""
 
@@ -179,6 +225,7 @@ class Demo(TermNL):
         self.settings = {"show commands": "on", "admin mode": "on", "name": ""}
         self.device = Device()
         self.training, self.told, self.sessions, self.lock = None, {}, {}, threading.Lock()
+        self.player = Player()
         self.inbox = []
         self.taught = []  # the skill folders taught in this tab  # what TermNL didn't understand, and the guesses a yes confirmed (to teach), in this visit
 
@@ -188,8 +235,11 @@ class Demo(TermNL):
         return False
 
     def _say(self, text, session, screen):
-        self.ran = None
+        self.ran, self.played = None, None
         r = super()._say(text, session, screen)
+        if self.played and r.get("ran") == "ran":  # the Player's own words, said to the person by name (Gab, 25 Nov)
+            name = self.settings.get("name") if self.played.startswith(("playing", "carrying on")) else None
+            r["say"] = "Okay %s, %s" % (name, self.played) if name else self.played[0].upper() + self.played[1:]
         if self.ran and r.get("ran") == "ran":
             r["ran"], r["show"] = "simulated", self.ran
             if NOTHING in r["say"]:  # a reply that would quote what the command said, which nobody knows here
@@ -235,6 +285,10 @@ class Demo(TermNL):
         if skill.get("reads"):
             return SAID.get(skill["reads"], "")
         self.ran = command
+        if command.startswith("mpc "):
+            self.played = self.player(command.split(" | ")[0].split(" -f ")[0])
+            if self.played:
+                return ""
         if r.get("skill") == "find-file":  # find answers with the paths of what it found on the board
             said = re.search(r"-iname '?\*?([^*']+)", command)
             found = [f"{folder.replace('$HOME', HOME)}/{f}" for folder, files in FILES.items() for f in files
