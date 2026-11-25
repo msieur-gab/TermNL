@@ -118,3 +118,10 @@ with `{user}` is only used once a name is set.
     python3 -m tests.real -v            # the real conversations in tests/real.md, turn by turn
     python3 -m tests.real --add         # adds the conversations in logs/ that real.md doesn't hold yet
     python3 -m termnl.train             # retrain termnl/languages/en/model.json
+
+## License
+
+Licensed under [PolyForm Noncommercial 1.0.0](LICENSE). For commercial use, get in touch.
+
+TermNL is a research project, not made for production. It runs real commands on the device it lives on, and asks
+before the risky ones; try it on a board you can afford to start over.
