@@ -50,6 +50,15 @@ it would have done. The page's switches (show commands, admin mode) are written 
 
 Python 3.9 or newer, standard library only. Training the model needs numpy (`python3-numpy`).
 
+## Where it runs
+
+TermNL is tested on two small Linux boards: the Orange Pi Zero 2W and the Luckfox Lyra Zero W.
+
+It is also the terminal of SymbiOS, a system I'm building: a computer that is only yours, built on these small boards.
+A thinking device you carry and plug into a screen, with your phone as its companion, that can be extended with
+Meshtastic nodes and more. There, TermNL works alongside other small models. If SymbiOS interests you, get in touch
+through [thecu.be](https://thecu.be).
+
 ## Said in words: your name and your settings
 
 "call me Gab", "show me the commands", "hide the commands": each changes its line in `settings.md`. A skill does
@@ -121,7 +130,8 @@ with `{user}` is only used once a name is set.
 
 ## License
 
-Licensed under [PolyForm Noncommercial 1.0.0](LICENSE). For commercial use, get in touch.
+Licensed under [PolyForm Noncommercial 1.0.0](LICENSE). For commercial use, get in touch through
+[thecu.be](https://thecu.be).
 
 TermNL is a research project, not made for production. It runs real commands on the device it lives on, and asks
 before the risky ones; try it on a board you can afford to start over.
