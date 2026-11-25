@@ -9,7 +9,7 @@ files. It runs offline, on the device, with no large model and no generated comm
 
 Every request ends in one of four outcomes: **act**, **ask**, **approve**, **abstain**.
 
-**[Try it in your browser](https://msieur-gab.github.io/TermNL/web/demo.html)**: TermNL itself, on a pretend board.
+**[Try it in your browser](https://msieur-gab.github.io/TermNL/demo/)**: TermNL itself, on a pretend board.
 Commands are shown, never run.
 
 ## Why it asks before it acts
@@ -91,9 +91,11 @@ with `{user}` is only used once a name is set.
       readers.py                the device read in words people use (temperature, memory…)
       device.py, runner.py      the device's own lists, and running a command
       server.py                 the thin API and the chat page
-    web/                        the chat page; termnl-chat.js is the chat, a component any page can hold;
-                                demo.html and demo.py, the demo: TermNL run in the browser (Pyodide) on a pretend
-                                board, published by GitHub Pages from main (.nojekyll: the files as they are)
+    web/                        the chat page; termnl-chat.js is the chat, a component any page can hold
+    demo/                       the demo: TermNL run in the browser (Pyodide) on a pretend board, published by
+                                GitHub Pages from main (.nojekyll: the files as they are). index.html; demo.py,
+                                TermNL's turn on the pretend board; css/; js/ (main.js, libs/: TermNL in the page,
+                                the chat, the readings drawn, training in a worker; util/: the DOM, the icons)
     tests/                      the dialogue tests, the readers, the measure on phrasings.md, and
                                 real.py: the conversations people really had (real.md, from logs/,
                                 kept out of git), replayed against today's TermNL

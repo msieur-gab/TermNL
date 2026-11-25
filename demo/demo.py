@@ -1,10 +1,10 @@
-"""The demo: TermNL itself, run in the visitor's browser (Pyodide, from demo.html), on a pretend device.
+"""The demo: TermNL itself, run in the visitor's browser (Pyodide, from index.html), on a pretend device.
 
 The server's own turn (server.py) answers each sentence, so the demo says what the board would say. Three things are
 pretend: the device (the test device's folders and files, tests/device.py, and made-up readings: temperature,
 memory, Wi-Fi…) and every command, shown and never run. Learning is real but stays in the visitor's tab: a skill
 taught in the page is read at once, and "learn what I taught you" trains the model again in a background worker
-of the page (demo.html), whose model replaces this one when it is whole."""
+of the page (js/libs/train-worker.js), whose model replaces this one when it is whole."""
 import json
 import os
 import random
@@ -301,7 +301,7 @@ class Demo(TermNL):
         in this tab (its taught skills among them); the chat goes on meanwhile, as on the board"""
         if self.training:
             return False
-        import js  # the page (demo.html)
+        import js  # the page (js/libs/termnl.js, trainWith)
         skills = os.path.join(os.path.dirname(readers.__file__), "languages", "en", "skills")
         taught = {d: open(os.path.join(skills, d, "skill.md"), encoding="utf-8").read() for d in self.taught}
         js.termnlTrain(json.dumps(taught))
@@ -342,7 +342,7 @@ demo = Demo()
 
 
 def api(method, path, body):
-    """what termnl-chat.js and demo.html ask, answered here as server.py's handler would → JSON"""
+    """what the page asks (js/libs/termnl.js, call), answered here as server.py's handler would → JSON"""
     body = json.loads(body or "{}")
     path, _, query = path.partition("?")
     session = body.get("session") or dict(p.split("=", 1) for p in query.split("&") if "=" in p).get("session") or "visitor"
