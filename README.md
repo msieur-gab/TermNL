@@ -52,7 +52,8 @@ Python 3.9 or newer, standard library only. Training the model needs numpy (`pyt
 
 ## Where it runs
 
-TermNL is tested on two small Linux boards: the Orange Pi Zero 2W and the Luckfox Lyra Zero W.
+TermNL is tested on two small Linux boards: the Orange Pi Zero 2W and the Luckfox Lyra Zero W. It was made with
+constrained devices in mind, so it should run comfortably on a Raspberry Pi too.
 
 It is also the terminal of SymbiOS, a system I'm building: a computer that is only yours, built on these small boards.
 A thinking device you carry and plug into a screen, with your phone as its companion, that can be extended with
