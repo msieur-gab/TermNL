@@ -5,239 +5,577 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TermNL demo</title>
 <meta name="description" content="Talk to a Linux board in plain words. TermNL runs here, in your browser, on a pretend board.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-  /* the chat page's colours (index.html) */
-  :root {
-    --bg: #f6f5f1; --surface: #ffffff; --code: #ecebe6; --text: #1d1d1b; --muted: #6b6a65; --line: #dcdad3;
-    --accent: #2f6f5e; --on-accent: #ffffff; --warn: #9a6400; --bad: #b3261e;
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #151614; --surface: #20221f; --code: #191b18; --text: #e9e8e3; --muted: #9a9a93; --line: #34362f;
-      --accent: #7cc4ad; --on-accent: #0e1a16; --warn: #e0b04f; --bad: #f08a80;
-    }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, sans-serif; }
-  .page { max-width: 1120px; margin: 0 auto; padding: 0 16px; display: grid; gap: 0 32px;
-          grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: auto auto minmax(0, 1fr);
-          grid-template-areas: "head head" "chat intro" "chat more"; height: 100dvh; }
-  header { grid-area: head; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 14px 0 10px;
-           border-bottom: 1px solid var(--line); }
-  h1 { font-size: 18px; margin: 0; }
-  .where { color: var(--muted); font-size: 14px; flex: 1; }
-  a { color: var(--accent); }
-  button.ghost { font: inherit; font-size: 14px; background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; }
-  .chat { grid-area: chat; min-height: 0; display: flex; flex-direction: column; padding-bottom: 16px; position: relative; }
-  termnl-chat { flex: 1; min-height: 0; }
-  .waking { position: absolute; inset: 0 0 70px; display: grid; place-content: center; text-align: center; color: var(--muted);
-            font-size: 15px; pointer-events: none; }
-  .waking b { display: block; color: var(--text); font-size: 17px; margin-bottom: 4px; }
-  .waking[hidden] { display: none; }
-  aside { padding: 16px 0 0; display: flex; flex-direction: column; gap: 22px; }
-  .intro { grid-area: intro; }
-  .more { grid-area: more; overflow-y: auto; padding-bottom: 16px; }
-  section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
-  section p { margin: 0 0 8px; font-size: 15px; }
-  .small { font-size: 13px; color: var(--muted); }
-  .tries { display: flex; flex-direction: column; gap: 10px; }
-  .try { display: flex; flex-direction: column; gap: 4px; }
-  .try span { font-size: 13px; color: var(--muted); }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { font: inherit; font-size: 14px; cursor: pointer; border: 1px solid var(--accent); background: none; color: var(--accent);
-          border-radius: 999px; padding: 3px 11px; text-align: left; }
-  .chip:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); }
-  .chip:disabled { opacity: .4; cursor: default; }
-  .board { font-size: 14px; display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; }
-  .board b { font-weight: 600; }
-  .board span { color: var(--muted); overflow-wrap: anywhere; }
-  textarea { width: 100%; min-height: 260px; resize: vertical; font: 13px/1.45 ui-monospace, "Departure Mono", monospace;
-             padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
-  .teach { margin-top: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .teach button.do { font: inherit; border: 0; background: var(--accent); color: var(--on-accent); border-radius: 10px;
-                     padding: 7px 14px; cursor: pointer; }
-  .teach button.do:disabled { opacity: .5; cursor: default; }
-  .said { font-size: 14px; }
-  .said.bad { color: var(--bad); }
-  @media (max-width: 880px) {
-    .page { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "head" "intro" "chat" "more"; height: auto; }
-    .chat { height: min(80dvh, 680px); }
-    .more { overflow: visible; border-top: 1px solid var(--line); }
-  }
+/* The playground's look (22 Oct): a conversation, and on its left a panel that folds away (the sentences to try,
+   the inbox, teaching a skill, the pretend board). On a phone the panel slides over the conversation. */
+:root {
+  --bg: #f2f4f3; --panel: #ffffff; --ink: #1b2422; --muted: #5c6b67; --line: #d5dcd9;
+  --accent: #1f6670; --accent-soft: #e1eef0;
+  --act: #2e7d4f; --act-soft: #e2f2e8; --ask: #2a5d9f; --ask-soft: #e3ecf8;
+  --approve: #9a6200; --approve-soft: #f8edd8; --abstain: #8a3b3b; --abstain-soft: #f6e4e4;
+  --term-bg: #18201e; --term-ink: #d8e6e1; --term-dim: #7f9690;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121816; --panel: #1a2220; --ink: #e3ebe8; --muted: #93a39f; --line: #2c3734;
+  --accent: #6fb7c0; --accent-soft: #1d3236;
+  --act: #7cc79a; --act-soft: #1c3226; --ask: #8fb4e8; --ask-soft: #1d2a3c;
+  --approve: #e3b45c; --approve-soft: #382c14; --abstain: #e39a9a; --abstain-soft: #3a2222;
+  --term-bg: #0b0f0e; --term-ink: #d8e6e1; --term-dim: #7f9690; color-scheme: dark } }
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+button { font: inherit; cursor: pointer; color: inherit; }
+a { color: var(--accent); }
+.wrap { max-width: 1240px; height: 100%; margin: 0 auto; padding: 16px; display: grid; gap: 16px 20px;
+        grid-template-columns: 360px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head head" "panel chat"; }
+.wrap.folded { grid-template-columns: 0 minmax(0, 1fr); column-gap: 0; }
+header { grid-area: head; display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; }
+h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+h1 span { font-family: var(--mono); font-weight: 600; color: var(--accent); }
+header p { margin: 0; color: var(--muted); font-size: 14px; flex: 1; min-width: 240px; }
+.toggle-panel { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel);
+                padding: 6px 12px; border-radius: 8px; font-size: 14px; order: -1; }
+.toggle-panel svg { width: 18px; height: 18px; }
+
+/* the conversation */
+.chat { grid-area: chat; display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.where { padding: 10px 16px; border-bottom: 1px solid var(--line); font: 13px/1.4 var(--mono); color: var(--muted); display: flex; gap: 12px; }
+.where b { color: var(--accent); font-weight: 600; }
+.where .learning { margin-left: auto; color: var(--approve); }
+.log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.hello { margin: auto; max-width: 440px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.hello b { color: var(--ink); font-size: 18px; }
+.hello .chips { justify-content: center; }
+.you { align-self: flex-end; max-width: 80%; background: var(--accent); color: var(--panel); padding: 8px 12px; border-radius: 12px 12px 2px 12px; }
+.turn { display: flex; flex-direction: column; gap: 8px; max-width: 92%; min-width: 0; }
+.typing { align-self: flex-start; display: flex; gap: 5px; background: var(--bg); padding: 14px 14px; border-radius: 12px 12px 12px 2px; }
+.typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); animation: dot 1s infinite ease-in-out; }
+.typing span:nth-child(2) { animation-delay: .15s; } .typing span:nth-child(3) { animation-delay: .3s; }
+@keyframes dot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: 1; transform: translateY(-3px); } }
+.say { align-self: flex-start; background: var(--bg); padding: 10px 12px; border-radius: 12px 12px 12px 2px; white-space: pre-wrap; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.out { font: 600 11px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; }
+.out.act { color: var(--act); background: var(--act-soft); }
+.out.ask { color: var(--ask); background: var(--ask-soft); }
+.out.approve { color: var(--approve); background: var(--approve-soft); }
+.out.abstain { color: var(--abstain); background: var(--abstain-soft); }
+.tag { font-family: var(--mono); font-size: 12px; }
+.new { color: var(--approve); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--accent); color: var(--accent); background: transparent; padding: 3px 10px; border-radius: 999px; font-size: 14px; text-align: left; }
+.chip:hover:not(:disabled), .chip:focus-visible { background: var(--accent-soft); }
+.chip:disabled { opacity: .4; cursor: default; }
+.cmd { background: var(--term-bg); color: var(--term-ink); font: 13px/1.5 var(--mono); padding: 8px 12px; border-radius: 6px;
+       overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmd b { color: var(--term-dim); font-weight: 400; }
+.cmd i { color: var(--term-dim); font-style: normal; }
+.cmd.none { color: var(--term-dim); }
+form.entry { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+#say { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); }
+#say:focus-visible, button:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.send { background: var(--accent); color: var(--panel); border: 0; padding: 0 16px; border-radius: 8px; font-weight: 700; }
+
+/* what the board read: a table, files with their icons, gauges */
+.scroll { max-width: 100%; overflow-x: auto; }
+table { border-collapse: collapse; font-size: 14px; background: var(--bg); border-radius: 8px; overflow: hidden; }
+th, td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-weight: 700; color: var(--muted); font-size: 12px; }
+tr:last-child td { border-bottom: 0; }
+td.warm, td.high, td.busy, td.filling-up, td.weak { color: var(--approve); }
+td.hot, td.full, td.struggling { color: var(--abstain); }
+td .ico { display: inline-flex; vertical-align: -3px; margin-right: 8px; color: var(--accent); }
+td .ico svg, .mark svg { width: 17px; height: 17px; }
+.mark { display: inline-flex; vertical-align: -3px; margin-right: 6px; }
+.gauges { display: flex; flex-direction: column; gap: 12px; background: var(--bg); border-radius: 8px; padding: 12px 14px; min-width: min(340px, 100%); }
+.gauge { display: flex; flex-direction: column; gap: 5px; --level: var(--act); }
+.gauge.warm, .gauge.high, .gauge.filling-up, .gauge.busy, .gauge.weak { --level: var(--approve); }
+.gauge.hot, .gauge.full, .gauge.struggling { --level: var(--abstain); }
+.g-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--muted); }
+.g-head b { font: 600 18px/1 var(--mono); color: var(--ink); }
+.g-track { position: relative; height: 10px; border-radius: 999px; background: var(--line); }
+.g-fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--level); transform-origin: left; }
+.g-mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); opacity: .55; }
+.g-scale { display: flex; justify-content: space-between; font: 11px/1 var(--mono); color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .turn, .you { animation: in .18s ease-out; } @keyframes in { from { opacity: .4; transform: translateY(4px); } }
+  .g-fill { animation: grow .5s ease-out; } @keyframes grow { from { transform: scaleX(0); } }
+}
+
+/* the panel, on the left */
+.intro { margin: 0; font-size: 15px; }
+.o { font: 600 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 3px 6px; border-radius: 4px; }
+.o.act { color: var(--act); background: var(--act-soft); } .o.ask { color: var(--ask); background: var(--ask-soft); }
+.o.approve { color: var(--approve); background: var(--approve-soft); } .o.abstain { color: var(--abstain); background: var(--abstain-soft); }
+details { border-top: 1px solid var(--line); padding-top: 6px; }
+details:first-of-type { border-top: 0; padding-top: 0; }
+summary { cursor: pointer; font-size: 14px; padding: 4px 0; list-style-position: inside; }
+summary small { color: var(--muted); font: 12px var(--mono); margin-left: 4px; }
+details .pills { padding: 6px 0 4px; }
+aside { grid-area: panel; min-height: 0; min-width: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.wrap.folded aside { display: none; }
+aside section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+aside .top { display: none; }
+h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; }
+h3 { font-size: 13px; margin: 4px 0 0; color: var(--muted); font-weight: 400; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { border: 1px solid var(--line); background: var(--bg); color: var(--ink); padding: 4px 10px; border-radius: 999px; font-size: 14px; text-align: left; }
+.pill:hover, .pill:focus-visible { border-color: var(--accent); }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.inbox { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.inbox li { display: flex; flex-direction: column; border-left: 3px solid var(--abstain); padding-left: 8px; }
+.inbox li.teach { border-color: var(--approve); }
+.inbox small { color: var(--muted); font: 12px var(--mono); }
+textarea { width: 100%; min-height: 240px; resize: vertical; font: 12.5px/1.5 var(--mono); padding: 10px; border-radius: 8px;
+           border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 15px; flex-wrap: wrap; }
+.do { background: var(--accent); color: var(--panel); border: 0; padding: 6px 14px; border-radius: 8px; font-weight: 700; }
+.do:disabled { opacity: .5; cursor: default; }
+.taught { font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.taught.bad { color: var(--abstain); }
+.switch { border: 1px solid var(--line); background: var(--bg); padding: 4px 12px; border-radius: 6px; font: 13px var(--mono); min-width: 56px; }
+.switch[aria-pressed="true"] { background: var(--approve-soft); color: var(--approve); border-color: var(--approve); }
+.ghost { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 6px 10px; border-radius: 6px; font-size: 14px; }
+dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 14px; }
+dt { color: var(--muted); }
+dd { margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+
+@media (max-width: 860px) {
+  .wrap, .wrap.folded { grid-template-columns: minmax(0, 1fr); grid-template-areas: "head" "chat"; padding: 12px; }
+  header p { display: none; }
+  aside { position: fixed; inset: 0 auto 0 0; width: min(380px, 92vw); z-index: 5; background: var(--bg); padding: 12px;
+          box-shadow: 8px 0 30px rgb(0 0 0 / .25); }
+  aside .top { display: flex; justify-content: space-between; align-items: center; }
+}
 </style>
 </head>
 <body>
-<div class="page">
+<div class="wrap folded" id="wrap">
   <header>
-    <h1>TermNL</h1>
-    <span class="where">You're in <b id="here">home</b> · a demo, running in your browser</span>
-    <button class="ghost" id="reset" type="button">New conversation</button>
+    <h1><span>TermNL</span> demo</h1>
+    <p>A terminal you talk to. This is TermNL itself, running in your browser on a pretend Linux board: commands are shown, never run.
+      <a href="https://github.com/msieur-gab/TermNL">How it works</a></p>
+    <button class="toggle-panel" id="toggle" type="button" aria-controls="panel" aria-expanded="false"></button>
   </header>
 
-  <div class="chat">
-    <termnl-chat api=""></termnl-chat>
-    <div class="waking" id="waking"><div><b>Waking TermNL up…</b><span id="waking-what">loading it into this page</span></div></div>
-  </div>
+  <main class="chat">
+    <div class="where"><span>You're in <b id="here">home</b></span><span class="learning" id="learning" hidden>learning…</span></div>
+    <div class="log" id="log" aria-live="polite">
+      <div class="hello" id="hello"><b>Waking TermNL up…</b><span id="hello-what">loading it into this page</span></div>
+    </div>
+    <form class="entry" id="form">
+      <input id="say" autocomplete="off" placeholder="e.g. make a folder called drafts in documents" aria-label="Your request">
+      <button class="send" type="submit">Send</button>
+    </form>
+  </main>
 
-  <aside class="intro">
+  <aside id="panel" aria-label="Panel">
+    <div class="top"><h2>Panel</h2><button class="ghost" id="close" type="button">Close</button></div>
     <section>
       <h2>What this is</h2>
-      <p>TermNL lets you talk to a Linux board in plain words. This is TermNL itself, running in this page, on a pretend
-        board with a few folders. Commands are shown, never run: nothing on your computer is touched.</p>
-      <p class="small">Every request ends in one of four outcomes: act, ask, approve, abstain.
-        <a href="https://github.com/msieur-gab/TermNL">The code and how it works</a></p>
+      <p class="intro">TermNL lets you talk to a Linux board in plain words, for people who aren't comfortable with the
+        terminal. It asks for whatever is missing, asks for approval when an action is risky, and only ever runs commands
+        written in its skill files: small text files anyone can write.</p>
+      <p class="note">This is TermNL itself, running in this page on a pretend board. Commands are shown, never run.
+        Every request ends in one of four outcomes: <b class="o act">act</b> <b class="o ask">ask</b>
+        <b class="o approve">approve</b> <b class="o abstain">abstain</b>.</p>
+      <h3>It asks for approval before anything risky</h3>
+      <div class="pills" data-pills="delete todo.txt|turn off the wifi|restart the system|kill Firefox"></div>
+      <h3>It asks when it isn't sure</h3>
+      <div class="pills" data-pills="my disk feels full|is there enough space for a movie|add a new note inside my documets"></div>
+      <h3>It says when it doesn't know</h3>
+      <div class="pills" data-pills="what's the weather tomorrow|order a pizza"></div>
     </section>
 
     <section>
-      <h2>Try</h2>
-      <div class="tries">
-        <div class="try"><span>It asks for approval before anything risky</span>
-          <div class="chips"><button class="chip" data-say>delete groceries.md from documents</button></div></div>
-        <div class="try"><span>It asks when it isn't sure</span>
-          <div class="chips"><button class="chip" data-say>my disk feels full</button></div></div>
-        <div class="try"><span>It says when it doesn't know</span>
-          <div class="chips"><button class="chip" data-say>what's the weather tomorrow</button></div></div>
-        <div class="try"><span>And it acts, or reads the board</span>
-          <div class="chips"><button class="chip" data-say>make a folder called bikes in documents</button>
-            <button class="chip" data-say>how hot is the board?</button>
-            <button class="chip" data-say>what's in documents</button>
-            <button class="chip" data-say>help</button></div></div>
-      </div>
-    </section>
-  </aside>
-
-  <aside class="more">
-    <section>
-      <h2>The pretend board</h2>
-      <div class="board" id="board"><span>loading…</span></div>
+      <h2>Inbox</h2>
+      <ul class="inbox" id="inbox"></ul>
+      <p class="note" id="inbox-empty">What TermNL doesn't understand lands here, and so does a guess you confirm with a yes:
+        on the board, that is what you teach it next.</p>
     </section>
 
     <section>
       <h2>Teach it a skill</h2>
-      <p>A skill is a text file. Change this one, or write your own, then teach it.</p>
+      <p class="note">A skill is a text file: what people say, the command it runs, what it replies. Change this one, or write your own.</p>
       <textarea id="skill" spellcheck="false" aria-label="A skill file">---
-does: water plants
-label: water the plants
+does: show users
+label: show who is logged in
 admin: no
 approve: no
-topic: You and me
+topic: This device
 ---
 
-A reminder to water the plants.
+Who is logged in on the board right now. `who` is on every Linux.
 
 ## Words
 
-- water: water
-- plants: plants, plant, garden
+- users: users, user, people logged in
 
 ## People say
 
-- water (the) plants
-- remind me to water (the) plants
+- who is logged in (on the board)
+- show (me) (the) users
+- who is on the board
 
 ## Also said
 
-- did i water the plants
-- the plants need water
+- who else is on this board
+- is anyone logged in right now
+- list the people logged in
+- which users are connected
+- is somebody else using the board
+
+## Command
+
+who
 
 ## Replies
 
-- done: Watering the plants: they will thank you.
+- done: Logged in now: {output}
 </textarea>
-      <div class="teach"><button class="do" id="teach" type="button" disabled>Teach it</button>
-        <span class="said" id="taught"></span></div>
-      <p class="small">TermNL knows the sentences under <b>## People say</b> at once. The <b>## Also said</b> lines teach
-        its small model other ways of saying them: on the board, "learn what I taught you" trains it. This page doesn't.</p>
+      <div class="row"><button class="do" id="teach" type="button" disabled>Teach it</button></div>
+      <div class="taught" id="taught"></div>
+      <p class="note">TermNL knows the sentences under <b>## People say</b> at once. The <b>## Also said</b> lines teach its
+        small model other ways of saying them: say “learn what I taught you” and it trains again, here in your browser,
+        in a few minutes, while you keep talking. What you teach stays in this tab.</p>
+    </section>
+
+    <section>
+      <h2>The pretend board</h2>
+      <dl id="device"></dl>
+      <p class="note">What a real board would list itself. Anything else is asked about.</p>
+    </section>
+
+    <section>
+      <h2>Settings</h2>
+      <div class="row"><span>Admin mode</span><button class="switch" id="admin" type="button" aria-pressed="true">on</button></div>
+      <p class="note">Off: restarting, shutting down, installing and switching Wi-Fi or Bluetooth are refused. On: each one asks for approval.</p>
+      <button class="ghost" id="reset" type="button">Start a new conversation</button>
+    </section>
+    <section>
+      <h2>What it can do</h2>
+      <p class="note"><span id="count">82</span> skills. A few sentences for each kind, to tap or to say your own way.</p>
+      <details><summary>Files and folders <small></small></summary>
+        <div class="pills" data-pills="go to Pictures|what's in Documents|make a new folder called drafts|create a new file called plan.md|find report.pdf|open beach.jpg|rename note.md to journal.md|move movie.mkv from Downloads to Videos|list all the pdfs in Documents|how big is the Music folder|compress the Pictures folder|what's in my trash|restore old-notes.md from the trash"></div></details>
+      <details><summary>The board <small></small></summary>
+        <div class="pills" data-pills="how hot is the board|check how much memory is free|how much space is left|give me a health check on the board|tell me about this device|what time is it|what usb devices are connected|update the board|shut down the board"></div></details>
+      <details><summary>Network <small></small></summary>
+        <div class="pills" data-pills="am I connected to wifi|list the available wifi networks|check my internet connection|is bluetooth working|ping the laptop|get report.pdf from the laptop"></div></details>
+      <details><summary>Apps and services <small></small></summary>
+        <div class="pills" data-pills="is nginx running|restart nginx|show the nginx log|show me what's running|open firefox|install firefox"></div></details>
+      <details><summary>Sound and music <small></small></summary>
+        <div class="pills" data-pills="play Bonobo|play Kong|what song is playing|skip this song|turn the volume up|mute the audio"></div></details>
+      <details><summary>You and TermNL <small></small></summary>
+        <div class="pills" data-pills="hey|call me Sam|what can you do|are you still learning|learn what I taught you"></div></details>
     </section>
   </aside>
 </div>
 
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
 <script type="module">
-// TermNL runs here: Pyodide (Python in the browser) loads its files from this repo, and demo.py answers what the
-// chat asks the server (/api/…), as server.py would on the board. Nothing leaves the page but those file requests.
-const realFetch = window.fetch.bind(window);
-const waking = document.getElementById("waking"), wakingWhat = document.getElementById("waking-what");
-let api;
+// TermNL runs here: Pyodide (Python in the browser) loads its files from this repo, and demo.py answers each sentence
+// with server.py's own turn, as on the board. Nothing leaves the page but the requests for those files.
+const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const svg = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+// the desk's line icons (symbios, web/js/icons.js)
+const I = {
+  folder: svg(`<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>`),
+  note: svg(`<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>`),
+  picture: svg(`<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/>`),
+  video: svg(`<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>`),
+  track: svg(`<path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>`),
+  document: svg(`<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 14h6M9 17h4"/>`),
+  file: svg(`<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/>`),
+  terminal: svg(`<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>`),
+  lock: svg(`<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>`),
+  panel: svg(`<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/>`),
+};
+const KINDS = [[/\.(md|txt)$/i, "note"], [/\.(jpe?g|png|gif|webp|svg)$/i, "picture"], [/\.(mp4|mkv|webm|mov|avi)$/i, "video"],
+  [/\.(mp3|flac|ogg|wav|m4a)$/i, "track"], [/\.(pdf|docx?|odt)$/i, "document"], [/\.(sh|py|js|html?|css)$/i, "terminal"]];
+const iconOf = (name, kind) => kind === "folder" || /\/$/.test(name) ? I.folder : I[(KINDS.find(([re]) => re.test(name)) || [, "file"])[1]];
 
+// ---- the panel: open beside the chat on a wide screen, over it on a phone; remembered in this browser
+const wrap = $("wrap"), toggle = $("toggle"), narrow = matchMedia("(max-width: 860px)");
+const showPanel = open => {
+  wrap.classList.toggle("folded", !open);
+  toggle.setAttribute("aria-expanded", String(open));
+  toggle.innerHTML = I.panel + (open ? "Hide panel" : "Show panel");
+  try { if (!narrow.matches) localStorage.termnlPanel = open ? "open" : "folded"; } catch {}
+};
+let remembered; try { remembered = localStorage.termnlPanel; } catch {}
+showPanel(!narrow.matches && remembered !== "folded");
+toggle.onclick = () => showPanel(wrap.classList.contains("folded"));
+$("close").onclick = () => showPanel(false);
+
+// ---- TermNL in the page
+const fileTexts = new Map();  // every file loaded, handed to the training worker too
+let api, py;
 const ready = (async () => {
-  // the files: listed by GitHub (the repo's main), fetched from beside this page
   const onPages = location.hostname.endsWith(".github.io");
   const owner = onPages ? location.hostname.split(".")[0] : "msieur-gab";
   const repo = onPages ? location.pathname.split("/")[1] : "TermNL";
-  const [py, tree] = await Promise.all([
-    loadPyodide(),
-    realFetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`).then(r => {
-      if (!r.ok) throw new Error("GitHub didn't list the files (" + r.status + "). Try again in a few minutes.");
+  const [pyodide, tree] = await Promise.all([
+    loadPyodide({ indexURL: PYODIDE }),
+    fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/main?recursive=1`).then(r => {
+      if (!r.ok) throw new Error("GitHub didn't list TermNL's files (" + r.status + "). Try again in a few minutes.");
       return r.json();
     }),
   ]);
-  wakingWhat.textContent = "reading its skill files";
+  py = pyodide;
+  $("hello-what").textContent = "reading its skill files";
   const files = tree.tree.filter(t => t.type === "blob" && /^termnl\/.*\.(py|md|json)$/.test(t.path) && !t.path.startsWith("termnl/bin/"))
     .map(t => t.path).concat(["tests/__init__.py", "tests/device.py", "web/demo.py"]);
   await Promise.all(files.map(async f => {
-    const r = await realFetch("../" + f);
+    const r = await fetch("../" + f);
     if (!r.ok) throw new Error("couldn't read " + f);
-    const where = "/home/pyodide/" + f;
-    py.FS.mkdirTree(where.slice(0, where.lastIndexOf("/")));
-    py.FS.writeFile(where, await r.text());
+    fileTexts.set(f, await r.text());
   }));
+  for (const [f, text] of fileTexts) write(py, f, text);
   py.runPython("import sys; sys.path.insert(0, '/home/pyodide/web')");
   api = py.pyimport("demo").api;
-  return py;
 })();
+function write(pyodide, path, text) {
+  const where = "/home/pyodide/" + path;
+  pyodide.FS.mkdirTree(where.slice(0, where.lastIndexOf("/")));
+  pyodide.FS.writeFile(where, text);
+}
+const session = (() => { try { return crypto.randomUUID(); } catch { return "s" + Math.random().toString(36).slice(2); } })();
+const call = async (path, body = {}) => { await ready; return JSON.parse(api("POST", path, JSON.stringify({ ...body, session }))); };
 
-// the chat asks the server; here, demo.py answers
-window.fetch = async (url, options = {}) => {
-  const u = url instanceof Request ? url.url : String(url);
-  if (!u.startsWith("/api/")) return realFetch(url, options);
-  await ready;
-  return new Response(api(options.method || "GET", u, options.body || ""), { headers: { "Content-Type": "application/json" } });
+// ---- learning again: the model is trained in a worker, from the skill files as they are in this tab
+const WORKER = `
+importScripts("${PYODIDE}pyodide.js");
+onmessage = async ({ data }) => {
+  try {
+    const py = await loadPyodide({ indexURL: "${PYODIDE}" });
+    await py.loadPackage("numpy");
+    for (const [path, text] of data.files) {
+      const where = "/home/pyodide/" + path;
+      py.FS.mkdirTree(where.slice(0, where.lastIndexOf("/")));
+      py.FS.writeFile(where, text);
+    }
+    postMessage({ model: py.runPython("import json\\nfrom termnl.train import train_language\\nmodel, n, took = train_language('en')\\njson.dumps(model, separators=(',', ':'))") });
+  } catch (e) { postMessage({ error: String(e && e.message || e).split("\\n").filter(Boolean).slice(-3).join(" ") }); }
+};`;
+window.termnlTrain = taughtJson => {
+  const taught = JSON.parse(taughtJson);
+  const files = [...fileTexts].filter(([f]) => !f.endsWith("model.json"))
+    .concat(Object.entries(taught).map(([id, text]) => [`termnl/languages/en/skills/${id}/skill.md`, text]));
+  const worker = new Worker(URL.createObjectURL(new Blob([WORKER], { type: "text/javascript" })));
+  $("learning").hidden = false;
+  worker.onmessage = ({ data }) => {
+    worker.terminate();
+    $("learning").hidden = true;
+    if (data.error) console.error("[termnl] learning failed:", data.error);
+    py.pyimport("demo").demo.trained(data.model || null, data.error || null);
+  };
+  worker.postMessage({ files });
 };
 
-await import("./termnl-chat.js");
-const chat = document.querySelector("termnl-chat");
-const quiet = () => waking.hidden = true;  // the hint goes once the conversation starts
-const narrow = matchMedia("(max-width: 880px)");  // a phone: the chat is below the sentences, so it comes into view
-const ask = text => { quiet(); chat.say(text); if (narrow.matches) document.querySelector(".chat").scrollIntoView({ behavior: "smooth" }); };
-chat.addEventListener("reply", quiet);
-document.querySelectorAll("[data-say]").forEach(b => { b.type = "button"; b.onclick = () => ask(b.textContent); });
-chat.addEventListener("reply", e => { if (e.detail.here) document.getElementById("here").textContent = e.detail.here; });
-document.getElementById("reset").onclick = () => { chat.reset(); document.getElementById("here").textContent = "home"; };
-
-const el = (tag, text) => { const e = document.createElement(tag); e.textContent = text; return e; };
-try {
-  await ready;
-  waking.querySelector("b").textContent = "TermNL is ready";
-  wakingWhat.textContent = "Type a request, or tap a sentence under Try.";
-  chat.shadowRoot.querySelector("form").addEventListener("submit", quiet);
-  const board = document.getElementById("board");
-  board.replaceChildren(...(await (await fetch("/api/board")).json()).flatMap(f => [el("b", f.folder), el("span", f.files.join(", "))]));
-  document.getElementById("teach").disabled = false;
-} catch (e) {
-  wakingWhat.textContent = String(e.message || e);
-  waking.querySelector("b").textContent = "TermNL couldn't wake up";
+// ---- the conversation
+const log = $("log");
+let started = false;
+function begin() {
+  if (started) return;
+  started = true;
+  $("hello")?.remove();
+}
+async function send(text) {
+  text = text.trim();
+  if (!text) return;
+  begin();
+  for (const b of log.querySelectorAll(".turn .chip")) b.disabled = true;  // an old question's answers
+  log.append(el("div", "you", text));
+  log.scrollTop = log.scrollHeight;
+  if (narrow.matches) showPanel(false);
+  const typing = el("div", "typing"); typing.setAttribute("aria-label", "TermNL is answering");
+  typing.append(el("span"), el("span"), el("span"));
+  log.append(typing);
+  log.scrollTop = log.scrollHeight;
+  let r;
+  try { [r] = await Promise.all([call("/api/say", { text }), new Promise(ok => setTimeout(ok, 450 + Math.random() * 350))]); }
+  catch (e) { r = { outcome: "abstain", say: "TermNL couldn't answer: " + (e.message || e) }; }
+  typing.remove();
+  show(r);
+  if (r.here) $("here").textContent = r.here;
+  if (r.learning) waitLearning();
+  showInbox();
+}
+async function waitLearning() {
+  for (;;) {
+    await new Promise(ok => setTimeout(ok, 2000));
+    const r = await call("/api/learning");
+    if (r.say) show({ outcome: "act", skill: "train-model", say: r.say });
+    if (!r.learning) break;
+  }
+}
+const HOW_SURE = r => r.how === "template" ? "read by a template" : r.how === "model" ? `model, ${Math.round(r.p * 100)}% sure` : "";
+function show(r) {
+  const turn = el("div", "turn");
+  turn.append(el("div", "say", r.say));
+  const seen = drawn(r);
+  if (seen) turn.append(seen);
+  else if (r.table) turn.append(table(r.table));
+  const meta = el("div", "meta");
+  meta.append(el("span", "out " + r.outcome, r.outcome));
+  if (r.skill) meta.append(el("span", "tag", r.skill));
+  if (HOW_SURE(r)) meta.append(el("span", "", HOW_SURE(r)));
+  if (r.unknown?.length) meta.append(el("span", "new", "new words: " + r.unknown.join(", ")));
+  if (r.reason && r.outcome === "abstain") meta.append(el("span", "", r.reason));
+  if (r.ran === "simulated") meta.append(el("span", "new", "simulated: nothing ran"));
+  turn.append(meta);
+  if (r.chips?.length) {
+    const chips = el("div", "chips");
+    for (const c of r.chips) { const b = el("button", "chip", c); b.type = "button"; b.onclick = () => send(c); chips.append(b); }
+    turn.append(chips);
+  }
+  const cmd = el("div", "cmd" + (r.show ? "" : " none"));
+  if (r.show) {
+    cmd.append(el("b", "", "$ "), document.createTextNode(r.show));
+    if (r.outcome === "approve") cmd.append(el("i", "", "   # waits for your yes"));
+    else if (r.ran === "simulated") cmd.append(el("i", "", r["made up"] ? "   # not run here: its answer is made up" : "   # not run here"));
+    else if (r.ran === "read") cmd.append(el("i", "", "   # its output is made up here"));
+  } else cmd.textContent = r.ran === "read" ? "no shell command: TermNL reads the board itself" : "no command";
+  turn.append(cmd);
+  log.append(turn);
+  log.scrollTop = log.scrollHeight;
 }
 
-// teaching: the file goes into TermNL's skills folder, in this page only, and the skill files are read again
-const taught = document.getElementById("taught");
-document.getElementById("teach").onclick = async () => {
-  const text = document.getElementById("skill").value;
-  const does = (text.match(/^does:\s*(.+)$/m) || [])[1];
-  taught.className = "said";
-  if (!does) { taught.className = "said bad"; taught.textContent = "A skill needs a does: line (an action and an object)."; return; }
-  const id = does.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const r = await (await fetch("/api/teach", { method: "POST", body: JSON.stringify({ id, text }) })).json();
-  if (r.errors?.length) { taught.className = "said bad"; taught.textContent = r.errors.join(" "); return; }
-  const first = (text.split(/^## People say$/m)[1] || "").match(/^- (.+)$/m);
-  taught.replaceChildren(el("span", "Learnt. Try: "));
-  if (first) {
-    const sentence = first[1].replace(/\(([^)|/]*)\)/g, "$1").replace(/\{[^}]+\}/g, "").replace(/\s+/g, " ").trim();
-    const b = el("button", sentence); b.className = "chip"; b.type = "button"; b.onclick = () => ask(sentence);
-    taught.append(b);
+// a reader's table, as termnl-chat.js draws it; a row's level colours its last cell, a lock marks a network
+function table({ columns, rows, levels = [], marks = [] }, icons = false) {
+  const wrapT = el("div", "scroll"), t = el("table");
+  if (columns.some(Boolean)) { const tr = el("tr"); for (const c of columns) tr.append(el("th", "", c)); t.append(tr); }
+  rows.forEach((row, i) => {
+    const tr = el("tr");
+    row.forEach((c, j) => tr.append(el("td", j === row.length - 1 && levels[i] ? levels[i].replace(/ /g, "-") : "", c)));
+    if (icons && row[0] && row.some(Boolean)) { const m = el("span", "ico"); m.innerHTML = iconOf(row[0], row[1]); tr.firstChild.prepend(m); }
+    if (marks[i] === "lock") { const m = el("span", "mark"); m.innerHTML = I.lock; tr.firstChild.prepend(m); }
+    t.append(tr);
+  });
+  wrapT.append(t);
+  return wrapT;
+}
+
+// what the board read, drawn: a gauge for a level, files with their icons
+const num = v => parseFloat(String(v || "").replace(",", "."));
+function gauge(label, value, percent, level, { mark, scale } = {}) {
+  const g = el("div", "gauge " + String(level || "").replace(/ /g, "-"));
+  const head = el("div", "g-head"); head.append(el("span", "", label), el("b", "", value));
+  const track = el("div", "g-track"), fill = el("div", "g-fill");
+  fill.style.width = Math.max(2, Math.min(100, percent)) + "%";
+  track.append(fill);
+  if (mark !== undefined) { const m = el("div", "g-mark"); m.style.left = mark + "%"; track.append(m); }
+  g.append(head, track);
+  if (scale) { const s = el("div", "g-scale"); for (const x of scale) s.append(el("span", "", x)); g.append(s); }
+  return g;
+}
+const TEMP = t => (t - 20) / 0.8;  // 20 °C to 100 °C across the track
+function drawn(r) {
+  const k = r.reading?.kind, v = r.reading?.values || {}, level = r.reading?.level;
+  const box = el("div", "gauges");
+  if (k === "temperature" && !isNaN(num(v["@sys.temperature"]))) {
+    const t = num(v["@sys.temperature"]), max = num(v["@sys.temperature.max"]) || 80;
+    box.append(gauge("Temperature", v["@sys.temperature"], TEMP(t), level, { mark: TEMP(max), scale: ["20 °C", `slows down at ${max} °C`, "100 °C"] }));
+    return box;
   }
+  if (k === "memory") {
+    box.append(gauge("Memory used", `${v["@sys.memory.used"]} of ${v["@sys.memory.total"]}`, num(v["@sys.memory.percent"]), level, { scale: ["", v["@sys.memory.percent"], ""] }));
+    return box;
+  }
+  if (k === "storage") {
+    box.append(gauge("Main disk", `${v["@sys.storage.free"]} free`, num(v["@sys.storage.percent"]), level, { scale: ["", `${v["@sys.storage.percent"]} of ${v["@sys.storage.total"]} used`, ""] }));
+    return box;
+  }
+  if ((k === "health" || k === "feeling") && r.table) {
+    const [t, m, d] = r.table.levels || [];
+    const temp = num(v["@sys.health.temperature"]);
+    box.append(gauge("Temperature", v["@sys.health.temperature"], TEMP(temp), t, { mark: TEMP(80) }),
+      gauge("Memory used", v["@sys.health.memory"], num(v["@sys.health.memory"]), m),
+      gauge("Disk used", v["@sys.health.disk"], num(v["@sys.health.disk"]), d, { scale: ["", `running for ${v["@sys.health.uptime"]}`, ""] }));
+    return box;
+  }
+  if (k === "wifi" && v["@sys.wifi.signal"]) {
+    box.append(gauge(v["@sys.wifi"] || "Wi-Fi", "signal " + v["@sys.wifi.signal"], num(v["@sys.wifi.signal"]), level));
+    return box;
+  }
+  if (["folder", "files", "has", "recent", "trash"].includes(k) && r.table) return table(r.table, true);
+  return null;
+}
+
+// ---- the panel's parts
+for (const p of document.querySelectorAll("[data-pills]")) {
+  const said = p.dataset.pills.split("|");
+  for (const s of said) { const b = el("button", "pill", s); b.type = "button"; b.onclick = () => send(s); p.append(b); }
+  const count = p.closest("details")?.querySelector("summary small");
+  if (count) count.textContent = said.length;
+}
+$("form").addEventListener("submit", e => { e.preventDefault(); send($("say").value); $("say").value = ""; });
+async function showInbox() {
+  const items = await call("/api/inbox");
+  $("inbox-empty").hidden = items.length > 0;
+  $("inbox").replaceChildren(...items.slice().reverse().map(i => {
+    const li = el("li", i.teach ? "teach" : "");
+    li.append(el("span", "", "“" + i.text + "”"), el("small", "", i.teach ? "to teach → " + i.teach : i.reason));
+    return li;
+  }));
+}
+$("admin").onclick = async () => {
+  const on = $("admin").getAttribute("aria-pressed") !== "true";
+  await call("/api/settings", { "admin mode": on ? "on" : "off" });
+  $("admin").setAttribute("aria-pressed", String(on));
+  $("admin").textContent = on ? "on" : "off";
 };
+$("reset").onclick = async () => {
+  await call("/api/reset");
+  log.replaceChildren();
+  $("here").textContent = "home";
+  if (narrow.matches) showPanel(false);
+};
+const taught = $("taught");
+$("teach").onclick = async () => {
+  const text = $("skill").value;
+  const does = (text.match(/^does:\s*(.+)$/m) || [])[1];
+  taught.className = "taught";
+  if (!does) { taught.className = "taught bad"; taught.textContent = "A skill needs a does: line, an action and an object."; return; }
+  const id = does.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const r = await call("/api/teach", { id, text });
+  if (r.errors?.length) { taught.className = "taught bad"; taught.textContent = r.errors.join(" "); return; }
+  taught.replaceChildren(el("span", "", "Learnt. Try:"));
+  const say = (text.split(/^## People say$/m)[1] || "").split(/^## /m)[0].match(/^- (.+)$/m);
+  const also = (text.split(/^## Also said$/m)[1] || "").split(/^## /m)[0].match(/^- (.+)$/gm) || [];
+  const tries = [say && say[1].replace(/\(([^()]*)\)/g, (_, x) => x.split("/")[0]).replace(/\{[^}]+\}/g, "").replace(/\s+/g, " ").trim(),
+    also.length ? also[also.length - 2 >= 0 ? also.length - 2 : 0].slice(2) : null, "learn what I taught you"].filter(Boolean);
+  for (const s of tries) { const b = el("button", "chip", s); b.type = "button"; b.onclick = () => send(s); taught.append(b); }
+};
+
+try {
+  await ready;
+  const hello = $("hello");
+  hello.replaceChildren(el("b", "", "TermNL is ready"), el("span", "", "Talk to the board the way you'd say it, or try one of these:"));
+  const chips = el("div", "chips");
+  for (const s of ["delete todo.txt", "my disk feels full", "what's the weather tomorrow", "how hot is the board"]) {
+    const b = el("button", "chip", s); b.type = "button"; b.onclick = () => send(s); chips.append(b);
+  }
+  hello.append(chips, el("span", "", "More in the panel, where you can also teach it a skill."));
+  const board = await call("/api/board");
+  const LABELS = { folder: "Folders", service: "Services", app: "Apps", running: "Running", network: "Networks", host: "Computers", music: "Music" };
+  $("device").replaceChildren(
+    ...Object.entries(LABELS).filter(([k]) => board.lists[k]).flatMap(([k, label]) => [el("dt", "", label), el("dd", "", board.lists[k].join(", "))]),
+    ...board.files.flatMap(f => [el("dt", "", f.folder + "/"), el("dd", "", f.files.join(", "))]));
+  $("count").textContent = board.skills;
+  $("teach").disabled = false;
+} catch (e) {
+  console.error("[termnl]", e);
+  const where = $("hello") || log.appendChild(el("div", "hello"));
+  where.replaceChildren(el("b", "", "TermNL couldn't wake up"), el("span", "", String(e.message || e)));
+}
 </script>
 </body>
 </html>
