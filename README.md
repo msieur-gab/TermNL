@@ -12,6 +12,21 @@ Every request ends in one of four outcomes: **act**, **ask**, **approve**, **abs
 **[Try it in your browser](https://msieur-gab.github.io/TermNL/demo/)**: TermNL itself, on a pretend board.
 Commands are shown, never run.
 
+## Where it runs
+
+TermNL is tested on two small Linux boards: the Orange Pi Zero 2W and the Luckfox Lyra Zero W. It was made with
+constrained devices in mind, so it should run comfortably on a Raspberry Pi too, and it runs on any Linux computer,
+a laptop included: Python 3.9 or newer, nothing else to install.
+
+It is also the terminal of SymbiOS, a system I'm building: a computer that is only yours, built on these small boards.
+A thinking device you carry and plug into a screen, with your phone as its companion, that can be extended with
+Meshtastic nodes and more. There, TermNL works alongside other small models. If SymbiOS interests you, get in touch
+through [thecu.be](https://thecu.be).
+
+<img src="docs/images/symbios.png" width="720" alt="TermNL in SymbiOS, on an Orange Pi Zero 2W: it answers how much space and memory are left, and plays music by Bonobo, beside the music player and a Meshtastic message">
+
+*TermNL in SymbiOS, on an Orange Pi Zero 2W.*
+
 ## Why it asks before it acts
 
 A command on a real device can't always be undone. So TermNL doesn't act on a guess: when a word is new
@@ -49,20 +64,6 @@ listed in `simulate:` (restart, shut down, Wi-Fi, Bluetooth, services) never run
 it would have done. The page's switches (show commands, admin mode) are written back to `settings.md`.
 
 Python 3.9 or newer, standard library only. Training the model needs numpy (`python3-numpy`).
-
-## Where it runs
-
-TermNL is tested on two small Linux boards: the Orange Pi Zero 2W and the Luckfox Lyra Zero W. It was made with
-constrained devices in mind, so it should run comfortably on a Raspberry Pi too.
-
-It is also the terminal of SymbiOS, a system I'm building: a computer that is only yours, built on these small boards.
-A thinking device you carry and plug into a screen, with your phone as its companion, that can be extended with
-Meshtastic nodes and more. There, TermNL works alongside other small models. If SymbiOS interests you, get in touch
-through [thecu.be](https://thecu.be).
-
-<img src="docs/images/symbios.png" width="720" alt="TermNL in SymbiOS, on an Orange Pi Zero 2W: it answers how much space and memory are left, and plays music by Bonobo, beside the music player and a Meshtastic message">
-
-*TermNL in SymbiOS, on an Orange Pi Zero 2W.*
 
 ## Said in words: your name and your settings
 
