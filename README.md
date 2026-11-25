@@ -136,8 +136,9 @@ with `{user}` is only used once a name is set.
 
 ## License
 
-Licensed under [PolyForm Noncommercial 1.0.0](LICENSE). For commercial use, get in touch through
-[thecu.be](https://thecu.be).
+GPL-3.0 ([LICENSE](LICENSE)), with two additional terms under its section 7: copies keep the attribution
+"Originally made by Gabriel Baude" with a link to the original source, and a changed version carries another name.
+See [NOTICE.md](NOTICE.md).
 
 TermNL is a research project, not made for production. It runs real commands on the device it lives on, and asks
 before the risky ones; try it on a board you can afford to start over.
