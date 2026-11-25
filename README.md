@@ -60,6 +60,10 @@ A thinking device you carry and plug into a screen, with your phone as its compa
 Meshtastic nodes and more. There, TermNL works alongside other small models. If SymbiOS interests you, get in touch
 through [thecu.be](https://thecu.be).
 
+<img src="docs/images/symbios.png" width="720" alt="TermNL in SymbiOS, on an Orange Pi Zero 2W: it answers how much space and memory are left, and plays music by Bonobo, beside the music player and a Meshtastic message">
+
+*TermNL in SymbiOS, on an Orange Pi Zero 2W.*
+
 ## Said in words: your name and your settings
 
 "call me Gab", "show me the commands", "hide the commands": each changes its line in `settings.md`. A skill does
